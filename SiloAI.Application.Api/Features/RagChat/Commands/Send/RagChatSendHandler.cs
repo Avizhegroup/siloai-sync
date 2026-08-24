@@ -11,6 +11,9 @@ public class RagChatSendHandler(
 {
     public async Task<RagChatResponse> Handle(RagChatSendCommand request, CancellationToken cancellationToken)
     {
+        if (!await HasCreditAsync(request.CustomerId, cancellationToken))
+            throw new InsufficientCreditException();
+
         var ownerKey = ChatSessionOwnerKey.ForOwnerId(request.OwnerId);
 
         AiChatSession? chatSession = null;
@@ -56,7 +59,14 @@ public class RagChatSendHandler(
             Datetime = DateTime.Now
         };
 
-        var (response, updatedSessionJson, tokenUsage) = await agentService.SendWithAgentSessionAsync(existingSessionJson, query);
+        var result = await agentService.SendWithAgentSessionAsync(existingSessionJson, query);
+
+        var customer = await dbContext.Customers.FirstOrDefaultAsync(c => c.Id == request.CustomerId,cancellationToken);
+
+        if (customer is not null)
+        {
+            customer.RemainingCredit -= result.PriceUsage;
+        }
 
         var now = DateTime.UtcNow;
         if (chatSession is null)
@@ -71,7 +81,7 @@ public class RagChatSendHandler(
             dbContext.AiChatSessions.Add(chatSession);
         }
 
-        chatSession.SessionState = updatedSessionJson;
+        chatSession.SessionState = result.SerializedSession;
         chatSession.UpdatedAt = now;
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -91,10 +101,12 @@ public class RagChatSendHandler(
 
         return new RagChatResponse
         {
-            ResponseText = response.ResponseText,
+            ResponseText = result.Response.ResponseText,
             ConversationId = chatSession.Id,
-            TokenUsage = tokenUsage,
-            Citations = citations
+            TokenUsage = result.TokenUsage,
+            Citations = citations,
+            PriceUsage = result.PriceUsage
+
         };
     }
 
@@ -146,5 +158,21 @@ public class RagChatSendHandler(
     {
         if (string.IsNullOrEmpty(value)) return string.Empty;
         return value.Length <= maxLength ? value : value[..maxLength] + "…";
+    }
+
+    private async Task<bool> HasCreditAsync(
+    int? customerId,
+    CancellationToken cancellationToken)
+    {
+        if (customerId is null)
+            return true;
+
+        var customer = await dbContext.Customers
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                c => c.Id == customerId.Value,
+                cancellationToken);
+
+        return customer is not null && customer.RemainingCredit > 0;
     }
 }

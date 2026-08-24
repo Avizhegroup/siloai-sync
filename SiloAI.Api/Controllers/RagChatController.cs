@@ -68,7 +68,8 @@ public class RagChatController(
                 AugmentedMessageTemplate = _augmentedMessageTemplate,
                 RagModel = openAiOptions.Value.RagModel,
                 Username = User?.Identity?.Name ?? string.Empty,
-                OwnerId = GetOwnerId()
+                OwnerId = GetOwnerId(),
+                CustomerId = GetCustomerId()
             }, cancellationToken);
 
             return Ok(result);
@@ -112,5 +113,14 @@ public class RagChatController(
         }
 
         return sections;
+    }
+
+    private int? GetCustomerId()
+    {
+        var customerId = User.Claims.FirstOrDefault(c => c.Type == "CustomerId") ?.Value;
+
+        return int.TryParse(customerId, out var id)
+            ? id
+            : null;
     }
 }

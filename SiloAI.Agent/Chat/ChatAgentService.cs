@@ -14,7 +14,8 @@ using SiloAI.Shared;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 namespace SiloAI.Agent.Chat;
-public class ChatAgentService(IOptions<OpenAIOptions> options)
+public class ChatAgentService(IOptions<OpenAIOptions> options,
+    AiCostCalculator costCalculator)
 {
     private IChatClient chatClient;
     private AIAgent writer;
@@ -52,7 +53,7 @@ public class ChatAgentService(IOptions<OpenAIOptions> options)
         };
     }
 
-    public async Task<(CopilotMessageDto Response, string SerializedSession, ChatTokenUsageDto TokenUsage )> SendWithAgentSessionAsync( string? sessionJson,CopilotMessageRequest query)
+    public async Task<ChatAgentResponse> SendWithAgentSessionAsync(string? sessionJson,CopilotMessageRequest query)
     {
         AgentSession session;
 
@@ -71,23 +72,30 @@ public class ChatAgentService(IOptions<OpenAIOptions> options)
 
         string responseText = result?.ToString();
 
+        var tokenUsage = new ChatTokenUsageDto
+        {
+            InputTokenCount = result?.Usage?.InputTokenCount ?? 0,
+            OutputTokenCount = result?.Usage?.OutputTokenCount ?? 0,
+            CachedInputTokenCount = result?.Usage?.CachedInputTokenCount ?? 0,
+            TotalTokenCount = result?.Usage?.TotalTokenCount ?? 0
+        };
+
+        var priceUsage = costCalculator.Calculate(tokenUsage);
+
         var serializedElement = await writer.SerializeSessionAsync(session);
 
         string serializedSession = serializedElement.GetRawText();
 
-        return (new CopilotMessageDto
+        return new ChatAgentResponse
+        {
+            Response = new CopilotMessageDto
             {
                 ResponseText = responseText
             },
-            serializedSession,
-            new ChatTokenUsageDto
-            {
-                InputTokenCount = result?.Usage?.InputTokenCount ?? 0,
-                OutputTokenCount = result?.Usage?.OutputTokenCount ?? 0,
-                CachedInputTokenCount = result?.Usage?.CachedInputTokenCount ?? 0,
-                TotalTokenCount = result?.Usage?. TotalTokenCount ?? 0
-            }
-        );
+            SerializedSession = serializedSession,
+            TokenUsage = tokenUsage,
+            PriceUsage = priceUsage
+        };
     }
 
     public async Task<AgentSession> CreateNewSessionAsync()
