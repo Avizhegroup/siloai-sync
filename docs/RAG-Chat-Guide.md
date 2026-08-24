@@ -1,4 +1,4 @@
-# RAG Chat — External Integration Guide
+# RAG Chat — External Integration Guide - SILOAI
 
 This document is for **external clients** integrating with SiloAI's Retrieval-Augmented
 Generation (RAG) chat feature. It explains how the feature works end-to-end and describes
