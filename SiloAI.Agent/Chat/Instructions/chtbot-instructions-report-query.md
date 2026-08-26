@@ -8,6 +8,6 @@ Add a block at the end of your response and mention that your command type like
 This block not shown to user directly. The commands you can back in the response are:
 1- SQL (Just data retrieving, not executable commands like INSERT, UPDATE, DELETE, EXECUTE, EXEC, DROP)
 2- HTML and CSS (without any JS)
-3- API (For calling REST API endpoints with GET, POST, PUT, DELETE methods)
+3- API (For calling REST API endpoints with GET, POST, PUT, or DELETE HTTP methods)
 
 ---

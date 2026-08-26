@@ -42,15 +42,6 @@ public class InvalidContentCheckMiddleware
 
         var path = context.Request.Path.Value;
 
-        if (path?.StartsWith("/RfidCore/v2/ChatSessions", StringComparison.OrdinalIgnoreCase) == true
-               || path?.StartsWith("/api/ai/chat/send", StringComparison.OrdinalIgnoreCase) == true
-               || path?.StartsWith("/api/rag/chat/send", StringComparison.OrdinalIgnoreCase) == true
-               || path?.StartsWith("/api/rag/instructions", StringComparison.OrdinalIgnoreCase) == true)
-        {
-            await next(context);
-            return;
-        }
-
         if (ContainsSqlInjection(requestContent))
         {
             logger.LogWarning("Possible SQL injection attempt detected: {RequestContent}", requestContent);
@@ -80,11 +71,62 @@ public class InvalidContentCheckMiddleware
         }
 
         string[] sqlInjectionPatterns =
-        {
-            @"(\%27)|(\')|(\-\-)|(\%23)|(#)",
-            @"((\%3D)|(=))[^\n]*((\%27)|(\')|(\-\-)|(\%3B)|(;))",
-            @"\b(select|update|delete|insert|exec|union|drop|alter|declare|cast|convert)\b"
-        };
+         {
+            // Classic SQL Injection:
+            // ' OR 1=1 --
+          @"(['""\s]|%27)\s*(or|and)\s+[\w\s'""%]+\s*(=|%3D)\s*[\w'""%]+(\s*(--|#|%23))?",
+
+
+           // Boolean SQL Injection:
+           // OR '1'='1'
+           // AND 1=1
+          @"\b(or|and)\b\s+['""]?\d+['""]?\s*(=|%3D)\s*['""]?\d+['""]?",
+
+
+            // SQL comments used for injection:
+            // abc'--
+            // abc'#
+          @"(['""])\s*(or|and)\s+\d+\s*=\s*\d+\s*(--|#|%23)",
+
+
+            // UNION based injection:
+            // UNION SELECT ...
+          @"\bunion\b\s+(all\s+)?\bselect\b\s+",
+
+
+           // Data modification commands:
+           // DROP TABLE Users
+           // DELETE FROM Users
+           // ALTER TABLE Users
+           // TRUNCATE TABLE Users
+          @"\b(drop|delete|alter|truncate)\b\s+(table|database|schema|view|procedure|function)\s+[\w\[\]]+",
+
+
+          // INSERT INTO Users
+         @"\binsert\s+into\s+[\w\[\]]+",
+
+
+          // UPDATE Users SET
+          @"\bupdate\s+[\w\[\]]+\s+set\b",
+
+
+          // EXEC dbo.Procedure
+          @"\bexec(ute)?\s+(\[?\w+\]?\.)?\[?\w+\]?",
+
+
+          // DECLARE @x, CAST(), CONVERT()
+          // only when used as SQL syntax, not as plain words
+          @"\bdeclare\s+@\w+",
+          @"\bcast\s*\(",
+          @"\bconvert\s*\(",
+
+
+          // Stacked queries:
+          // ; DROP TABLE
+          // ; DELETE FROM
+          @";\s*(drop|delete|alter|truncate|insert|update)\s+[\w\[\]]+"
+
+          };
 
         foreach (var pattern in sqlInjectionPatterns)
         {
