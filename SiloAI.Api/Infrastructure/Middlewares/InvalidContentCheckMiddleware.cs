@@ -42,11 +42,14 @@ public class InvalidContentCheckMiddleware
 
         var path = context.Request.Path.Value;
 
-        if (path?.StartsWith( "/RfidCore/v2/ChatSessions", StringComparison.OrdinalIgnoreCase) == true || path?.StartsWith( "/api/ai/chat/send", StringComparison.OrdinalIgnoreCase) == true)
-        {
-            await next(context);
-            return;
-        }
+        //if (path?.StartsWith("/RfidCore/v2/ChatSessions", StringComparison.OrdinalIgnoreCase) == true
+        //         || path?.StartsWith("/api/ai/chat/send", StringComparison.OrdinalIgnoreCase) == true
+        //         || path?.StartsWith("/api/rag/chat/send", StringComparison.OrdinalIgnoreCase) == true
+        //         || path?.StartsWith("/api/rag/instructions", StringComparison.OrdinalIgnoreCase) == true)
+        //{
+        //    await next(context);
+        //    return;
+        //}
 
         if (ContainsSqlInjection(requestContent))
         {

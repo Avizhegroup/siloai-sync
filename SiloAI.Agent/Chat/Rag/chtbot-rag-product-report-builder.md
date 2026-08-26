@@ -119,13 +119,20 @@ After selecting the desired filters and columns:
 You can export the data to Excel. Printing is available only for charts.
 
 ### Managing saved report formats
-For each saved report format, three options are available:
-1.✅(View) – Load and run the saved report
-2.Delete – Remove the saved format
-3.Add to Menu – Add the report as a menu item in the application
+For each saved report format, three action buttons are available in its row:
+1.Select / View Report:
+Used to select the saved report format.
+Displays the filters and columns that were selected when the report format was created.
+Allows the user to review the saved report configuration.
+2.Delete:
+Used to delete the saved report format.
+3.Report Access Management:
+Opens the تعریف دسترسی های گزارش سازها page.
+This page is used to define and manage access permissions for the selected saved report.
+Access settings determine which users can access or use the report.
 
-### Adding a report to the menu
-After selecting Add to Menu:
+4. تعریف دسترسی های گزارش سازها
+After opening the تعریف دسترسی های گزارش سازها page:
 - Define the report address and display title
 - In the Users section, grant access to specific users
 - In the Menu section, choose where the report should appear in the application menu
