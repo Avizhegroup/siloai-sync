@@ -78,6 +78,10 @@ public class RagChatController(
         {
             return NotFound(new { error = "مکالمه یافت نشد یا دسترسی به آن مجاز نیست." });
         }
+        catch (InsufficientCreditException)
+        {
+            return StatusCode(StatusCodes.Status402PaymentRequired);
+        }
     }
 
     private string GetOwnerId()

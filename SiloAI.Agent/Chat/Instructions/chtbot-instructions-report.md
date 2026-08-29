@@ -90,7 +90,9 @@ provide a **brief Persian summary** explaining what the query does.
 
 📌 [خلاصه فارسی: چه داده‌هایی بازگردانده می‌شود و چه فیلترهایی اعمال شده است]
 
-<<SQL -- اینجا کوئری>>
+<<SQL
+-- اینجا کوئری
+>>
 ```
 
 ## Query Rules & Best Practices

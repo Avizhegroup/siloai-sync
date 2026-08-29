@@ -12,7 +12,9 @@ public class RagChatSendHandler(
     public async Task<RagChatResponse> Handle(RagChatSendCommand request, CancellationToken cancellationToken)
     {
         if (!await HasCreditAsync(request.CustomerId, cancellationToken))
+        {
             throw new InsufficientCreditException();
+        }
 
         var ownerKey = ChatSessionOwnerKey.ForOwnerId(request.OwnerId);
 
@@ -65,7 +67,7 @@ public class RagChatSendHandler(
 
         if (customer is not null)
         {
-            customer.RemainingCredit -= result.PriceUsage;
+            customer.RemainingCredit = Math.Max( 0, customer.RemainingCredit - result.PriceUsage);
         }
 
         var now = DateTime.UtcNow;
