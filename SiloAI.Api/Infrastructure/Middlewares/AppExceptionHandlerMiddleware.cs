@@ -4,10 +4,11 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using SiloAI.Application.Api;
+using SiloAI.Shared;
 using System.Diagnostics;
 using System.Net;
 using System.Text;
-using SiloAI.Shared;
 
 public class AppExceptionHandlerMiddleware
 {
@@ -116,10 +117,10 @@ public class AppExceptionHandlerMiddleware
                 result = JsonConvert.SerializeObject(new ApiResponse()
                 {
                     Successful = false,
-                    Messages = new[]
-                    {
+                    Messages =
+                    [
                         userNotFoundException.Message
-                    },
+                    ],
                 });
 
                 break;
@@ -131,10 +132,10 @@ public class AppExceptionHandlerMiddleware
                 result = JsonConvert.SerializeObject(new ApiResponse()
                 {
                     Successful = false,
-                    Messages = new[]
-                    {
+                    Messages =
+                    [
                         tokenRequiredException.Message
-                    },
+                    ],
                 });
 
                 break;
@@ -184,10 +185,42 @@ public class AppExceptionHandlerMiddleware
                 {
                     Successful = false,
                     Value = null,
-                    Messages = new[]
-                    {
+                    Messages = 
+                    [
                        "در انجام عملیات مشکلی به وجود آمده است"
-                    },
+                    ],
+                });
+
+                break;
+
+            case ConversationNotFoundException notFoundException:
+
+                httpStatusCode = HttpStatusCode.NotFound;
+
+                result = JsonConvert.SerializeObject(new ApiResponse()
+                {
+                    Successful = false,
+                    Value = null,
+                    Messages =
+                    [
+                       "مکالمه یافت نشد یا دسترسی به آن مجاز نیست"
+                    ],
+                });
+
+                break;  
+            
+            case InsufficientCreditException insufficientCreditException:
+
+                httpStatusCode = HttpStatusCode.PaymentRequired;
+
+                result = JsonConvert.SerializeObject(new ApiResponse()
+                {
+                    Successful = false,
+                    Value = null,
+                    Messages =
+                    [
+                       "اعتبار کافی نیست"
+                    ],
                 });
 
                 break;

@@ -1,11 +1,8 @@
-using Azure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using SiloAI.Agent;
 using SiloAI.Agent.Chat;
 
 namespace SiloAI.Application.Api.Features;
-
 public class SendChatCommandHandler(
     ChatAgentService agentService,
     AiApiContext dbContext,
@@ -16,20 +13,25 @@ public class SendChatCommandHandler(
     public async Task<SendChatResponse> Handle(SendChatCommand request, CancellationToken cancellationToken)
     {
         if (!await HasCreditAsync(request.CustomerId, cancellationToken))
+        {
             throw new InsufficientCreditException();
+        }
 
         var ownerKey = ChatSessionOwnerKey.ForCustomer(request.CustomerId);
 
         AiChatSession? chatSession = null;
+
         string? existingSessionJson = null;
 
-        if (request.ConversationId.HasValue)
+        if (request.ConversationId is not null)
         {
             chatSession = await dbContext.AiChatSessions
                 .FirstOrDefaultAsync(s => s.Id == request.ConversationId.Value, cancellationToken);
 
             if (chatSession is null || chatSession.OwnerKey != ownerKey)
-                throw new ConversationNotFoundException();
+            { 
+                throw new ConversationNotFoundException(); 
+            }
 
             existingSessionJson = chatSession.SessionState;
         }
@@ -50,6 +52,7 @@ public class SendChatCommandHandler(
         var priceUsage = result.PriceUsage;
 
         var customer = await dbContext.Customers.FirstOrDefaultAsync(c => c.Id == request.CustomerId, cancellationToken);
+     
         if (customer is not null)
         {
             customer.RemainingCredit -= priceUsage;
@@ -58,6 +61,7 @@ public class SendChatCommandHandler(
         }
 
         var now = DateTime.UtcNow;
+
         if (chatSession is null)
         {
             chatSession = new AiChatSession
@@ -116,11 +120,14 @@ public class SendChatCommandHandler(
 
     private async Task<bool> HasCreditAsync(int? customerId, CancellationToken cancellationToken)
     {
-        if (customerId is null) return true;
+        if (customerId is null)
+        {
+            return true; 
+        }
 
         var customer = await dbContext.Customers
-            .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == customerId.Value, cancellationToken);
+                                      .AsNoTracking()
+                                      .FirstOrDefaultAsync(c => c.Id == customerId.Value, cancellationToken);
 
         return customer is null || customer.RemainingCredit > 0;
     }

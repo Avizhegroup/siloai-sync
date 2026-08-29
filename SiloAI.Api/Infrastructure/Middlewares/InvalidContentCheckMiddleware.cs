@@ -71,66 +71,18 @@ public class InvalidContentCheckMiddleware
         }
 
         string[] sqlInjectionPatterns =
-         {
-            // Classic SQL Injection:
-            // ' OR 1=1 --
-          @"(['""\s]|%27)\s*(or|and)\s+[\w\s'""%]+\s*(=|%3D)\s*[\w'""%]+(\s*(--|#|%23))?",
-
-
-           // Boolean SQL Injection:
-           // OR '1'='1'
-           // AND 1=1
-          @"\b(or|and)\b\s+['""]?\d+['""]?\s*(=|%3D)\s*['""]?\d+['""]?",
-
-
-            // SQL comments used for injection:
-            // abc'--
-            // abc'#
-          @"(['""])\s*(or|and)\s+\d+\s*=\s*\d+\s*(--|#|%23)",
-
-
-            // UNION based injection:
-            // UNION SELECT ...
-          @"\bunion\b\s+(all\s+)?\bselect\b\s+",
-
-
-           // Data modification commands:
-           // DROP TABLE Users
-           // DELETE FROM Users
-           // ALTER TABLE Users
-           // TRUNCATE TABLE Users
-          @"\b(drop|delete|alter|truncate)\b\s+(table|database|schema|view|procedure|function)\s+[\w\[\]]+",
-
-
-          // INSERT INTO Users
-         @"\binsert\s+into\s+[\w\[\]]+",
-
-
-          // UPDATE Users SET
-          @"\bupdate\s+[\w\[\]]+\s+set\b",
-
-
-          // EXEC dbo.Procedure
-          @"\bexec(ute)?\s+(\[?\w+\]?\.)?\[?\w+\]?",
-
-
-          // DECLARE @x, CAST(), CONVERT()
-          // only when used as SQL syntax, not as plain words
-          @"\bdeclare\s+@\w+",
-          @"\bcast\s*\(",
-          @"\bconvert\s*\(",
-
-
-          // Stacked queries:
-          // ; DROP TABLE
-          // ; DELETE FROM
-          @";\s*(drop|delete|alter|truncate|insert|update)\s+[\w\[\]]+"
-
-          };
+        {
+            @"(?:'|%27)\s*(?:or|and)(?:\s|%20)+(?:\(?\s*)?(?:\d+|(?:'|%27)[^'\r\n]*?(?:'|%27))\s*(?:=|%3D|<>|!=)\s*(?:\d+|(?:'|%27)[^'\r\n]*?(?:'|%27))",
+            @"\bunion(?:\s|%20)+(?:all(?:\s|%20)+)?select\b",
+            @"(?:;|%3B)(?:\s|%20)*(?:select\b[^;\r\n]*\bfrom\b|insert(?:\s|%20)+into\b|update\b[^;\r\n]*\bset\b|delete(?:\s|%20)+from\b|(?:drop|alter|create)(?:\s|%20)+(?:table|database)\b|exec(?:ute)?(?:\s|%20)+[\w.\[\]]+|declare(?:\s|%20)+@\w+)",
+            @"\bselect\b[^;\r\n]*(?:\s|%20)+from(?:\s|%20)+[\w.\[\]]+(?:[^;\r\n]*(?:--|%2D%2D|#|%23))?",
+            @"\b(?:insert(?:\s|%20)+into|update\b[^;\r\n]*\bset|delete(?:\s|%20)+from|(?:drop|alter|create)(?:\s|%20)+(?:table|database)|exec(?:ute)?(?:\s|%20)+[\w.\[\]]+|declare(?:\s|%20)+@\w+)\b",
+            @"\bcast\s*\([^)]*\bas\b[^)]*\)|\bconvert\s*\([^,]+,[^)]*\)"
+        };
 
         foreach (var pattern in sqlInjectionPatterns)
         {
-            if (Regex.IsMatch(input, pattern, RegexOptions.IgnoreCase))
+            if (Regex.IsMatch(input, pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
             {
                 return true;
             }
