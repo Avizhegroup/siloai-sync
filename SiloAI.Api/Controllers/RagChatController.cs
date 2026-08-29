@@ -50,32 +50,24 @@ public class RagChatController(
     [HttpPost("send")]
     public async Task<IActionResult> Send([FromBody] RagChatRequest request, CancellationToken cancellationToken)
     {
-        try
+        var result = await mediator.Send(new RagChatSendCommand
         {
-            var result = await mediator.Send(new RagChatSendCommand
-            {
-                ConversationId = request.ConversationId,
-                Message = request.Message,
-                TopK = request.TopK,
-                IsMainChat = request.IsMainChat,
-                DocType = request.DocType,
-                Key = request.Key,
-                SystemPrompt = _ragSystemPrompt,
-                SystemPromptMainChat = _ragSystemPromptMainChat,
-                AugmentedMessageTemplate = _augmentedMessageTemplate,
-                RagModel = openAiOptions.Value.RagModel,
-                Username = User?.Identity?.Name ?? string.Empty,
-                OwnerId = User.GetOwnerId(),
-                CustomerId = int.Parse(User.GetCustomerId())
-            }, cancellationToken);
+            ConversationId = request.ConversationId,
+            Message = request.Message,
+            TopK = request.TopK,
+            IsMainChat = request.IsMainChat,
+            DocType = request.DocType,
+            Key = request.Key,
+            SystemPrompt = _ragSystemPrompt,
+            SystemPromptMainChat = _ragSystemPromptMainChat,
+            AugmentedMessageTemplate = _augmentedMessageTemplate,
+            RagModel = openAiOptions.Value.RagModel,
+            Username = User?.Identity?.Name ?? string.Empty,
+            OwnerId = User.GetOwnerId(),
+            CustomerId = int.Parse(User.GetCustomerId())
+        }, cancellationToken);
 
-            return Ok(result);
-        }
-   
-        catch (InsufficientCreditException)
-        {
-            return StatusCode(StatusCodes.Status402PaymentRequired);
-        }
+        return Ok(result);
     }
 
     private static Dictionary<string, string> LoadPromptSections(string resourceName)
