@@ -6,13 +6,13 @@ public static partial class Program
 
         app.UseSwaggerUI();
 
-        app.UseInfrastructureSharedMiddlewares();
-
         app.UseAuthentication();
 
         app.UseAuthorization();
 
         app.MapControllers();
+
+        app.UseInfrastructureSharedMiddlewares();
 
         return app;
     }
