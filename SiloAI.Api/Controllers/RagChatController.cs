@@ -52,8 +52,6 @@ public class RagChatController(
     {
         try
         {
-
-
             var result = await mediator.Send(new RagChatSendCommand
             {
                 ConversationId = request.ConversationId,
