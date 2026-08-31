@@ -6,4 +6,5 @@ public class RagChatResponse
     public Guid ConversationId { get; set; }
     public List<RagChatCitationDto> Citations { get; set; } = new();
     public ChatTokenUsageDto? TokenUsage { get; set; }
+    public decimal? PriceUsage   { get; set; }
 }

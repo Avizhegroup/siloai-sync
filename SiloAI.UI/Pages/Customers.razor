@@ -161,7 +161,7 @@ else
                     <thead class="table-light">
                         <tr>
                             <th>نام</th>
-                            <th>اعتبار باقیمانده</th>
+                            <th>اعتبار باقیمانده(دلار)</th>
                             <th>تاریخ ثبت</th>
                             <th class="text-end">عملیات</th>
                         </tr>
@@ -196,7 +196,7 @@ else
                                     else
                                     {
                                         <span class="@(customer.RemainingCredit <= 0 ? "text-danger fw-bold" : "text-success fw-bold")">
-                                            @customer.RemainingCredit.ToString("N2")
+                                            $ @customer.RemainingCredit.ToString("N2")
                                         </span>
                                     }
                                 </td>

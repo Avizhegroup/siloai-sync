@@ -14,4 +14,5 @@ public class RagChatSendCommand : IRequest<RagChatResponse>
     public string? RagModel { get; set; }
     public string Username { get; set; }
     public string OwnerId { get; set; }
+    public int? CustomerId { get; set; }
 }
