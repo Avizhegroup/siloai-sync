@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using CommunityToolkit.VectorData.SqlServer;
 using Microsoft.Extensions.VectorData;
-using Microsoft.SemanticKernel.Connectors.SqlServer;
 using SiloAI.Application.Shared.Contracts.Rag;
 using SiloAI.Domains;
 
