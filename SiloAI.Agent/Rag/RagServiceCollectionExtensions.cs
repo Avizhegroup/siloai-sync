@@ -1,9 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using CommunityToolkit.VectorData.SqlServer;
-using Microsoft.Extensions.VectorData;
 using SiloAI.Application.Shared.Contracts.Rag;
-using SiloAI.Domains;
 
 namespace SiloAI.Agent.Rag;
 
@@ -18,6 +15,7 @@ public static class RagServiceCollectionExtensions
         services.AddOptions();
 
         var ragSection = configuration.GetSection(RagOptions.SectionName);
+
         services.Configure<RagOptions>(o =>
         {
             o.ChunkSize = ParseInt(ragSection[nameof(RagOptions.ChunkSize)], o.ChunkSize);
@@ -33,6 +31,7 @@ public static class RagServiceCollectionExtensions
         });
 
         var openAiSection = configuration.GetSection(OpenAIOptions.SectionName);
+      
         services.Configure<OpenAIOptions>(o =>
         {
             o.ApiKey = openAiSection[nameof(OpenAIOptions.ApiKey)] ?? o.ApiKey;
@@ -45,57 +44,22 @@ public static class RagServiceCollectionExtensions
         });
 
         services.AddScoped<ITextExtractionService, TxtTextExtractionService>();
+
         services.AddScoped<ITextExtractionService, MarkdownTextExtractionService>();
+
         services.AddScoped<ITextExtractionDispatcher, TextExtractionDispatcher>();
 
         services.AddScoped<ITextChunkingService, TextChunkingService>();
+
         services.AddScoped<IEmbeddingService, OpenAIEmbeddingService>();
+
         services.AddScoped<IRagIndexingService, RagIndexingService>();
+
         services.AddScoped<IRagSearchService, RagSearchService>();
+
         services.AddScoped<RagContextProviderFactory>();
 
-        services.AddSqlServerCollection<Guid, RagDocumentChunk>(
-            name: "tbl_RagDocumentChunks",
-            connectionStringProvider: static sp =>
-            {
-                var configuration = sp.GetRequiredService<IConfiguration>();
-                return configuration.GetConnectionString("AiDb")!;
-            },
-            optionsProvider: static sp =>
-            {
-                var embeddings = sp.GetRequiredService<IEmbeddingService>();
-                return new SqlServerCollectionOptions
-                {
-                    Definition = new VectorStoreCollectionDefinition
-                    {
-                        Properties =
-                        [
-                            new VectorStoreKeyProperty(nameof(RagDocumentChunk.Id), typeof(Guid))
-                            {
-                                StorageName = "fld_Id"
-                            },
-                            new VectorStoreDataProperty(nameof(RagDocumentChunk.DocumentId), typeof(Guid))
-                            {
-                                StorageName = "fld_DocumentId"
-                            },
-                            new VectorStoreDataProperty(nameof(RagDocumentChunk.ChunkIndex), typeof(int))
-                            {
-                                StorageName = "fld_ChunkIndex"
-                            },
-                            new VectorStoreDataProperty(nameof(RagDocumentChunk.Content), typeof(string))
-                            {
-                                StorageName = "fld_Content"
-                            },
-                            new VectorStoreVectorProperty(nameof(RagDocumentChunk.Embedding), typeof(float[]), embeddings.Dimensions)
-                            {
-                                StorageName = "fld_Embedding",
-                                DistanceFunction = DistanceFunction.CosineDistance
-                            }
-                        ]
-                    }
-                };
-            },
-            ServiceLifetime.Scoped);
+        services.AddRagDocumentChunkCollection();
 
         return services;
     }
