@@ -5,8 +5,8 @@ using Microsoft.Extensions.Options;
 using SiloAI.Agent.Rag;
 using SiloAI.Api.Auth;
 using SiloAI.Application.Api;
+using SiloAI.Shared;
 using System.Reflection;
-using System.Security.Claims;
 using System.Text;
 
 namespace SiloAI.Api.Controllers;
@@ -41,7 +41,7 @@ public class RagChatController(
         {
             SystemPrompt = _ragSystemPrompt,
             RagModel = openAiOptions.Value.RagModel,
-            OwnerId = GetOwnerId()
+            OwnerId = User.GetOwnerId()
         }, cancellationToken);
 
         return Ok(result);
@@ -50,9 +50,6 @@ public class RagChatController(
     [HttpPost("send")]
     public async Task<IActionResult> Send([FromBody] RagChatRequest request, CancellationToken cancellationToken)
     {
-        if (request is null || string.IsNullOrWhiteSpace(request.Message))
-            return BadRequest(new { error = "Message is required." });
-
         try
         {
             var result = await mediator.Send(new RagChatSendCommand
@@ -68,46 +65,44 @@ public class RagChatController(
                 AugmentedMessageTemplate = _augmentedMessageTemplate,
                 RagModel = openAiOptions.Value.RagModel,
                 Username = User?.Identity?.Name ?? string.Empty,
-                OwnerId = GetOwnerId()
+                OwnerId = User.GetOwnerId(),
+                CustomerId = int.Parse(User.GetCustomerId())
             }, cancellationToken);
 
             return Ok(result);
         }
-        catch (ConversationNotFoundException)
+        catch (InsufficientCreditException)
         {
-            return NotFound(new { error = "مکالمه یافت نشد یا دسترسی به آن مجاز نیست." });
+            return StatusCode(402, new { message = "Insufficient credit to perform this action." });
         }
-    }
-
-    private string GetOwnerId()
-    {
-        var customerId = User.Claims.FirstOrDefault(c => c.Type == "CustomerId")?.Value;
-        if (!string.IsNullOrEmpty(customerId))
-            return $"customer:{customerId}";
-
-        var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-        if (!string.IsNullOrEmpty(userId))
-            return $"user:{userId}";
-
-        return User?.Identity?.Name ?? string.Empty;
     }
 
     private static Dictionary<string, string> LoadPromptSections(string resourceName)
     {
         var assembly = Assembly.GetExecutingAssembly();
-        using var stream = assembly.GetManifestResourceStream(resourceName)
-            ?? throw new InvalidOperationException($"Embedded prompt file '{resourceName}' not found.");
-        using var reader = new StreamReader(stream, Encoding.UTF8);
+
+        using var stream = assembly.GetManifestResourceStream(resourceName);
+
+        using StreamReader reader = new(stream, Encoding.UTF8);
+
         var content = reader.ReadToEnd();
 
-        var sections = new Dictionary<string, string>();
+        Dictionary<string, string> sections = new();
+
         var parts = content.Split("### SECTION:", StringSplitOptions.RemoveEmptyEntries);
+
         foreach (var part in parts)
         {
             var headerEnd = part.IndexOf(" ###");
-            if (headerEnd < 0) continue;
+
+            if (headerEnd < 0)
+            {
+                continue;
+            }
             var key = part[..headerEnd].Trim();
+
             var value = part[(headerEnd + 4)..].Trim();
+
             sections[key] = value;
         }
 

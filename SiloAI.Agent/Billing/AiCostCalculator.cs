@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
+using SiloAI.Application.Shared.Features;
 
-namespace SiloAI.Application.Api;
+namespace SiloAI.Agent;
 
 public class AiCostCalculator(IConfiguration configuration)
 {
@@ -14,7 +15,7 @@ public class AiCostCalculator(IConfiguration configuration)
 
         var cachedInputPrice = configuration.GetValue<decimal>($"AiPricing:Models:{modelName}:CachedInputPerMillionTokens");
 
-        var normalInputTokens = Math.Max( 0, tokenUsage.InputTokenCount - tokenUsage.CachedInputTokenCount);
+        var normalInputTokens = Math.Max(0, tokenUsage.InputTokenCount - tokenUsage.CachedInputTokenCount);
 
         var priceUsage =
             (normalInputTokens / 1_000_000m * inputPrice)

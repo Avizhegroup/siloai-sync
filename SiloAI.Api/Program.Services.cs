@@ -6,6 +6,7 @@ using SiloAI.Identity.Server;
 using Microsoft.OpenApi.Models;
 using Serilog;
 using SiloAI.Api;
+using SiloAI.Agent;
 
 public static partial class Program
 {

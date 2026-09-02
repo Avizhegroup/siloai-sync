@@ -42,15 +42,6 @@ public class InvalidContentCheckMiddleware
 
         var path = context.Request.Path.Value;
 
-        //if (path?.StartsWith("/RfidCore/v2/ChatSessions", StringComparison.OrdinalIgnoreCase) == true
-        //         || path?.StartsWith("/api/ai/chat/send", StringComparison.OrdinalIgnoreCase) == true
-        //         || path?.StartsWith("/api/rag/chat/send", StringComparison.OrdinalIgnoreCase) == true
-        //         || path?.StartsWith("/api/rag/instructions", StringComparison.OrdinalIgnoreCase) == true)
-        //{
-        //    await next(context);
-        //    return;
-        //}
-
         if (ContainsSqlInjection(requestContent))
         {
             logger.LogWarning("Possible SQL injection attempt detected: {RequestContent}", requestContent);
@@ -81,14 +72,17 @@ public class InvalidContentCheckMiddleware
 
         string[] sqlInjectionPatterns =
         {
-            @"(\%27)|(\')|(\-\-)|(\%23)|(#)",
-            @"((\%3D)|(=))[^\n]*((\%27)|(\')|(\-\-)|(\%3B)|(;))",
-            @"\b(select|update|delete|insert|exec|union|drop|alter|declare|cast|convert)\b"
+            @"(?:'|%27)\s*(?:or|and)(?:\s|%20)+(?:\(?\s*)?(?:\d+|(?:'|%27)[^'\r\n]*?(?:'|%27))\s*(?:=|%3D|<>|!=)\s*(?:\d+|(?:'|%27)[^'\r\n]*?(?:'|%27))",
+            @"\bunion(?:\s|%20)+(?:all(?:\s|%20)+)?select\b",
+            @"(?:;|%3B)(?:\s|%20)*(?:select\b[^;\r\n]*\bfrom\b|insert(?:\s|%20)+into\b|update\b[^;\r\n]*\bset\b|delete(?:\s|%20)+from\b|(?:drop|alter|create)(?:\s|%20)+(?:table|database)\b|exec(?:ute)?(?:\s|%20)+[\w.\[\]]+|declare(?:\s|%20)+@\w+)",
+            @"\bselect\b[^;\r\n]*(?:\s|%20)+from(?:\s|%20)+[\w.\[\]]+(?:[^;\r\n]*(?:--|%2D%2D|#|%23))?",
+            @"\b(?:insert(?:\s|%20)+into|update\b[^;\r\n]*\bset|delete(?:\s|%20)+from|(?:drop|alter|create)(?:\s|%20)+(?:table|database)|exec(?:ute)?(?:\s|%20)+[\w.\[\]]+|declare(?:\s|%20)+@\w+)\b",
+            @"\bcast\s*\([^)]*\bas\b[^)]*\)|\bconvert\s*\([^,]+,[^)]*\)"
         };
 
         foreach (var pattern in sqlInjectionPatterns)
         {
-            if (Regex.IsMatch(input, pattern, RegexOptions.IgnoreCase))
+            if (Regex.IsMatch(input, pattern, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
             {
                 return true;
             }

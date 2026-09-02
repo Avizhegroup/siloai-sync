@@ -78,7 +78,7 @@ public partial class Customers
     {
         _editingId = customer.Id;
         _editName = customer.Name;
-        _editCredit = customer.RemainingCredit;
+        _editCredit = Math.Round(customer.RemainingCredit, 2);
     }
 
     private void CancelEdit()
