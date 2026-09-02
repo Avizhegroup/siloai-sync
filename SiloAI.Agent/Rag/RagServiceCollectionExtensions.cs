@@ -49,6 +49,7 @@ public static class RagServiceCollectionExtensions
         services.AddScoped<IEmbeddingService, OpenAIEmbeddingService>();
         services.AddScoped<IRagIndexingService, RagIndexingService>();
         services.AddScoped<IRagSearchService, RagSearchService>();
+        services.AddScoped<RagContextProviderFactory>();
 
         return services;
     }
