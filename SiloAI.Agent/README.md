@@ -50,10 +50,10 @@ SiloAI.Agent/
 
 | Package | Version | Purpose |
 |---------|---------|---------|
-| `OpenAI` | 2.8.0 | Official OpenAI .NET SDK — provides `ChatClient` and `ApiKeyCredential` |
-| `Microsoft.Extensions.AI` | 10.3.0 | Core AI abstractions: `IChatClient`, `ChatMessage`, `AIContent`, `DataContent`, `TextContent` |
-| `Microsoft.Extensions.AI.OpenAI` | 10.3.0 | Bridge that exposes the OpenAI `ChatClient` as `IChatClient` via `.AsIChatClient()` |
-| `Microsoft.Agents.AI` | 1.0.0-preview | Microsoft Agents SDK — provides `AIAgent`, `ChatClientAgent`, `AgentSession`, `ChatClientAgentOptions` |
+| `OpenAI` | 2.13.0 | Official OpenAI .NET SDK — provides `ChatClient` and `ApiKeyCredential` |
+| `Microsoft.Extensions.AI` | 10.9.0 | Core AI abstractions: `IChatClient`, `ChatMessage`, `AIContent`, `DataContent`, `TextContent` |
+| `Microsoft.Extensions.AI.OpenAI` | 10.9.0 | Bridge that exposes the OpenAI `ChatClient` as `IChatClient` via `.AsIChatClient()` |
+| `Microsoft.Agents.AI` | 1.18.0 | Microsoft Agents SDK — provides `AIAgent`, `ChatClientAgent`, `AgentSession`, `ChatClientAgentOptions`, `TextSearchProvider` |
 
 > **Central package management:** Versions are declared in `Directory.Packages.props` at the solution root. Do **not** specify versions in the `.csproj` file itself.
 
@@ -79,8 +79,13 @@ Creates the `IChatClient` connected to the GitHub AI Inference endpoint and buil
 
 **Example**
 
+`ChatAgentService` requires `IOptions<OpenAIOptions>`, `IRagSearchService`, and `AiCostCalculator` via constructor injection:
+
 ```csharp
-var service = new ChatAgentService();
+var service = new ChatAgentService(
+    options,
+    ragSearchService,
+    costCalculator);
 
 // Load only main + product instructions
 await service.InitChatAgent(new List<string> { "add-product" });
@@ -386,6 +391,8 @@ Copy the `Chat/` directory (with all `chtbot-instructions-*.md` files) into your
 ### 3. Copy the service and tools
 
 Copy `Chat/ChatAgentService.cs` and `Tools/SqlTextTools.cs` into your project. Adjust the namespace as needed.
+
+> **Note:** `ChatAgentService` now depends on `IRagSearchService`. Either reference an existing implementation (see `SiloAI.Agent/Rag`) or provide your own `ITextSearchProvider` backing store.
 
 ### 4. Copy the required DTOs
 
