@@ -14,7 +14,9 @@ using SiloAI.Shared;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 namespace SiloAI.Agent.Chat;
-public class ChatAgentService(IOptions<OpenAIOptions> options,
+public class ChatAgentService(
+    IOptions<OpenAIOptions> options,
+    IRagSearchService ragSearchService,
     AiCostCalculator costCalculator)
 {
     private IChatClient chatClient;
@@ -34,12 +36,41 @@ public class ChatAgentService(IOptions<OpenAIOptions> options,
             new OpenAIClientOptions { Endpoint = new Uri(options.Value.Endpoint) })
             .AsIChatClient();
 
+        var ragContextProvider = new TextSearchProvider(
+            async (query, cancellationToken) =>
+            {
+                var hits = await ragSearchService.SearchAsync(
+                    query, topK: 5, docType: null, key: null, cancellationToken);
+
+                return hits.Select(h => new TextSearchProvider.TextSearchResult
+                {
+                    SourceName = h.FileName,
+                    Text = h.Content
+                });
+            },
+            new TextSearchProviderOptions
+            {
+                SearchTime = TextSearchProviderOptions.TextSearchBehavior.BeforeAIInvoke,
+                ContextFormatter = static results =>
+                {
+                    if (results.Count == 0)
+                    {
+                        return string.Empty;
+                    }
+
+                    return string.Join(
+                        Environment.NewLine + "---" + Environment.NewLine,
+                        results.Select(r => r.Text));
+                }
+            });
+
         writer = new ChatClientAgent(chatClient, new ChatClientAgentOptions
         {
             ChatOptions = new()
             {
                 Instructions = instructions,
-            }
+            },
+            AIContextProviders = [ragContextProvider]
         });
     }
 
