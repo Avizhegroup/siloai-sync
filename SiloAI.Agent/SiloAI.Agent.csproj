@@ -6,6 +6,8 @@
         <PackageReference Include="Microsoft.Extensions.AI.OpenAI" />
         <PackageReference Include="Microsoft.Extensions.AI" />
         <PackageReference Include="Microsoft.Agents.AI" />
+        <PackageReference Include="Microsoft.Extensions.VectorData.Abstractions" />
+        <PackageReference Include="Microsoft.SemanticKernel.Connectors.SqlServer" />
         <PackageReference Include="Markdig" />
     </ItemGroup>
 
