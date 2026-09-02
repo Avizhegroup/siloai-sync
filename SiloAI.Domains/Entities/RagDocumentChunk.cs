@@ -32,10 +32,10 @@ public class RagDocumentChunk
 
     /// <summary>
     /// Stored in SQL Server 2025 as a native VECTOR(N) column. Excluded from EF model and
-    /// written via raw SQL by the indexing service; read via Microsoft.Extensions.VectorData
+    /// written via raw SQL by the indexing service;# read via Microsoft.Extensions.VectorData
     /// by the search service.
     /// </summary>
     [NotMapped]
-    [VectorStoreVector(1536, StorageName = "fld_Embedding", DistanceFunction = "Cosine")]
+    [VectorStoreVector(1536, StorageName = "fld_Embedding", DistanceFunction = DistanceFunction.CosineDistance)]
     public float[]? Embedding { get; set; }
 }

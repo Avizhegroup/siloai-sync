@@ -89,7 +89,7 @@ public static class RagServiceCollectionExtensions
                             new VectorStoreVectorProperty(nameof(RagDocumentChunk.Embedding), typeof(float[]), embeddings.Dimensions)
                             {
                                 StorageName = "fld_Embedding",
-                                DistanceFunction = "Cosine"
+                                DistanceFunction = DistanceFunction.CosineDistance
                             }
                         ]
                     }

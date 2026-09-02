@@ -74,7 +74,7 @@ public class RagSearchService(
         return hits;
     }
 
-    private async Task<IReadOnlySet<Guid>> BuildDocumentFilterAsync(
+    private async Task<List<Guid>> BuildDocumentFilterAsync(
         string? docType,
         string? key,
         CancellationToken cancellationToken)
@@ -91,6 +91,6 @@ public class RagSearchService(
             query = query.Where(d => d.Key == key);
         }
 
-        return (await query.Select(d => d.Id).ToListAsync(cancellationToken)).ToHashSet();
+        return await query.Select(d => d.Id).Distinct().ToListAsync(cancellationToken);
     }
 }
