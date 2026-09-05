@@ -1,13 +1,15 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.VectorData;
 using SiloAI.Application.Shared.Contracts.Rag;
 using SiloAI.Domains;
-using System.Data;
+using System.Linq.Expressions;
 
 namespace SiloAI.Agent.Rag;
 
 public class RagSearchService(
     AiApiContext context,
-    IEmbeddingService embeddings) : IRagSearchService
+    IEmbeddingService embeddings,
+    VectorStoreCollection<Guid, RagDocumentChunk> chunkCollection) : IRagSearchService
 {
     public async Task<IReadOnlyList<RagSearchHit>> SearchAsync(
         string query,
@@ -21,91 +23,74 @@ public class RagSearchService(
         var top = Math.Clamp(topK, 1, 100);
 
         var queryVector = await embeddings.GenerateEmbeddingAsync(query, cancellationToken);
-        var literal = RagIndexingService.FormatVectorLiteral(queryVector);
-        var dims = embeddings.Dimensions;
 
-        // Build optional WHERE predicates for DocType and Key filters.
-        var docTypeFilter = string.IsNullOrWhiteSpace(docType) ? string.Empty
-            : "AND d.[fld_DocType] = @docType\n";
-        var keyFilter = string.IsNullOrWhiteSpace(key) ? string.Empty
-            : "AND d.[fld_Key] = @key\n";
+        Expression<Func<RagDocumentChunk, bool>>? filter = null;
 
-        // TOP cannot be parameterised. The value is clamped above so it cannot exceed the
-        // validated range, making the inlined value safe.
-        var sql = $@"
-SELECT TOP({top})
-    c.[fld_Id]               AS ChunkId,
-    c.[fld_DocumentId]       AS DocumentId,
-    d.[fld_OriginalFileName] AS FileName,
-    d.[fld_Category]         AS Category,
-    c.[fld_ChunkIndex]       AS ChunkIndex,
-    c.[fld_Content]          AS Content,
-    VECTOR_DISTANCE('cosine', c.[fld_Embedding], CAST(@queryVector AS VECTOR({dims}))) AS Distance
-FROM [tbl_RagDocumentChunks] c
-INNER JOIN [tbl_RagDocuments] d ON d.[fld_Id] = c.[fld_DocumentId]
-WHERE c.[fld_Embedding] IS NOT NULL
-{docTypeFilter}{keyFilter}ORDER BY Distance ASC;";
-
-        var connection = context.Database.GetDbConnection();
-        var openedHere = false;
-        if (connection.State != ConnectionState.Open)
+        if (!string.IsNullOrWhiteSpace(docType) || !string.IsNullOrWhiteSpace(key))
         {
-            await connection.OpenAsync(cancellationToken);
-            openedHere = true;
+            var documentIds = await BuildDocumentFilterAsync(docType, key, cancellationToken);
+            if (documentIds.Count == 0)
+            {
+                return [];
+            }
+
+            filter = c => documentIds.Contains(c.DocumentId);
         }
 
-        try
+        var searchOptions = new VectorSearchOptions<RagDocumentChunk>
         {
-            await using var command = connection.CreateCommand();
-            command.CommandText = sql;
+            Filter = filter,
+            IncludeVectors = false
+        };
 
-            var vectorParam = command.CreateParameter();
-            vectorParam.ParameterName = "@queryVector";
-            vectorParam.DbType = DbType.String;
-            vectorParam.Value = literal;
-            command.Parameters.Add(vectorParam);
+        var results = chunkCollection.SearchAsync(
+            queryVector, top, searchOptions, cancellationToken);
 
-            if (!string.IsNullOrWhiteSpace(docType))
-            {
-                var docTypeParam = command.CreateParameter();
-                docTypeParam.ParameterName = "@docType";
-                docTypeParam.DbType = DbType.String;
-                docTypeParam.Value = docType;
-                command.Parameters.Add(docTypeParam);
-            }
-
-            if (!string.IsNullOrWhiteSpace(key))
-            {
-                var keyParam = command.CreateParameter();
-                keyParam.ParameterName = "@key";
-                keyParam.DbType = DbType.String;
-                keyParam.Value = key;
-                command.Parameters.Add(keyParam);
-            }
-
-            var hits = new List<RagSearchHit>(top);
-            await using var reader = await command.ExecuteReaderAsync(cancellationToken);
-            while (await reader.ReadAsync(cancellationToken))
-            {
-                var distance = reader.GetDouble(reader.GetOrdinal("Distance"));
-                hits.Add(new RagSearchHit(
-                    ChunkId: reader.GetGuid(reader.GetOrdinal("ChunkId")),
-                    DocumentId: reader.GetGuid(reader.GetOrdinal("DocumentId")),
-                    FileName: reader.GetString(reader.GetOrdinal("FileName")),
-                    Category: reader.IsDBNull(reader.GetOrdinal("Category")) ? null : reader.GetString(reader.GetOrdinal("Category")),
-                    ChunkIndex: reader.GetInt32(reader.GetOrdinal("ChunkIndex")),
-                    Content: reader.GetString(reader.GetOrdinal("Content")),
-                    Distance: distance,
-                    Similarity: 1d - distance));
-            }
-            return hits;
-        }
-        finally
+        var hits = new List<RagSearchHit>(top);
+        await foreach (var result in results.WithCancellation(cancellationToken))
         {
-            if (openedHere)
+            var chunk = result.Record;
+            var document = await context.RagDocuments
+                .AsNoTracking()
+                .FirstOrDefaultAsync(d => d.Id == chunk.DocumentId, cancellationToken);
+
+            if (document is null)
             {
-                await connection.CloseAsync();
+                continue;
             }
+
+            var distance = result.Score ?? 0d;
+            hits.Add(new RagSearchHit(
+                ChunkId: chunk.Id,
+                DocumentId: chunk.DocumentId,
+                FileName: document.OriginalFileName,
+                Category: document.Category,
+                ChunkIndex: chunk.ChunkIndex,
+                Content: chunk.Content,
+                Distance: distance,
+                Similarity: 1d - distance));
         }
+
+        return hits;
+    }
+
+    private async Task<List<Guid>> BuildDocumentFilterAsync(
+        string? docType,
+        string? key,
+        CancellationToken cancellationToken)
+    {
+        var query = context.RagDocuments.AsNoTracking().AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(docType))
+        {
+            query = query.Where(d => d.DocType == docType);
+        }
+
+        if (!string.IsNullOrWhiteSpace(key))
+        {
+            query = query.Where(d => d.Key == key);
+        }
+
+        return await query.Select(d => d.Id).Distinct().ToListAsync(cancellationToken);
     }
 }

@@ -15,6 +15,7 @@ public static class RagServiceCollectionExtensions
         services.AddOptions();
 
         var ragSection = configuration.GetSection(RagOptions.SectionName);
+
         services.Configure<RagOptions>(o =>
         {
             o.ChunkSize = ParseInt(ragSection[nameof(RagOptions.ChunkSize)], o.ChunkSize);
@@ -30,6 +31,7 @@ public static class RagServiceCollectionExtensions
         });
 
         var openAiSection = configuration.GetSection(OpenAIOptions.SectionName);
+      
         services.Configure<OpenAIOptions>(o =>
         {
             o.ApiKey = openAiSection[nameof(OpenAIOptions.ApiKey)] ?? o.ApiKey;
@@ -42,13 +44,22 @@ public static class RagServiceCollectionExtensions
         });
 
         services.AddScoped<ITextExtractionService, TxtTextExtractionService>();
+
         services.AddScoped<ITextExtractionService, MarkdownTextExtractionService>();
+
         services.AddScoped<ITextExtractionDispatcher, TextExtractionDispatcher>();
 
         services.AddScoped<ITextChunkingService, TextChunkingService>();
+
         services.AddScoped<IEmbeddingService, OpenAIEmbeddingService>();
+
         services.AddScoped<IRagIndexingService, RagIndexingService>();
+
         services.AddScoped<IRagSearchService, RagSearchService>();
+
+        services.AddScoped<RagContextProviderFactory>();
+
+        services.AddRagDocumentChunkCollection();
 
         return services;
     }
