@@ -32,15 +32,13 @@ public class RagChatSendHandler(
             existingSessionJson = chatSession.SessionState;
         }
 
-        var systemPrompt = request.IsMainChat ? request.SystemPromptMainChat : request.SystemPrompt;
-
         var instructions = await mediator.Send(new GetAllRagInstructionsQuery
         {
             DocType = request.DocType,
             IsActive = true
         }, cancellationToken);
 
-        var agentInstructions = BuildAgentInstructions(systemPrompt, instructions);
+        var agentInstructions = BuildAgentInstructions( instructions);
 
         agentService.InitChatAgentWithInstructions(agentInstructions, request.RagModel);
 
@@ -108,20 +106,16 @@ public class RagChatSendHandler(
             TokenUsage = result.TokenUsage,
             Citations = citations,
             PriceUsage = result.PriceUsage
-
         };
     }
 
-    private static string BuildAgentInstructions(string systemPrompt, List<RagInstructionDto> instructions)
+    private static string BuildAgentInstructions( List<RagInstructionDto> instructions)
     {
-        if (instructions is null || instructions.Count == 0)
-            return systemPrompt;
-
         var docTypeInstructionsText = string.Join("\n---\n", instructions
             .OrderBy(i => i.CreateDateTime)
             .Select(i => i.Content));
 
-        return $"{systemPrompt}\n\n{docTypeInstructionsText}";
+        return $"{docTypeInstructionsText}";
     }
 
     private static string BuildAugmentedMessage(

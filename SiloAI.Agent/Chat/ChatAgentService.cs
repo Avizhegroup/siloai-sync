@@ -1,23 +1,22 @@
-﻿using System.ClientModel;
-using System.Text.Json;
+﻿using DocumentFormat.OpenXml.InkML;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
 using OpenAI;
 using OpenAI.Chat;
 using SiloAI.Agent.Rag;
-using SiloAI.Application.Shared.Contracts.Rag;
-using SiloAI.Application.Shared;
 using SiloAI.Application.Shared.Features;
-using SiloAI.Shared;
-
+using SiloAI.Domains;
+using System.ClientModel;
+using System.Text.Json;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 namespace SiloAI.Agent.Chat;
 public class ChatAgentService(
     IOptions<OpenAIOptions> options,
     RagContextProviderFactory ragContextProviderFactory,
-    AiCostCalculator costCalculator)
+    AiCostCalculator costCalculator,
+    AiApiContext context)
 {
     private IChatClient chatClient;
     private AIAgent writer;
@@ -25,6 +24,7 @@ public class ChatAgentService(
     public async Task InitChatAgent(List<string>? promptKeys = null, string? modelName = null)
     {
         var instructions = await LoadInstructionsAsync(promptKeys);
+
         InitChatAgentWithInstructions(instructions, modelName);
     }
 
@@ -160,48 +160,8 @@ public class ChatAgentService(
 
     private async Task<string> LoadInstructionsAsync(List<string>? promptKeys = null)
     {
-        var chatDirectoryPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Chat");
+        var instructions = context.RagInstructions.Where(p => promptKeys.Contains(p.Key));
 
-        if (!Directory.Exists(chatDirectoryPath))
-        {
-            return string.Empty;
-        }
-
-        var files = Directory.GetFiles(chatDirectoryPath, "*", SearchOption.TopDirectoryOnly);
-        var combinedContent = new List<string>();
-
-        foreach (var filePath in files)
-        {
-            var fileContent = await File.ReadAllTextAsync(filePath);
-
-            var fileName = Path.GetFileName(filePath);
-
-            if (promptKeys is not null && promptKeys.Count > 0
-             && fileName.NotEquals($"chtbot-instructions-main.md"))
-            {
-                bool shouldInclude = false;
-                foreach (var promptKey in promptKeys)
-                {
-                    if (fileName.Equals($"chtbot-instructions-{promptKey}.md"))
-                    {
-                        shouldInclude = true;
-                        break;
-                    }
-                }
-
-                if (!shouldInclude)
-                {
-                    continue;
-                }
-            }
-
-            combinedContent.Add($"=== {fileName} ===");
-
-            combinedContent.Add(fileContent);
-
-            combinedContent.Add("");
-        }
-
-        return string.Join(Environment.NewLine, combinedContent);
+        return string.Join(Environment.NewLine, instructions.Select(p=>p.Content));
     }
 }
