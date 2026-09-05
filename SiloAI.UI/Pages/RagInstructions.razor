@@ -92,7 +92,7 @@
         <div class="row g-3 align-items-end">
             <div class="col-md-3">
                 <label class="form-label fw-semibold">نوع سند</label>
-                <select class="form-select" @bind="_docType">
+                <select class="form-select" @bind="_docType" disabled="@(_editingId is not null)">
                     @foreach (var type in Enum.GetValues<RagDocType>())
                     {
                         <option value="@type">@type.ToDisplay()</option>
@@ -118,6 +118,12 @@
             <div class="col-md-12">
                 <label class="form-label fw-semibold">محتوای دستورالعمل</label>
                 <TelerikEditor @bind-Value="_content" Height="300px"></TelerikEditor>
+            </div>
+            <div class="col-md-12">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="isSystematicCheck" @bind="_isSystematic" />
+                    <label class="form-check-label fw-semibold" for="isSystematicCheck">سیستماتیک</label>
+                </div>
             </div>
             @if (_editingId is not null)
             {

@@ -7,5 +7,6 @@ public class CreateRagInstructionCommand : IRequest<RagInstructionDto>
     public string? Category { get; set; }
     public string? Tags { get; set; }
     public string Content { get; set; }
+    public bool IsSystematic { get; set; }
     public string? CreatorUserId { get; set; }
 }

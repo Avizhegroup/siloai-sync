@@ -27,6 +27,10 @@ public class RagInstruction
     [Column("fld_Content")]
     public string Content { get; set; }
 
+    [Required]
+    [Column("fld_IsSystematic")]
+    public bool IsSystematic { get; set; } = false;
+
     [Column("fld_IsActive")]
     public bool IsActive { get; set; } = true;
 

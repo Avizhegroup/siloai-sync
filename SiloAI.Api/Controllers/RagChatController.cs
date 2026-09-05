@@ -19,27 +19,11 @@ public class RagChatController(
     IMediator mediator,
     IOptions<OpenAIOptions> openAiOptions) : ControllerBase
 {
-    private static readonly string _ragSystemPrompt;
-    private static readonly string _ragSystemPromptMainChat;
-    private static readonly string _augmentedMessageTemplate;
-
-    static RagChatController()
-    {
-        var sections = LoadPromptSections("SiloAI.Api.Prompts.rag-prompts.txt");
-
-        _ragSystemPrompt = sections["SystemPrompt"];
-
-        _ragSystemPromptMainChat = sections["SystemPromptMainChat"];
-
-        _augmentedMessageTemplate = sections["AugmentedMessageTemplate"];
-    }
-
     [HttpPost("new-session")]
     public async Task<IActionResult> NewSession(CancellationToken cancellationToken)
     {
         var result = await mediator.Send(new RagChatNewSessionCommand
         {
-            SystemPrompt = _ragSystemPrompt,
             RagModel = openAiOptions.Value.RagModel,
             OwnerId = User.GetOwnerId()
         }, cancellationToken);
@@ -60,9 +44,6 @@ public class RagChatController(
                 IsMainChat = request.IsMainChat,
                 DocType = request.DocType,
                 Key = request.Key,
-                SystemPrompt = _ragSystemPrompt,
-                SystemPromptMainChat = _ragSystemPromptMainChat,
-                AugmentedMessageTemplate = _augmentedMessageTemplate,
                 RagModel = openAiOptions.Value.RagModel,
                 Username = User?.Identity?.Name ?? string.Empty,
                 OwnerId = User.GetOwnerId(),

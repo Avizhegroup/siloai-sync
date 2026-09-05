@@ -29,6 +29,7 @@ public class GetAllRagInstructionsQueryHandler(AiApiContext context) : IRequestH
         Category = x.Category,
         Tags = x.Tags,
         Content = x.Content,
+        IsSystematic = x.IsSystematic,
         IsActive = x.IsActive,
         CreateDateTime = x.CreateDateTime,
         LastUpdateDateTime = x.LastUpdateDateTime

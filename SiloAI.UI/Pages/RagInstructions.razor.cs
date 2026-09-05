@@ -14,6 +14,7 @@ public partial class RagInstructions
     private string _category = string.Empty;
     private string _tags = string.Empty;
     private string _content = string.Empty;
+    private bool _isSystematic;
     private bool _isActive = true;
 
     private const long MaxUploadSize = 5 * 1024 * 1024;
@@ -65,6 +66,7 @@ public partial class RagInstructions
         _category = instruction.Category ?? string.Empty;
         _tags = instruction.Tags ?? string.Empty;
         _content = instruction.Content;
+        _isSystematic = instruction.IsSystematic;
         _isActive = instruction.IsActive;
     }
 
@@ -76,6 +78,7 @@ public partial class RagInstructions
         _category = string.Empty;
         _tags = string.Empty;
         _content = string.Empty;
+        _isSystematic = false;
         _isActive = true;
     }
 
@@ -96,7 +99,8 @@ public partial class RagInstructions
                     Key = string.IsNullOrWhiteSpace(_key) ? null : _key.Trim(),
                     Category = _category,
                     Tags = _tags,
-                    Content = _content
+                    Content = _content,
+                    IsSystematic = _isSystematic
                 });
             }
             else
@@ -108,6 +112,7 @@ public partial class RagInstructions
                     Category = _category,
                     Tags = _tags,
                     Content = _content,
+                    IsSystematic = _isSystematic,
                     IsActive = _isActive
                 });
             }
