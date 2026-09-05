@@ -10,7 +10,8 @@ public class RagChatNewSessionCommandHandler(
     {
         await agentService.InitChatAgent(new()
         {
-            "RAG-Init" }
+            "RAG-Init"
+        }
         , request.RagModel);
 
         var session = await agentService.CreateNewSessionAsync();
