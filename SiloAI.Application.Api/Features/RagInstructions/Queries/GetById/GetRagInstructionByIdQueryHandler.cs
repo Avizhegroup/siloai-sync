@@ -18,6 +18,7 @@ public class GetRagInstructionByIdQueryHandler(AiApiContext context) : IRequestH
             Category = instruction.Category,
             Tags = instruction.Tags,
             Content = instruction.Content,
+            IsSystematic = instruction.IsSystematic,
             IsActive = instruction.IsActive,
             CreateDateTime = instruction.CreateDateTime,
             LastUpdateDateTime = instruction.LastUpdateDateTime
