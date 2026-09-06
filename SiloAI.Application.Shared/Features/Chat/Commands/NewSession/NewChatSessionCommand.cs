@@ -2,6 +2,6 @@ namespace SiloAI.Application.Shared.Features;
 
 public class NewChatSessionCommand : IRequest<NewSessionResponse>
 {
-    public List<string> PromptKeys { get; set; } = new();
+    public RagDocType DocType { get; set; }
     public int? CustomerId { get; set; }
 }

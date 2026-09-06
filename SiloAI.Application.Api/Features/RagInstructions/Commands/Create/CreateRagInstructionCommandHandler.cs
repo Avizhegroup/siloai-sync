@@ -4,12 +4,10 @@ public class CreateRagInstructionCommandHandler(AiApiContext context) : IRequest
 {
     public async Task<RagInstructionDto> Handle(CreateRagInstructionCommand request, CancellationToken cancellationToken)
     {
-        var docType = (request.DocType ?? RagDocType.GeneralChat).ToString();
-
         if (request.IsSystematic)
         {
             var existingSystematic = await context.RagInstructions
-                .AnyAsync(x => x.DocType == docType && x.IsSystematic, cancellationToken);
+                .AnyAsync(x => x.DocType == (int)request.DocType && x.IsSystematic, cancellationToken);
 
             if (existingSystematic)
             {
@@ -23,10 +21,10 @@ public class CreateRagInstructionCommandHandler(AiApiContext context) : IRequest
 
         var now = DateTime.UtcNow;
 
-        var instruction = new RagInstruction
+        RagInstruction instruction = new()
         {
             Id = Guid.NewGuid(),
-            DocType = docType,
+            DocType = (int)request.DocType,
             Key = string.IsNullOrWhiteSpace(request.Key) ? null : request.Key.Trim(),
             Category = request.Category,
             Tags = request.Tags,
@@ -40,12 +38,13 @@ public class CreateRagInstructionCommandHandler(AiApiContext context) : IRequest
         };
 
         context.RagInstructions.Add(instruction);
+       
         await context.SaveChangesAsync(cancellationToken);
 
-        return new RagInstructionDto
+        return new()
         {
             Id = instruction.Id,
-            DocType = Enum.TryParse<RagDocType>(instruction.DocType, out var dt) ? dt : RagDocType.GeneralChat,
+            DocType = (RagDocType)instruction.DocType,
             Key = instruction.Key,
             Category = instruction.Category,
             Tags = instruction.Tags,

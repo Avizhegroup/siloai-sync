@@ -7,7 +7,10 @@ public class UpdateRagInstructionCommandHandler(AiApiContext context) : IRequest
         var instruction = await context.RagInstructions
             .FirstOrDefaultAsync(x => x.Id == request.Id, cancellationToken);
 
-        if (instruction is null) return null;
+        if (instruction is null)
+        {
+            return null; 
+        }
 
         if (request.IsSystematic)
         {
@@ -16,9 +19,8 @@ public class UpdateRagInstructionCommandHandler(AiApiContext context) : IRequest
 
             if (existingSystematic)
             {
-                var docTypeDisplay = Enum.TryParse<RagDocType>(instruction.DocType, out var dt)
-                    ? dt.ToDisplay()
-                    : instruction.DocType;
+                var docTypeDisplay = ((RagDocType)instruction.DocType).ToDisplay();
+
                 throw new SiloValidationException(new List<ValidationResult>
                 {
                     new ValidationResult($"برای نوع سند '{docTypeDisplay}' یک دستورالعمل سیستماتیک دیگر قبلاً ثبت شده است.")
@@ -40,7 +42,7 @@ public class UpdateRagInstructionCommandHandler(AiApiContext context) : IRequest
         return new RagInstructionDto
         {
             Id = instruction.Id,
-            DocType = Enum.TryParse<RagDocType>(instruction.DocType, out var docType) ? docType : RagDocType.GeneralChat,
+            DocType = (RagDocType)instruction.DocType,
             Key = instruction.Key,
             Category = instruction.Category,
             Tags = instruction.Tags,

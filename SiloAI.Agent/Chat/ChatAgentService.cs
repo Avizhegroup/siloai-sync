@@ -21,7 +21,7 @@ public class ChatAgentService(
     private IChatClient chatClient;
     private AIAgent writer;
 
-    public async Task InitChatAgent(List<string>? promptKeys = null, string? modelName = null)
+    public async Task InitChatAgent(List<RagDocType>? promptKeys = null, string? modelName = null)
     {
         var instructions = await LoadInstructionsAsync(promptKeys);
 
@@ -114,7 +114,9 @@ public class ChatAgentService(
         return serializedElement.GetRawText();
     }
 
-    public async Task<string> SendImageAndGetTextAsync(byte[] imageData, string imageMediaType = "image/jpeg", string? promptKey = null)
+    public async Task<string> SendImageAndGetTextAsync(byte[] imageData
+        , string imageMediaType
+        , RagDocType promptKey)
     {
         if (imageData is null || imageData.Length == 0)
         {
@@ -142,7 +144,9 @@ public class ChatAgentService(
         return response?.ToString() ?? string.Empty;
     }
 
-    public async Task<string> SendImageAndGetTextAsync(Stream imageStream, string imageMediaType = "image/jpeg", string? promptText = null)
+    public async Task<string> SendImageAndGetTextAsync(Stream imageStream
+        , string imageMediaType
+        , RagDocType promptKey)
     {
         if (imageStream is null)
         {
@@ -155,12 +159,12 @@ public class ChatAgentService(
 
         var imageData = memoryStream.ToArray();
 
-        return await SendImageAndGetTextAsync(imageData, imageMediaType, promptText);
+        return await SendImageAndGetTextAsync(imageData, imageMediaType, promptKey);
     }
 
-    private async Task<string> LoadInstructionsAsync(List<string>? promptKeys = null)
+    private async Task<string> LoadInstructionsAsync(List<RagDocType>? promptKeys = null)
     {
-        var instructions = context.RagInstructions.Where(p => promptKeys.Contains(p.Key));
+        var instructions = context.RagInstructions.Where(p => promptKeys.Contains((RagDocType)p.DocType));
 
         return string.Join(Environment.NewLine, instructions.Select(p=>p.Content));
     }

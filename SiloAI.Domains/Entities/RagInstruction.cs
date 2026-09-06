@@ -9,7 +9,7 @@ public class RagInstruction
     [Required]
     [Column("fld_DocType")]
     [StringLength(50)]
-    public string DocType { get; set; } = "GeneralChat";
+    public int DocType { get; set; }
 
     [Column("fld_Key")]
     [StringLength(200)]

@@ -1,38 +1,31 @@
 using Microsoft.AspNetCore.Components.Forms;
 
 namespace SiloAI.UI.Pages;
-
 public partial class RagInstructions
 {
-    private List<RagInstructionDto>? _instructions;
-    private bool _isLoading;
-    private bool _isSaving;
-
-    private Guid? _editingId;
-    private RagDocType _docType = RagDocType.GeneralChat;
-    private string _key = string.Empty;
-    private string _category = string.Empty;
-    private string _tags = string.Empty;
-    private string _content = string.Empty;
-    private bool _isSystematic;
-    private bool _isActive = true;
-
-    private const long MaxUploadSize = 5 * 1024 * 1024;
+    public bool IsLoading = true;
+    public bool IsSaving;
+    public Guid? EditingId;
+    public List<RagInstructionDto>? Instructions;
+    public RagInstructionDto Request;
+    public const long MaxUploadSize = 5 * 1024 * 1024;
 
     [Inject] public AiApiClient ApiClient { get; set; }
     [CascadingParameter] public TelerikNotification Notification { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
+        Request = NewModel();
+
         await LoadInstructionsAsync();
     }
 
     private async Task LoadInstructionsAsync()
     {
-        _isLoading = true;
+        IsLoading = true;
         try
         {
-            _instructions = await ApiClient.GetFromJsonAsync<List<RagInstructionDto>>("api/rag/instructions");
+            Instructions = await ApiClient.GetFromJsonAsync<List<RagInstructionDto>>("api/rag/instructions");
         }
         catch (Exception ex)
         {
@@ -40,7 +33,7 @@ public partial class RagInstructions
         }
         finally
         {
-            _isLoading = false;
+            IsLoading = false;
         }
     }
 
@@ -50,7 +43,7 @@ public partial class RagInstructions
         {
             using var stream = args.File.OpenReadStream(MaxUploadSize);
             using var reader = new StreamReader(stream);
-            _content = await reader.ReadToEndAsync();
+            Request.Content = await reader.ReadToEndAsync();
         }
         catch (Exception ex)
         {
@@ -60,66 +53,67 @@ public partial class RagInstructions
 
     private void StartEdit(RagInstructionDto instruction)
     {
-        _editingId = instruction.Id;
-        _docType = instruction.DocType;
-        _key = instruction.Key ?? string.Empty;
-        _category = instruction.Category ?? string.Empty;
-        _tags = instruction.Tags ?? string.Empty;
-        _content = instruction.Content;
-        _isSystematic = instruction.IsSystematic;
-        _isActive = instruction.IsActive;
+        EditingId = instruction.Id;
+
+        Request = new RagInstructionDto
+        {
+            Id = instruction.Id,
+            DocType = instruction.DocType,
+            Key = instruction.Key ?? string.Empty,
+            Category = instruction.Category ?? string.Empty,
+            Tags = instruction.Tags ?? string.Empty,
+            Content = instruction.Content,
+            IsSystematic = instruction.IsSystematic,
+            IsActive = instruction.IsActive,
+            CreateDateTime = instruction.CreateDateTime,
+            LastUpdateDateTime = instruction.LastUpdateDateTime
+        };
     }
 
     private void ResetForm()
     {
-        _editingId = null;
-        _docType = RagDocType.GeneralChat;
-        _key = string.Empty;
-        _category = string.Empty;
-        _tags = string.Empty;
-        _content = string.Empty;
-        _isSystematic = false;
-        _isActive = true;
+        EditingId = null;
+        Request = NewModel();
     }
 
     private async Task SaveAsync()
     {
-        if (string.IsNullOrWhiteSpace(_content)) return;
+        if (string.IsNullOrWhiteSpace(Request.Content)) return;
 
-        _isSaving = true;
+        IsSaving = true;
         try
         {
             HttpResponseMessage response;
 
-            if (_editingId is null)
+            if (EditingId is null)
             {
                 response = await ApiClient.PostAsJsonAsync("api/rag/instructions", new CreateRagInstructionCommand
                 {
-                    DocType = _docType,
-                    Key = string.IsNullOrWhiteSpace(_key) ? null : _key.Trim(),
-                    Category = _category,
-                    Tags = _tags,
-                    Content = _content,
-                    IsSystematic = _isSystematic
+                    DocType = Request.DocType,
+                    Key = string.IsNullOrWhiteSpace(Request.Key) ? null : Request.Key.Trim(),
+                    Category = Request.Category,
+                    Tags = Request.Tags,
+                    Content = Request.Content,
+                    IsSystematic = Request.IsSystematic
                 });
             }
             else
             {
-                response = await ApiClient.PutAsJsonAsync($"api/rag/instructions/{_editingId}", new UpdateRagInstructionCommand
+                response = await ApiClient.PutAsJsonAsync($"api/rag/instructions/{EditingId}", new UpdateRagInstructionCommand
                 {
-                    DocType = _docType,
-                    Key = string.IsNullOrWhiteSpace(_key) ? null : _key.Trim(),
-                    Category = _category,
-                    Tags = _tags,
-                    Content = _content,
-                    IsSystematic = _isSystematic,
-                    IsActive = _isActive
+                    DocType = Request.DocType,
+                    Key = string.IsNullOrWhiteSpace(Request.Key) ? null : Request.Key.Trim(),
+                    Category = Request.Category,
+                    Tags = Request.Tags,
+                    Content = Request.Content,
+                    IsSystematic = Request.IsSystematic,
+                    IsActive = Request.IsActive
                 });
             }
 
             response.EnsureSuccessStatusCode();
 
-            Notification.Show(_editingId is null ? "دستورالعمل با موفقیت ثبت شد." : "دستورالعمل با موفقیت به‌روزرسانی شد.", "success");
+            Notification.Show(EditingId is null ? "دستورالعمل با موفقیت ثبت شد." : "دستورالعمل با موفقیت به‌روزرسانی شد.", "success");
 
             ResetForm();
             await LoadInstructionsAsync();
@@ -130,19 +124,19 @@ public partial class RagInstructions
         }
         finally
         {
-            _isSaving = false;
+            IsSaving = false;
         }
     }
 
     private async Task DeleteAsync(Guid id)
     {
-        _isSaving = true;
+        IsSaving = true;
         try
         {
             var response = await ApiClient.DeleteAsync($"api/rag/instructions/{id}");
             response.EnsureSuccessStatusCode();
 
-            if (_editingId == id)
+            if (EditingId == id)
                 ResetForm();
 
             await LoadInstructionsAsync();
@@ -153,7 +147,19 @@ public partial class RagInstructions
         }
         finally
         {
-            _isSaving = false;
+            IsSaving = false;
         }
     }
+
+    private RagInstructionDto NewModel()
+    => new()
+    {
+        DocType = RagDocType.GeneralChat,
+        Key = string.Empty,
+        Category = string.Empty,
+        Tags = string.Empty,
+        Content = string.Empty,
+        IsSystematic = false,
+        IsActive = true
+    };
 }

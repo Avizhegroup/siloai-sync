@@ -36,7 +36,7 @@ public class SendChatCommandHandler(
             existingSessionJson = chatSession.SessionState;
         }
 
-        await agentService.InitChatAgent(request.PromptKeys);
+        await agentService.InitChatAgent(new() { request.DocType });
 
         var query = new CopilotMessageRequest
         {
@@ -80,7 +80,7 @@ public class SendChatCommandHandler(
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        var instructionKey = request.PromptKeys?.FirstOrDefault();
+        var instructionKey = request.DocType;
         var userAsk = request.Message;
         var botAnswer = result.Response;
         var customerId = request.CustomerId;
@@ -95,7 +95,7 @@ public class SendChatCommandHandler(
                 {
                     UserAsk = userAsk ?? string.Empty,
                     BotAnswer = botAnswer.ResponseText,
-                    InstructionKey = instructionKey,
+                    InstructionKey = (int)instructionKey,
                     CreditUsage = null,
                     LocalConversationId = 0,
                     CustomerId = customerId ?? 0,

@@ -20,13 +20,13 @@ public class RagChatController(
     IOptions<OpenAIOptions> openAiOptions) : ControllerBase
 {
     [HttpPost("new-session")]
-    public async Task<IActionResult> NewSession(CancellationToken cancellationToken)
+    public async Task<IActionResult> NewSession(RagChatNewSessionCommand request, CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(new RagChatNewSessionCommand
-        {
-            RagModel = openAiOptions.Value.RagModel,
-            OwnerId = User.GetOwnerId()
-        }, cancellationToken);
+        request.RagModel = openAiOptions.Value.RagModel;
+
+        request.OwnerId = User.GetOwnerId();
+
+        var result = await mediator.Send(request, cancellationToken);
 
         return Ok(result);
     }

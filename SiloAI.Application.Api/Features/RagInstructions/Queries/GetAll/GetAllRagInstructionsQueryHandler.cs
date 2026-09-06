@@ -8,23 +8,23 @@ public class GetAllRagInstructionsQueryHandler(AiApiContext context) : IRequestH
 
         if (request.DocType.HasValue)
         {
-            var docType = request.DocType.Value.ToString();
-            query = query.Where(x => x.DocType == docType);
+            query = query.Where(x => x.DocType == (int)request.DocType);
         }
 
         if (request.IsActive.HasValue)
+        { 
             query = query.Where(x => x.IsActive == request.IsActive.Value);
+        }
 
-        return await query
-            .OrderBy(x => x.CreateDateTime)
-            .Select(x => MapInstruction(x))
-            .ToListAsync(cancellationToken);
+        return await query.OrderBy(x => x.CreateDateTime)
+                          .Select(x => MapInstruction(x))
+                          .ToListAsync(cancellationToken);
     }
 
     private static RagInstructionDto MapInstruction(RagInstruction x) => new()
     {
         Id = x.Id,
-        DocType = Enum.TryParse<RagDocType>(x.DocType, out var dt) ? dt : RagDocType.GeneralChat,
+        DocType = (RagDocType)x.DocType,
         Key = x.Key,
         Category = x.Category,
         Tags = x.Tags,
