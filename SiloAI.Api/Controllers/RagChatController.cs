@@ -57,36 +57,4 @@ public class RagChatController(
             return StatusCode(402, new { message = "Insufficient credit to perform this action." });
         }
     }
-
-    private static Dictionary<string, string> LoadPromptSections(string resourceName)
-    {
-        var assembly = Assembly.GetExecutingAssembly();
-
-        using var stream = assembly.GetManifestResourceStream(resourceName);
-
-        using StreamReader reader = new(stream, Encoding.UTF8);
-
-        var content = reader.ReadToEnd();
-
-        Dictionary<string, string> sections = new();
-
-        var parts = content.Split("### SECTION:", StringSplitOptions.RemoveEmptyEntries);
-
-        foreach (var part in parts)
-        {
-            var headerEnd = part.IndexOf(" ###");
-
-            if (headerEnd < 0)
-            {
-                continue;
-            }
-            var key = part[..headerEnd].Trim();
-
-            var value = part[(headerEnd + 4)..].Trim();
-
-            sections[key] = value;
-        }
-
-        return sections;
-    }
 }

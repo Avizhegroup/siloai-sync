@@ -93,7 +93,7 @@ public class SendChatCommandHandler(
             {
                 db.AiConversations.Add(new AiConversation
                 {
-                    UserAsk = userAsk ?? string.Empty,
+                    UserAsk = userAsk,
                     BotAnswer = botAnswer.ResponseText,
                     InstructionKey = (int)instructionKey,
                     CreditUsage = null,
