@@ -1,7 +1,7 @@
 ﻿# Silo AI Knowledge(Rag) - Inventory Reconciliation Discrepancy Report
 
 ## System Navigation Path
-گزارش مغایرت‌های انبارگردانی ➔ انبارگردانی ➔ عملیات‌های انبار ➔ منو
+گزارش مغایرت‌های انبارگردانی ➔ انبارگردانی ➔ گزارشات انبار ➔ منو
 
 ## Purpose
 This report is designed to display and analyze inventory discrepancies based on:

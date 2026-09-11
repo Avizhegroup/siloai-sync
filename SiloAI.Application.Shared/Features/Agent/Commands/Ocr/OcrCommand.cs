@@ -4,6 +4,6 @@ public class OcrCommand : IRequest<OcrResponse>
 {
     public byte[] ImageData { get; set; }
     public string MediaType { get; set; }
-    public string? PromptKey { get; set; }
+    public RagDocType DocType { get; set; }
     public int? CustomerId { get; set; }
 }

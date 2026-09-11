@@ -16,8 +16,9 @@ public class OcrCommandHandler(
 
         await agentService.InitChatAgent(modelName: openAiOptions.Value.VoiceModel);
 
-        var extractedText = await agentService.SendImageAndGetTextAsync(
-            request.ImageData, request.MediaType, request.PromptKey);
+        var extractedText = await agentService.SendImageAndGetTextAsync(request.ImageData 
+            , request.MediaType
+            , request.DocType);
 
         return new OcrResponse { ExtractedText = extractedText };
     }

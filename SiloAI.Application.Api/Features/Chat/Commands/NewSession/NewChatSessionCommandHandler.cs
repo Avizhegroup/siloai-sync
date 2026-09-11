@@ -12,7 +12,7 @@ public class NewChatSessionCommandHandler(
         if (!await HasCreditAsync(request.CustomerId, cancellationToken))
             throw new InsufficientCreditException();
 
-        await agentService.InitChatAgent(request.PromptKeys);
+        await agentService.InitChatAgent(new() { request.DocType });
 
         var session = await agentService.CreateNewSessionAsync();
         var sessionJson = await agentService.SerializeSessionAsync(session);

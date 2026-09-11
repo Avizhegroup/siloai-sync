@@ -9,9 +9,9 @@
 <div class="card-ai">
     <div class="card-ai-header">
         <span><i class="bi bi-list-check me-2"></i>دستورالعمل‌ها</span>
-        <span class="text-muted small">@(_instructions?.Count ?? 0) مورد</span>
+        <span class="text-muted small">@(Instructions?.Count ?? 0) مورد</span>
     </div>
-    @if (_isLoading && _instructions is null)
+    @if (IsLoading && Instructions is null)
     {
         <div class="p-4 text-center text-muted">
             <div class="spinner-border spinner-border-sm me-2"></div>در حال بارگذاری...
@@ -34,7 +34,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @if (_instructions is { Count: 0 })
+                    @if (Instructions is { Count: 0 })
                     {
                         <tr>
                             <td colspan="8" class="text-center text-muted py-4">
@@ -42,7 +42,7 @@
                             </td>
                         </tr>
                     }
-                    @foreach (var instruction in _instructions ?? [])
+                    @foreach (var instruction in Instructions ?? [])
                     {
                         <tr>
                             <td><span class="badge bg-secondary">@instruction.DocType.ToDisplay()</span></td>
@@ -63,11 +63,11 @@
                             <td class="text-muted">@(instruction.LastUpdateDateTime?.ToLocalTime().ToString("yyyy/MM/dd HH:mm") ?? "—")</td>
                             <td class="text-end">
                                 <button class="btn btn-sm btn-outline-secondary me-1"
-                                        @onclick="() => StartEdit(instruction)" disabled="@_isSaving">
+                                        @onclick="() => StartEdit(instruction)" disabled="@IsSaving">
                                     <i class="bi bi-pencil me-1"></i>ویرایش
                                 </button>
                                 <button class="btn btn-sm btn-outline-danger"
-                                        @onclick="() => DeleteAsync(instruction.Id)" disabled="@_isSaving">
+                                        @onclick="() => DeleteAsync(instruction.Id)" disabled="@IsSaving">
                                     <i class="bi bi-trash me-1"></i>حذف
                                 </button>
                             </td>
@@ -80,8 +80,8 @@
 </div>
 <div class="card-ai mb-4">
     <div class="card-ai-header">
-        <span><i class="bi bi-card-checklist me-2"></i>@(_editingId is null ? "افزودن دستورالعمل جدید" : "ویرایش دستورالعمل")</span>
-        @if (_editingId is not null)
+        <span><i class="bi bi-card-checklist me-2"></i>@(EditingId is null ? "افزودن دستورالعمل جدید" : "ویرایش دستورالعمل")</span>
+        @if (EditingId is not null)
         {
             <button class="btn btn-sm btn-outline-secondary" @onclick="ResetForm">
                 <i class="bi bi-x me-1"></i>انصراف از ویرایش
@@ -92,7 +92,7 @@
         <div class="row g-3 align-items-end">
             <div class="col-md-3">
                 <label class="form-label fw-semibold">نوع سند</label>
-                <select class="form-select" @bind="_docType">
+                <select class="form-select" @bind="Request.DocType" disabled="@(EditingId is not null)">
                     @foreach (var type in Enum.GetValues<RagDocType>())
                     {
                         <option value="@type">@type.ToDisplay()</option>
@@ -101,15 +101,15 @@
             </div>
             <div class="col-md-3">
                 <label class="form-label fw-semibold">کلید (اختیاری)</label>
-                <input type="text" class="form-control" placeholder="مثلاً: hr-policy-2025" @bind="_key" />
+                <input type="text" class="form-control" placeholder="مثلاً: hr-policy-2025" @bind="Request.Key" />
             </div>
             <div class="col-md-3">
                 <label class="form-label fw-semibold">دسته‌بندی</label>
-                <input type="text" class="form-control" placeholder="مثلاً: قوانین احراز هویت" @bind="_category" />
+                <input type="text" class="form-control" placeholder="مثلاً: قوانین احراز هویت" @bind="Request.Category" />
             </div>
             <div class="col-md-3">
                 <label class="form-label fw-semibold">برچسب‌ها (اختیاری)</label>
-                <input type="text" class="form-control" placeholder="مثلاً: auth,security" @bind="_tags" />
+                <input type="text" class="form-control" placeholder="مثلاً: auth,security" @bind="Request.Tags" />
             </div>
             <div class="col-md-12">
                 <label class="form-label fw-semibold">بارگذاری فایل متنی (اختیاری)</label>
@@ -117,21 +117,27 @@
             </div>
             <div class="col-md-12">
                 <label class="form-label fw-semibold">محتوای دستورالعمل</label>
-                <TelerikEditor @bind-Value="_content" Height="300px"></TelerikEditor>
+                <TelerikEditor @bind-Value="Request.Content" Height="300px"></TelerikEditor>
             </div>
-            @if (_editingId is not null)
+            <div class="col-md-12">
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="isSystematicCheck" @bind="Request.IsSystematic" />
+                    <label class="form-check-label fw-semibold" for="isSystematicCheck">سیستماتیک</label>
+                </div>
+            </div>
+            @if (EditingId is not null)
             {
                 <div class="col-md-12">
                     <div class="form-check">
-                        <input type="checkbox" class="form-check-input" id="isActiveCheck" @bind="_isActive" />
+                        <input type="checkbox" class="form-check-input" id="isActiveCheck" @bind="Request.IsActive" />
                         <label class="form-check-label fw-semibold" for="isActiveCheck">فعال</label>
                     </div>
                 </div>
             }
         </div>
         <div class="mt-3 d-flex gap-2 align-items-center">
-            <button class="btn btn-primary" @onclick="SaveAsync" disabled="@(_isSaving || string.IsNullOrWhiteSpace(_content))">
-                @if (_isSaving)
+            <button class="btn btn-primary" @onclick="SaveAsync" disabled="@(IsSaving || string.IsNullOrWhiteSpace(Request.Content))">
+                @if (IsSaving)
                 {
                     <span class="spinner-border spinner-border-sm me-1"></span>
                 }
@@ -139,7 +145,7 @@
                 {
                     <i class="bi bi-check2 me-1"></i>
                 }
-                @(_editingId is null ? "ذخیره" : "به‌روزرسانی")
+                @(EditingId is null ? "ذخیره" : "به‌روزرسانی")
             </button>
         </div>
     </div>

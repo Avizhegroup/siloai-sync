@@ -13,7 +13,7 @@ namespace SiloAI.Api.Controllers;
 public class ImageController(IMediator mediator) : ControllerBase
 {
     [HttpPost("ocr")]
-    public async Task<IActionResult> Ocr([FromForm] IFormFile imageData, [FromForm] string mediaType, [FromForm] string? promptKey)
+    public async Task<IActionResult> Ocr([FromForm] IFormFile imageData, [FromForm] string mediaType, [FromForm] RagDocType docType)
     {
         if (imageData is null || imageData.Length == 0)
             return BadRequest("Image data is required.");
@@ -27,7 +27,7 @@ public class ImageController(IMediator mediator) : ControllerBase
             {
                 ImageData = ms.ToArray(),
                 MediaType = mediaType,
-                PromptKey = promptKey,
+                DocType = docType,
                 CustomerId = GetCustomerId()
             });
             return Ok(result);

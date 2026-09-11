@@ -7,7 +7,8 @@ In Persian responses, the device must be referred to as:
 and never as:
 ◦ دستگاه دستی
 ◦ شمارش دستی
-انبارگردانی must always be described as counting performed using the Handheld device, not as شمارش دستی.
+انبارگردانی refers specifically to the inventory counting process performed using the دستگاه هندهلد.
+انبارگردانی must never be described as شمارش دستی.
 
 ## Mandatory Concept Separation Rule
 شمارش فیزیکی refers exclusively to the process performed using other Reader devices (non-handheld) and بارگذاری اکسل شمارش فیزیکی.

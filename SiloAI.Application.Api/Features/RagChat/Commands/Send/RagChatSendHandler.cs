@@ -32,15 +32,13 @@ public class RagChatSendHandler(
             existingSessionJson = chatSession.SessionState;
         }
 
-        var systemPrompt = request.IsMainChat ? request.SystemPromptMainChat : request.SystemPrompt;
 
-        var instructions = await mediator.Send(new GetAllRagInstructionsQuery
-        {
-            DocType = request.DocType,
-            IsActive = true
-        }, cancellationToken);
+        var instructions = dbContext.RagInstructions
+                                    .Where(p => p.DocType == (int)request.DocType 
+                                                                && p.IsActive)
+                                    .AsNoTracking();
 
-        var agentInstructions = BuildAgentInstructions(systemPrompt, instructions);
+        var agentInstructions = BuildAgentInstructions( instructions.ToList());
 
         agentService.InitChatAgentWithInstructions(agentInstructions, request.RagModel);
 
@@ -49,8 +47,15 @@ public class RagChatSendHandler(
         var hits = await search.SearchAsync(
             request.Message, topK, request.DocType.ToString(), request.Key, cancellationToken);
 
+        var systematicInstructions =  instructions.FirstOrDefault(p => p.IsSystematic);
+
+        if (systematicInstructions is null)
+        {
+            throw new ConversationNotFoundException();
+        }
+
         var augmentedMessage = BuildAugmentedMessage(
-            request.Message, hits, request.IsMainChat, request.AugmentedMessageTemplate);
+            request.Message, hits, request.IsMainChat, systematicInstructions.Content);
 
         var query = new CopilotMessageRequest
         {
@@ -108,20 +113,16 @@ public class RagChatSendHandler(
             TokenUsage = result.TokenUsage,
             Citations = citations,
             PriceUsage = result.PriceUsage
-
         };
     }
 
-    private static string BuildAgentInstructions(string systemPrompt, List<RagInstructionDto> instructions)
+    private static string BuildAgentInstructions( List<RagInstruction> instructions)
     {
-        if (instructions is null || instructions.Count == 0)
-            return systemPrompt;
-
         var docTypeInstructionsText = string.Join("\n---\n", instructions
             .OrderBy(i => i.CreateDateTime)
             .Select(i => i.Content));
 
-        return $"{systemPrompt}\n\n{docTypeInstructionsText}";
+        return $"{docTypeInstructionsText}";
     }
 
     private static string BuildAugmentedMessage(
