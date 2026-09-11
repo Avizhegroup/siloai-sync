@@ -22,7 +22,7 @@ public class CreateApiKeyCommandHandler(AiApiContext context) : IRequestHandler<
             Label = request.Label,
             ExpiresAt = request.ExpiresAt,
             IsRevoked = false,
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = DateTime.Now,
             CustomerId = request.CustomerId
         };
 

@@ -60,7 +60,7 @@ public class SendChatCommandHandler(
             await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        var now = DateTime.UtcNow;
+        var now = DateTime.Now;
 
         if (chatSession is null)
         {
@@ -99,7 +99,7 @@ public class SendChatCommandHandler(
                     CreditUsage = null,
                     LocalConversationId = 0,
                     CustomerId = customerId ?? 0,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.Now
                 });
                 await db.SaveChangesAsync();
             }

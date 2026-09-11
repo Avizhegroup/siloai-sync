@@ -19,7 +19,7 @@ public class CreateRagInstructionCommandHandler(AiApiContext context) : IRequest
             }
         }
 
-        var now = DateTime.UtcNow;
+        var now = DateTime.Now;
 
         RagInstruction instruction = new()
         {

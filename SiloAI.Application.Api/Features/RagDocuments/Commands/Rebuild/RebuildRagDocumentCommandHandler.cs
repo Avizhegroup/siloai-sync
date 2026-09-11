@@ -23,7 +23,7 @@ public class RebuildRagDocumentCommandHandler(
         document.FileHash = hash;
         document.FileSize = request.FileContent.Length;
         document.ContentType = string.IsNullOrWhiteSpace(request.ContentType) ? document.ContentType : request.ContentType;
-        document.LastUpdateDateTime = DateTime.UtcNow;
+        document.LastUpdateDateTime = DateTime.Now;
         document.LastUpdateUserId = request.UpdaterUserId;
         await context.SaveChangesAsync(cancellationToken);
 

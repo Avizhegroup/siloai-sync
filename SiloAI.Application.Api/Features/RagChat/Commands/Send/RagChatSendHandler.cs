@@ -33,21 +33,28 @@ public class RagChatSendHandler(
         }
 
 
-        var instructions = dbContext.RagInstructions
+        var instructions = await dbContext.RagInstructions
                                     .Where(p => p.DocType == (int)request.DocType 
                                                                 && p.IsActive)
-                                    .AsNoTracking();
+                                    .AsNoTracking()
+                                    .ToListAsync(cancellationToken);
 
-        var agentInstructions = BuildAgentInstructions( instructions.ToList());
+        var agentInstructions = BuildAgentInstructions(instructions);
 
-        agentService.InitChatAgentWithInstructions(agentInstructions, request.RagModel);
+        // This handler already performs its own, DocType/Key-filtered retrieval below and
+        // augments the message itself, so the agent's built-in auto-RAG context provider is
+        // disabled here to avoid a second, unfiltered retrieval pass (extra embedding call,
+        // extra DB round-trips, and duplicate chunk content being sent to the model).
+        agentService.InitChatAgentWithInstructions(
+            agentInstructions, request.RagModel, includeAutoRagContext: false);
 
         var topK = request.TopK <= 0 ? 5 : Math.Clamp(request.TopK, 1, 20);
      
         var hits = await search.SearchAsync(
             request.Message, topK, request.DocType.ToString(), request.Key, cancellationToken);
 
-        var systematicInstructions =  instructions.FirstOrDefault(p => p.IsSystematic);
+        // Materialized above — no extra DB round-trip here.
+        var systematicInstructions = instructions.FirstOrDefault(p => p.IsSystematic);
 
         if (systematicInstructions is null)
         {

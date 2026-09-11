@@ -44,7 +44,7 @@ public class RagIndexingService(
         {
             document.ProcessingStatus = RagProcessingStatus.Processing;
             document.ProcessingError = null;
-            document.LastUpdateDateTime = DateTime.UtcNow;
+            document.LastUpdateDateTime = DateTime.Now;
             await context.SaveChangesAsync(cancellationToken);
 
             if (deleteExisting)
@@ -62,7 +62,7 @@ public class RagIndexingService(
             {
                 document.ProcessingStatus = RagProcessingStatus.Completed;
                 document.ChunkCount = 0;
-                document.LastUpdateDateTime = DateTime.UtcNow;
+                document.LastUpdateDateTime = DateTime.Now;
                 await context.SaveChangesAsync(cancellationToken);
                 return new RagIndexingResult(document.Id, 0, document.ProcessingStatus);
             }
@@ -77,7 +77,7 @@ public class RagIndexingService(
                     $"Embedding count mismatch (expected {chunks.Count}, got {vectors.Count}).");
             }
 
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var entities = chunks.Select(c => new RagDocumentChunk
             {
                 Id = Guid.NewGuid(),
@@ -106,7 +106,7 @@ public class RagIndexingService(
 
             document.ProcessingStatus = RagProcessingStatus.Completed;
             document.ChunkCount = entities.Count;
-            document.LastUpdateDateTime = DateTime.UtcNow;
+            document.LastUpdateDateTime = DateTime.Now;
             await context.SaveChangesAsync(cancellationToken);
 
             return new RagIndexingResult(document.Id, entities.Count, document.ProcessingStatus);
@@ -121,7 +121,7 @@ public class RagIndexingService(
 
             document.ProcessingStatus = RagProcessingStatus.Failed;
             document.ProcessingError = Truncate(ex.Message, 2000);
-            document.LastUpdateDateTime = DateTime.UtcNow;
+            document.LastUpdateDateTime = DateTime.Now;
             await context.SaveChangesAsync(CancellationToken.None);
 
             return new RagIndexingResult(document.Id, document.ChunkCount, document.ProcessingStatus, ex.Message);

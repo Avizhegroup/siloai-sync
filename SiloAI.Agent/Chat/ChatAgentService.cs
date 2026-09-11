@@ -1,5 +1,4 @@
-﻿using DocumentFormat.OpenXml.InkML;
-using Microsoft.Agents.AI;
+﻿using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
 using OpenAI;
@@ -16,9 +15,9 @@ public class ChatAgentService(
     IOptions<OpenAIOptions> options,
     RagContextProviderFactory ragContextProviderFactory,
     AiCostCalculator costCalculator,
-    AiApiContext context)
+    AiApiContext context,
+    ChatAgentCache agentCache)
 {
-    private IChatClient chatClient;
     private AIAgent writer;
 
     public async Task InitChatAgent(List<RagDocType>? promptKeys = null, string? modelName = null)
@@ -28,23 +27,49 @@ public class ChatAgentService(
         InitChatAgentWithInstructions(instructions, modelName);
     }
 
-    public void InitChatAgentWithInstructions(string instructions, string? modelName = null)
+    /// <summary>
+    /// Builds (or reuses a cached) underlying agent.
+    /// </summary>
+    /// <param name="includeAutoRagContext">
+    /// When true (default), the agent automatically retrieves and injects RAG context before
+    /// every model call via <see cref="RagContextProviderFactory"/>. Set this to false when the
+    /// caller already performs its own, correctly-filtered retrieval and augments the message
+    /// itself (e.g. <c>RagChatSendHandler</c>) — leaving this on in that case causes a second,
+    /// unfiltered retrieval pass and duplicate chunk content in the prompt.
+    /// </param>
+    /// <param name="ragDocType">DocType filter passed through to the auto context provider, if enabled.</param>
+    /// <param name="ragKey">Key filter passed through to the auto context provider, if enabled.</param>
+    public void InitChatAgentWithInstructions(
+        string instructions,
+        string? modelName = null,
+        bool includeAutoRagContext = true,
+        string? ragDocType = null,
+        string? ragKey = null)
     {
         var model = modelName ?? options.Value.MainModel;
-        chatClient = new ChatClient(model,
-            new ApiKeyCredential(options.Value.ApiKey),
-            new OpenAIClientOptions { Endpoint = new Uri(options.Value.Endpoint) })
-            .AsIChatClient();
 
-        var ragContextProvider = ragContextProviderFactory.Create();
+        var cacheKey = ChatAgentCache.BuildKey(
+            model, instructions, includeAutoRagContext, ragDocType, ragKey);
 
-        writer = new ChatClientAgent(chatClient, new ChatClientAgentOptions
+        writer = agentCache.GetOrCreate(cacheKey, () =>
         {
-            ChatOptions = new()
+            var chatClient = new ChatClient(model,
+                new ApiKeyCredential(options.Value.ApiKey),
+                new OpenAIClientOptions { Endpoint = new Uri(options.Value.Endpoint) })
+                .AsIChatClient();
+
+            var contextProviders = includeAutoRagContext
+                ? new[] { ragContextProviderFactory.Create(docType: ragDocType, key: ragKey) }
+                : Array.Empty<AIContextProvider>();
+
+            return new ChatClientAgent(chatClient, new ChatClientAgentOptions
             {
-                Instructions = instructions,
-            },
-            AIContextProviders = [ragContextProvider]
+                ChatOptions = new()
+                {
+                    Instructions = instructions,
+                },
+                AIContextProviders = contextProviders
+            });
         });
     }
 

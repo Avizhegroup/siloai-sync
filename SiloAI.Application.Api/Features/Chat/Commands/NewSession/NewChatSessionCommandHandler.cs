@@ -17,7 +17,7 @@ public class NewChatSessionCommandHandler(
         var session = await agentService.CreateNewSessionAsync();
         var sessionJson = await agentService.SerializeSessionAsync(session);
 
-        var now = DateTime.UtcNow;
+        var now = DateTime.Now;
         var chatSession = new AiChatSession
         {
             Id = Guid.NewGuid(),

@@ -28,13 +28,14 @@ public class RagSearchService(
 
         if (!string.IsNullOrWhiteSpace(docType) || !string.IsNullOrWhiteSpace(key))
         {
-            var documentIds = await BuildDocumentFilterAsync(docType, key, cancellationToken);
-            if (documentIds.Count == 0)
+            var documentIdsFiltered = await BuildDocumentFilterAsync(docType, key, cancellationToken);
+           
+            if (documentIdsFiltered.Count == 0)
             {
                 return [];
             }
 
-            filter = c => documentIds.Contains(c.DocumentId);
+            filter = c => documentIdsFiltered.Contains(c.DocumentId);
         }
 
         var searchOptions = new VectorSearchOptions<RagDocumentChunk>
@@ -46,20 +47,33 @@ public class RagSearchService(
         var results = chunkCollection.SearchAsync(
             queryVector, top, searchOptions, cancellationToken);
 
-        var hits = new List<RagSearchHit>(top);
+        var chunkResults = new List<(RagDocumentChunk Chunk, double Distance)>(top);
         await foreach (var result in results.WithCancellation(cancellationToken))
         {
-            var chunk = result.Record;
-            var document = await context.RagDocuments
-                .AsNoTracking()
-                .FirstOrDefaultAsync(d => d.Id == chunk.DocumentId, cancellationToken);
+            chunkResults.Add((result.Record, result.Score ?? 0d));
+        }
 
-            if (document is null)
+        if (chunkResults.Count == 0)
+        {
+            return [];
+        }
+
+        // Single batched lookup for FileName/Category instead of one query per hit.
+        var documentIds = chunkResults.Select(r => r.Chunk.DocumentId).Distinct().ToList();
+        var documentsById = (await context.RagDocuments
+                .AsNoTracking()
+                .Where(d => documentIds.Contains(d.Id))
+                .ToListAsync(cancellationToken))
+            .ToDictionary(d => d.Id);
+
+        var hits = new List<RagSearchHit>(chunkResults.Count);
+        foreach (var (chunk, distance) in chunkResults)
+        {
+            if (!documentsById.TryGetValue(chunk.DocumentId, out var document))
             {
                 continue;
             }
 
-            var distance = result.Score ?? 0d;
             hits.Add(new RagSearchHit(
                 ChunkId: chunk.Id,
                 DocumentId: chunk.DocumentId,

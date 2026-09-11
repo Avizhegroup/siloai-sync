@@ -37,7 +37,7 @@ public partial class Index
             _totalCustomers = customers.Count;
 
             _totalKeys = keys.Count;
-            _activeKeys = keys.Count(k => !k.IsRevoked && k.ExpiresAt > DateTime.UtcNow);
+            _activeKeys = keys.Count(k => !k.IsRevoked && k.ExpiresAt > DateTime.Now);
             _revokedKeys = keys.Count(k => k.IsRevoked);
 
             _recentKeys = keys.Take(5).ToList();
@@ -49,8 +49,8 @@ public partial class Index
                     var customerKeys = keys.Where(k => k.CustomerId == c.Id).ToList();
                     return new CustomerKeyStat(
                         c.Name,
-                        customerKeys.Count(k => !k.IsRevoked && k.ExpiresAt > DateTime.UtcNow),
-                        customerKeys.Count(k => !k.IsRevoked && k.ExpiresAt <= DateTime.UtcNow),
+                        customerKeys.Count(k => !k.IsRevoked && k.ExpiresAt > DateTime.Now),
+                        customerKeys.Count(k => !k.IsRevoked && k.ExpiresAt <= DateTime.Now),
                         customerKeys.Count(k => k.IsRevoked)
                     );
                 })

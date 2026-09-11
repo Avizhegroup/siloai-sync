@@ -34,7 +34,7 @@ public class UpdateRagInstructionCommandHandler(AiApiContext context) : IRequest
         instruction.Content = request.Content;
         instruction.IsSystematic = request.IsSystematic;
         instruction.IsActive = request.IsActive;
-        instruction.LastUpdateDateTime = DateTime.UtcNow;
+        instruction.LastUpdateDateTime = DateTime.Now;
         instruction.LastUpdateUserId = request.UpdaterUserId;
 
         await context.SaveChangesAsync(cancellationToken);

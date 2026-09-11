@@ -8,7 +8,7 @@ public partial class Chat
     {
         public bool IsUser { get; set; }
         public string Text { get; set; } = string.Empty;
-        public DateTime Time { get; set; } = DateTime.UtcNow;
+        public DateTime Time { get; set; } = DateTime.Now;
         public List<RagChatCitationDto>? Citations { get; set; }
     }
 
@@ -54,7 +54,7 @@ public partial class Chat
         {
             IsUser = true,
             Text = text,
-            Time = DateTime.UtcNow
+            Time = DateTime.Now
         });
 
         try
@@ -84,7 +84,7 @@ public partial class Chat
             {
                 IsUser = false,
                 Text = string.IsNullOrWhiteSpace(result.ResponseText) ? "—" : result.ResponseText,
-                Time = DateTime.UtcNow,
+                Time = DateTime.Now,
                 Citations = result.Citations
             });
         }

@@ -33,9 +33,9 @@ public class AiJwtService(AiIdentityBusiness identityBusiness) : IAiJwtService
         {
             Issuer = Issuer,
             Audience = Audience,
-            IssuedAt = DateTime.UtcNow,
-            NotBefore = DateTime.UtcNow,
-            Expires = DateTime.UtcNow.AddHours(8),
+            IssuedAt = DateTime.Now,
+            NotBefore = DateTime.Now,
+            Expires = DateTime.Now.AddHours(8),
             SigningCredentials = AiCryptoTools.GetJwtCredential(SigningKey),
             Subject = new ClaimsIdentity(claims),
             Claims = claims.ToDictionary(c => c.Type, c => (object)c.Value)

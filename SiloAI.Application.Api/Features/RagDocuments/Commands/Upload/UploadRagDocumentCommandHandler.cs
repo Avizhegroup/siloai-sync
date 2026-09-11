@@ -8,7 +8,7 @@ public class UploadRagDocumentCommandHandler(
 {
     public async Task<RagUploadResponseDto> Handle(UploadRagDocumentCommand request, CancellationToken cancellationToken)
     {
-        var now = DateTime.UtcNow;
+        var now = DateTime.Now;
         var extension = (Path.GetExtension(request.FileName) ?? string.Empty).ToLowerInvariant();
 
         string hash;

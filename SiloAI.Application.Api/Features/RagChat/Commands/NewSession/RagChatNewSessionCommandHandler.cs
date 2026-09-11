@@ -18,7 +18,7 @@ public class RagChatNewSessionCommandHandler(
 
         var sessionJson = await agentService.SerializeSessionAsync(session);
 
-        var now = DateTime.UtcNow;
+        var now = DateTime.Now;
         var chatSession = new AiChatSession
         {
             Id = Guid.NewGuid(),

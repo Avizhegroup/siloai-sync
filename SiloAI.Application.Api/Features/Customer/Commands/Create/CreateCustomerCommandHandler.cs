@@ -8,7 +8,7 @@ public class CreateCustomerCommandHandler(AiApiContext context) : IRequestHandle
         {
             Name = request.Name,
             RemainingCredit = request.RemainingCredit,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.Now
         };
 
         context.Customers.Add(customer);
