@@ -7,7 +7,8 @@ public class RagChatSendHandler(
     ChatAgentService agentService,
     IRagSearchService search,
     IMediator mediator,
-    AiApiContext dbContext) : IRequestHandler<RagChatSendCommand, RagChatResponse>
+    AiApiContext dbContext,
+    ChatAgentCache agentCache) : IRequestHandler<RagChatSendCommand, RagChatResponse>
 {
     public async Task<RagChatResponse> Handle(RagChatSendCommand request, CancellationToken cancellationToken)
     {
@@ -33,11 +34,12 @@ public class RagChatSendHandler(
         }
 
 
-        var instructions = await dbContext.RagInstructions
-                                    .Where(p => p.DocType == (int)request.DocType 
-                                                                && p.IsActive)
-                                    .AsNoTracking()
-                                    .ToListAsync(cancellationToken);
+        var instructions = await agentCache.GetOrCreateInstructionsAsync((int)request.DocType, async () =>
+            (IReadOnlyList<CachedRagInstruction>)await dbContext.RagInstructions
+                .Where(p => p.DocType == (int)request.DocType && p.IsActive)
+                .AsNoTracking()
+                .Select(p => new CachedRagInstruction(p.Content, p.IsSystematic, p.CreateDateTime))
+                .ToListAsync(cancellationToken));
 
         var agentInstructions = BuildAgentInstructions(instructions);
 
@@ -123,7 +125,7 @@ public class RagChatSendHandler(
         };
     }
 
-    private static string BuildAgentInstructions( List<RagInstruction> instructions)
+    private static string BuildAgentInstructions(IReadOnlyList<CachedRagInstruction> instructions)
     {
         var docTypeInstructionsText = string.Join("\n---\n", instructions
             .OrderBy(i => i.CreateDateTime)

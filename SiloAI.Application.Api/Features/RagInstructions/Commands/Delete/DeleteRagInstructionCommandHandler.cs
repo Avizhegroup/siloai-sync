@@ -1,6 +1,8 @@
+using SiloAI.Agent.Chat;
+
 namespace SiloAI.Application.Api.Features;
 
-public class DeleteRagInstructionCommandHandler(AiApiContext context) : IRequestHandler<DeleteRagInstructionCommand, bool>
+public class DeleteRagInstructionCommandHandler(AiApiContext context, ChatAgentCache agentCache) : IRequestHandler<DeleteRagInstructionCommand, bool>
 {
     public async Task<bool> Handle(DeleteRagInstructionCommand request, CancellationToken cancellationToken)
     {
@@ -12,6 +14,8 @@ public class DeleteRagInstructionCommandHandler(AiApiContext context) : IRequest
 
         context.RagInstructions.Remove(instruction);
         await context.SaveChangesAsync(cancellationToken);
+
+        agentCache.InvalidateInstructions(instruction.DocType);
 
         return true;
     }

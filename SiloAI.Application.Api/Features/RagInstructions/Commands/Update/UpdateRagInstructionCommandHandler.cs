@@ -1,6 +1,8 @@
+using SiloAI.Agent.Chat;
+
 namespace SiloAI.Application.Api.Features;
 
-public class UpdateRagInstructionCommandHandler(AiApiContext context) : IRequestHandler<UpdateRagInstructionCommand, RagInstructionDto?>
+public class UpdateRagInstructionCommandHandler(AiApiContext context, ChatAgentCache agentCache) : IRequestHandler<UpdateRagInstructionCommand, RagInstructionDto?>
 {
     public async Task<RagInstructionDto?> Handle(UpdateRagInstructionCommand request, CancellationToken cancellationToken)
     {
@@ -38,6 +40,8 @@ public class UpdateRagInstructionCommandHandler(AiApiContext context) : IRequest
         instruction.LastUpdateUserId = request.UpdaterUserId;
 
         await context.SaveChangesAsync(cancellationToken);
+
+        agentCache.InvalidateInstructions(instruction.DocType);
 
         return new RagInstructionDto
         {

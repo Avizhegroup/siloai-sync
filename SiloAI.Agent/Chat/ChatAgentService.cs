@@ -1,4 +1,5 @@
 ﻿using Microsoft.Agents.AI;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
 using OpenAI;
@@ -189,8 +190,27 @@ public class ChatAgentService(
 
     private async Task<string> LoadInstructionsAsync(List<RagDocType>? promptKeys = null)
     {
-        var instructions = context.RagInstructions.Where(p => promptKeys.Contains((RagDocType)p.DocType));
+        if (promptKeys is null || promptKeys.Count == 0)
+        {
+            return string.Empty;
+        }
 
-        return string.Join(Environment.NewLine, instructions.Select(p=>p.Content));
+        var contents = new List<string>();
+
+        foreach (var docType in promptKeys.Distinct())
+        {
+            var docTypeValue = (int)docType;
+
+            var cachedInstructions = await agentCache.GetOrCreateInstructionsAsync(docTypeValue, async () =>
+                (IReadOnlyList<CachedRagInstruction>)await context.RagInstructions
+                    .Where(p => p.DocType == docTypeValue && p.IsActive)
+                    .AsNoTracking()
+                    .Select(p => new CachedRagInstruction(p.Content, p.IsSystematic, p.CreateDateTime))
+                    .ToListAsync());
+
+            contents.AddRange(cachedInstructions.Select(i => i.Content));
+        }
+
+        return string.Join(Environment.NewLine, contents);
     }
 }

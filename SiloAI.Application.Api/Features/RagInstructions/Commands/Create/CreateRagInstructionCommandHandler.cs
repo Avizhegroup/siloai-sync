@@ -1,6 +1,8 @@
+using SiloAI.Agent.Chat;
+
 namespace SiloAI.Application.Api.Features;
 
-public class CreateRagInstructionCommandHandler(AiApiContext context) : IRequestHandler<CreateRagInstructionCommand, RagInstructionDto>
+public class CreateRagInstructionCommandHandler(AiApiContext context, ChatAgentCache agentCache) : IRequestHandler<CreateRagInstructionCommand, RagInstructionDto>
 {
     public async Task<RagInstructionDto> Handle(CreateRagInstructionCommand request, CancellationToken cancellationToken)
     {
@@ -38,8 +40,10 @@ public class CreateRagInstructionCommandHandler(AiApiContext context) : IRequest
         };
 
         context.RagInstructions.Add(instruction);
-       
+
         await context.SaveChangesAsync(cancellationToken);
+
+        agentCache.InvalidateInstructions(instruction.DocType);
 
         return new()
         {
