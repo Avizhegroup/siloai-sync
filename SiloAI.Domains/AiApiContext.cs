@@ -18,7 +18,6 @@ public class AiApiContext(DbContextOptions<AiApiContext> options) : DbContext(op
         modelBuilder.Entity<RagDocument>(b =>
         {
             b.HasKey(x => x.Id);
-            b.Property(x => x.DocType).HasDefaultValue("GeneralChat");
             b.HasIndex(x => x.FileHash).HasDatabaseName("IX_tbl_RagDocuments_fld_FileHash");
             b.HasIndex(x => x.Category).HasDatabaseName("IX_tbl_RagDocuments_fld_Category");
             b.HasIndex(x => x.DocType).HasDatabaseName("IX_tbl_RagDocuments_fld_DocType");
@@ -38,7 +37,6 @@ public class AiApiContext(DbContextOptions<AiApiContext> options) : DbContext(op
         modelBuilder.Entity<RagInstruction>(b =>
         {
             b.HasKey(x => x.Id);
-            b.Property(x => x.DocType).HasDefaultValue("GeneralChat");
             b.HasIndex(x => x.DocType).HasDatabaseName("IX_tbl_RagInstructions_fld_DocType");
             b.HasIndex(x => x.Category).HasDatabaseName("IX_tbl_RagInstructions_fld_Category");
         });

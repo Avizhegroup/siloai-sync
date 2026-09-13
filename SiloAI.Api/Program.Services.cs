@@ -25,6 +25,8 @@ public static partial class Program
 
         services.AddScoped<ChatAgentService>();
 
+        services.AddSingleton<ChatAgentCache>();
+
         services.AddScoped<AiCostCalculator>();
 
         services.AddRagServices(configuration);

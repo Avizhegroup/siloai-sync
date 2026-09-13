@@ -15,7 +15,7 @@ public class AiConversation
 
     [Column("fld_InstructionKey")]
     [StringLength(500)]
-    public string? InstructionKey { get; set; }
+    public int? InstructionKey { get; set; }
 
     [Column("fld_CreditUsage")]
     public long? CreditUsage { get; set; }

@@ -27,7 +27,7 @@ public partial class Dashboard
             if (keys is not null)
             {
                 _totalKeys = keys.Count;
-                _activeKeys = keys.Count(k => !k.IsRevoked && k.ExpiresAt > DateTime.UtcNow);
+                _activeKeys = keys.Count(k => !k.IsRevoked && k.ExpiresAt > DateTime.Now);
                 _revokedKeys = keys.Count(k => k.IsRevoked);
                 _recentKeys = keys.Take(5).ToList();
             }

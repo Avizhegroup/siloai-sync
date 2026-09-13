@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SiloAI.Domains;
 
@@ -11,9 +12,11 @@ using SiloAI.Domains;
 namespace SiloAI.Domains.Migrations
 {
     [DbContext(typeof(AiApiContext))]
-    partial class AiApiContextModelSnapshot : ModelSnapshot
+    [Migration("20260905135404_Add_Systematic_Instructions")]
+    partial class Add_Systematic_Instructions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -172,9 +175,9 @@ namespace SiloAI.Domains.Migrations
                         .HasColumnType("int")
                         .HasColumnName("fld_CustomerId");
 
-                    b.Property<int?>("InstructionKey")
+                    b.Property<string>("InstructionKey")
                         .HasMaxLength(500)
-                        .HasColumnType("int")
+                        .HasColumnType("nvarchar(500)")
                         .HasColumnName("fld_InstructionKey");
 
                     b.Property<int>("LocalConversationId")
@@ -252,8 +255,10 @@ namespace SiloAI.Domains.Migrations
 
                     b.Property<string>("DocType")
                         .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("GeneralChat")
                         .HasColumnName("fld_DocType");
 
                     b.Property<string>("FileHash")
@@ -387,9 +392,12 @@ namespace SiloAI.Domains.Migrations
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("fld_CreatorUserId");
 
-                    b.Property<int>("DocType")
+                    b.Property<string>("DocType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
-                        .HasColumnType("int")
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("GeneralChat")
                         .HasColumnName("fld_DocType");
 
                     b.Property<bool>("IsActive")

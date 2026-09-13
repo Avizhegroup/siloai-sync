@@ -8,6 +8,7 @@ public class RagInstructionDto
     public string? Category { get; set; }
     public string? Tags { get; set; }
     public string Content { get; set; }
+    public bool IsSystematic { get; set; }
     public bool IsActive { get; set; }
     public DateTime CreateDateTime { get; set; }
     public DateTime? LastUpdateDateTime { get; set; }

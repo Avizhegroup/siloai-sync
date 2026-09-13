@@ -9,7 +9,7 @@ public class RagInstruction
     [Required]
     [Column("fld_DocType")]
     [StringLength(50)]
-    public string DocType { get; set; } = "GeneralChat";
+    public int DocType { get; set; }
 
     [Column("fld_Key")]
     [StringLength(200)]
@@ -26,6 +26,10 @@ public class RagInstruction
     [Required]
     [Column("fld_Content")]
     public string Content { get; set; }
+
+    [Required]
+    [Column("fld_IsSystematic")]
+    public bool IsSystematic { get; set; } = false;
 
     [Column("fld_IsActive")]
     public bool IsActive { get; set; } = true;

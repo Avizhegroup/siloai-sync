@@ -35,7 +35,7 @@ public class ApiKeyAuthenticationHandler(
 
         var apiKey = await context.AiApiKeys
             .AsNoTracking()
-            .FirstOrDefaultAsync(k => k.KeyValue == keyHash && !k.IsRevoked && k.ExpiresAt > DateTime.UtcNow);
+            .FirstOrDefaultAsync(k => k.KeyValue == keyHash && !k.IsRevoked && k.ExpiresAt > DateTime.Now);
 
         if (apiKey is null)
             return AuthenticateResult.Fail("Invalid or expired API key");

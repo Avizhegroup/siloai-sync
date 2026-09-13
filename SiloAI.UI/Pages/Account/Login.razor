@@ -10,31 +10,31 @@
             <h4>پنل مدیریت هوش مصنوعی سیلو</h4>
         </div>
 
-        <EditForm Model="_model" OnValidSubmit="OnLoginSubmit">
+        <EditForm Model="Request" OnValidSubmit="OnLoginSubmit">
             <DataAnnotationsValidator />
             <div class="mb-3">
                 <label class="form-label fw-semibold">نام کاربری</label>
                 <div class="input-group">
                     <span class="input-group-text"><i class="bi bi-person"></i></span>
-                    <InputText @bind-Value="_model.Username"
+                    <InputText @bind-Value="Request.Username"
                                class="form-control"
                                autocomplete="username" />
                 </div>
-                <ValidationMessage For="() => _model.Username" class="text-danger small mt-1" />
+                <ValidationMessage For="() => Request.Username" class="text-danger small mt-1" />
             </div>
             <div class="mb-4">
                 <label class="form-label fw-semibold">رمز عبور</label>
                 <div class="input-group">
                     <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                    <InputText @bind-Value="_model.Password"
+                    <InputText @bind-Value="Request.Password"
                                type="password"
                                class="form-control"
                                autocomplete="current-password" />
                 </div>
-                <ValidationMessage For="() => _model.Password" class="text-danger small mt-1" />
+                <ValidationMessage For="() => Request.Password" class="text-danger small mt-1" />
             </div>
-            <button type="submit" class="btn-ai-primary" disabled="@_isLoading">
-                @if (_isLoading)
+            <button type="submit" class="btn-ai-primary" disabled="@IsLoading">
+                @if (IsLoading)
                 {
                     <span class="spinner-border spinner-border-sm me-2" role="status"></span>
                     <span>در حال ورود...</span>

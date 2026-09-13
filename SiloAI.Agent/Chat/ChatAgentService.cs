@@ -1,76 +1,75 @@
-﻿using System.ClientModel;
-using System.Text.Json;
-using Microsoft.Agents.AI;
+﻿using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
 using OpenAI;
 using OpenAI.Chat;
 using SiloAI.Agent.Rag;
-using SiloAI.Application.Shared.Contracts.Rag;
-using SiloAI.Application.Shared;
 using SiloAI.Application.Shared.Features;
-using SiloAI.Shared;
-
+using SiloAI.Domains;
+using System.ClientModel;
+using System.Text.Json;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 namespace SiloAI.Agent.Chat;
 public class ChatAgentService(
     IOptions<OpenAIOptions> options,
-    IRagSearchService ragSearchService,
-    AiCostCalculator costCalculator)
+    RagContextProviderFactory ragContextProviderFactory,
+    AiCostCalculator costCalculator,
+    AiApiContext context,
+    ChatAgentCache agentCache)
 {
-    private IChatClient chatClient;
     private AIAgent writer;
 
-    public async Task InitChatAgent(List<string>? promptKeys = null, string? modelName = null)
+    public async Task InitChatAgent(List<RagDocType>? promptKeys = null, string? modelName = null)
     {
         var instructions = await LoadInstructionsAsync(promptKeys);
+
         InitChatAgentWithInstructions(instructions, modelName);
     }
 
-    public void InitChatAgentWithInstructions(string instructions, string? modelName = null)
+    /// <summary>
+    /// Builds (or reuses a cached) underlying agent.
+    /// </summary>
+    /// <param name="includeAutoRagContext">
+    /// When true (default), the agent automatically retrieves and injects RAG context before
+    /// every model call via <see cref="RagContextProviderFactory"/>. Set this to false when the
+    /// caller already performs its own, correctly-filtered retrieval and augments the message
+    /// itself (e.g. <c>RagChatSendHandler</c>) — leaving this on in that case causes a second,
+    /// unfiltered retrieval pass and duplicate chunk content in the prompt.
+    /// </param>
+    /// <param name="ragDocType">DocType filter passed through to the auto context provider, if enabled.</param>
+    /// <param name="ragKey">Key filter passed through to the auto context provider, if enabled.</param>
+    public void InitChatAgentWithInstructions(
+        string instructions,
+        string? modelName = null,
+        bool includeAutoRagContext = true,
+        string? ragDocType = null,
+        string? ragKey = null)
     {
         var model = modelName ?? options.Value.MainModel;
-        chatClient = new ChatClient(model,
-            new ApiKeyCredential(options.Value.ApiKey),
-            new OpenAIClientOptions { Endpoint = new Uri(options.Value.Endpoint) })
-            .AsIChatClient();
 
-        var ragContextProvider = new TextSearchProvider(
-            async (query, cancellationToken) =>
-            {
-                var hits = await ragSearchService.SearchAsync(
-                    query, topK: 5, docType: null, key: null, cancellationToken);
+        var cacheKey = ChatAgentCache.BuildKey(
+            model, instructions, includeAutoRagContext, ragDocType, ragKey);
 
-                return hits.Select(h => new TextSearchProvider.TextSearchResult
-                {
-                    SourceName = h.FileName,
-                    Text = h.Content
-                });
-            },
-            new TextSearchProviderOptions
-            {
-                SearchTime = TextSearchProviderOptions.TextSearchBehavior.BeforeAIInvoke,
-                ContextFormatter = static results =>
-                {
-                    if (results.Count == 0)
-                    {
-                        return string.Empty;
-                    }
-
-                    return string.Join(
-                        Environment.NewLine + "---" + Environment.NewLine,
-                        results.Select(r => r.Text));
-                }
-            });
-
-        writer = new ChatClientAgent(chatClient, new ChatClientAgentOptions
+        writer = agentCache.GetOrCreate(cacheKey, () =>
         {
-            ChatOptions = new()
+            var chatClient = new ChatClient(model,
+                new ApiKeyCredential(options.Value.ApiKey),
+                new OpenAIClientOptions { Endpoint = new Uri(options.Value.Endpoint) })
+                .AsIChatClient();
+
+            var contextProviders = includeAutoRagContext
+                ? new[] { ragContextProviderFactory.Create(docType: ragDocType, key: ragKey) }
+                : Array.Empty<AIContextProvider>();
+
+            return new ChatClientAgent(chatClient, new ChatClientAgentOptions
             {
-                Instructions = instructions,
-            },
-            AIContextProviders = [ragContextProvider]
+                ChatOptions = new()
+                {
+                    Instructions = instructions,
+                },
+                AIContextProviders = contextProviders
+            });
         });
     }
 
@@ -140,7 +139,9 @@ public class ChatAgentService(
         return serializedElement.GetRawText();
     }
 
-    public async Task<string> SendImageAndGetTextAsync(byte[] imageData, string imageMediaType = "image/jpeg", string? promptKey = null)
+    public async Task<string> SendImageAndGetTextAsync(byte[] imageData
+        , string imageMediaType
+        , RagDocType promptKey)
     {
         if (imageData is null || imageData.Length == 0)
         {
@@ -168,7 +169,9 @@ public class ChatAgentService(
         return response?.ToString() ?? string.Empty;
     }
 
-    public async Task<string> SendImageAndGetTextAsync(Stream imageStream, string imageMediaType = "image/jpeg", string? promptText = null)
+    public async Task<string> SendImageAndGetTextAsync(Stream imageStream
+        , string imageMediaType
+        , RagDocType promptKey)
     {
         if (imageStream is null)
         {
@@ -181,53 +184,13 @@ public class ChatAgentService(
 
         var imageData = memoryStream.ToArray();
 
-        return await SendImageAndGetTextAsync(imageData, imageMediaType, promptText);
+        return await SendImageAndGetTextAsync(imageData, imageMediaType, promptKey);
     }
 
-    private async Task<string> LoadInstructionsAsync(List<string>? promptKeys = null)
+    private async Task<string> LoadInstructionsAsync(List<RagDocType>? promptKeys = null)
     {
-        var chatDirectoryPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Chat");
+        var instructions = context.RagInstructions.Where(p => promptKeys.Contains((RagDocType)p.DocType));
 
-        if (!Directory.Exists(chatDirectoryPath))
-        {
-            return string.Empty;
-        }
-
-        var files = Directory.GetFiles(chatDirectoryPath, "*", SearchOption.TopDirectoryOnly);
-        var combinedContent = new List<string>();
-
-        foreach (var filePath in files)
-        {
-            var fileContent = await File.ReadAllTextAsync(filePath);
-
-            var fileName = Path.GetFileName(filePath);
-
-            if (promptKeys is not null && promptKeys.Count > 0
-             && fileName.NotEquals($"chtbot-instructions-main.md"))
-            {
-                bool shouldInclude = false;
-                foreach (var promptKey in promptKeys)
-                {
-                    if (fileName.Equals($"chtbot-instructions-{promptKey}.md"))
-                    {
-                        shouldInclude = true;
-                        break;
-                    }
-                }
-
-                if (!shouldInclude)
-                {
-                    continue;
-                }
-            }
-
-            combinedContent.Add($"=== {fileName} ===");
-
-            combinedContent.Add(fileContent);
-
-            combinedContent.Add("");
-        }
-
-        return string.Join(Environment.NewLine, combinedContent);
+        return string.Join(Environment.NewLine, instructions.Select(p=>p.Content));
     }
 }

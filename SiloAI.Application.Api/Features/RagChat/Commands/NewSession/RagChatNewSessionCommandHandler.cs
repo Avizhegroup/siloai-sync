@@ -8,12 +8,17 @@ public class RagChatNewSessionCommandHandler(
 {
     public async Task<RagChatResponse> Handle(RagChatNewSessionCommand request, CancellationToken cancellationToken)
     {
-        agentService.InitChatAgentWithInstructions(request.SystemPrompt, request.RagModel);
+        await agentService.InitChatAgent(new()
+        {
+            request.DocType
+        }
+        , request.RagModel);
 
         var session = await agentService.CreateNewSessionAsync();
+
         var sessionJson = await agentService.SerializeSessionAsync(session);
 
-        var now = DateTime.UtcNow;
+        var now = DateTime.Now;
         var chatSession = new AiChatSession
         {
             Id = Guid.NewGuid(),

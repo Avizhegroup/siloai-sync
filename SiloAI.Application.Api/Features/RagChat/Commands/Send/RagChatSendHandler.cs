@@ -32,25 +32,37 @@ public class RagChatSendHandler(
             existingSessionJson = chatSession.SessionState;
         }
 
-        var systemPrompt = request.IsMainChat ? request.SystemPromptMainChat : request.SystemPrompt;
 
-        var instructions = await mediator.Send(new GetAllRagInstructionsQuery
-        {
-            DocType = request.DocType,
-            IsActive = true
-        }, cancellationToken);
+        var instructions = await dbContext.RagInstructions
+                                    .Where(p => p.DocType == (int)request.DocType 
+                                                                && p.IsActive)
+                                    .AsNoTracking()
+                                    .ToListAsync(cancellationToken);
 
-        var agentInstructions = BuildAgentInstructions(systemPrompt, instructions);
+        var agentInstructions = BuildAgentInstructions(instructions);
 
-        agentService.InitChatAgentWithInstructions(agentInstructions, request.RagModel);
+        // This handler already performs its own, DocType/Key-filtered retrieval below and
+        // augments the message itself, so the agent's built-in auto-RAG context provider is
+        // disabled here to avoid a second, unfiltered retrieval pass (extra embedding call,
+        // extra DB round-trips, and duplicate chunk content being sent to the model).
+        agentService.InitChatAgentWithInstructions(
+            agentInstructions, request.RagModel, includeAutoRagContext: false);
 
         var topK = request.TopK <= 0 ? 5 : Math.Clamp(request.TopK, 1, 20);
      
         var hits = await search.SearchAsync(
             request.Message, topK, request.DocType.ToString(), request.Key, cancellationToken);
 
+        // Materialized above — no extra DB round-trip here.
+        var systematicInstructions = instructions.FirstOrDefault(p => p.IsSystematic);
+
+        if (systematicInstructions is null)
+        {
+            throw new ConversationNotFoundException();
+        }
+
         var augmentedMessage = BuildAugmentedMessage(
-            request.Message, hits, request.IsMainChat, request.AugmentedMessageTemplate);
+            request.Message, hits, request.IsMainChat, systematicInstructions.Content);
 
         var query = new CopilotMessageRequest
         {
@@ -108,20 +120,16 @@ public class RagChatSendHandler(
             TokenUsage = result.TokenUsage,
             Citations = citations,
             PriceUsage = result.PriceUsage
-
         };
     }
 
-    private static string BuildAgentInstructions(string systemPrompt, List<RagInstructionDto> instructions)
+    private static string BuildAgentInstructions( List<RagInstruction> instructions)
     {
-        if (instructions is null || instructions.Count == 0)
-            return systemPrompt;
-
         var docTypeInstructionsText = string.Join("\n---\n", instructions
             .OrderBy(i => i.CreateDateTime)
             .Select(i => i.Content));
 
-        return $"{systemPrompt}\n\n{docTypeInstructionsText}";
+        return $"{docTypeInstructionsText}";
     }
 
     private static string BuildAugmentedMessage(

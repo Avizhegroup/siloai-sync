@@ -13,11 +13,12 @@ public class GetRagInstructionByIdQueryHandler(AiApiContext context) : IRequestH
         return new RagInstructionDto
         {
             Id = instruction.Id,
-            DocType = Enum.TryParse<RagDocType>(instruction.DocType, out var dt) ? dt : RagDocType.GeneralChat,
+            DocType = (RagDocType)instruction.DocType,
             Key = instruction.Key,
             Category = instruction.Category,
             Tags = instruction.Tags,
             Content = instruction.Content,
+            IsSystematic = instruction.IsSystematic,
             IsActive = instruction.IsActive,
             CreateDateTime = instruction.CreateDateTime,
             LastUpdateDateTime = instruction.LastUpdateDateTime

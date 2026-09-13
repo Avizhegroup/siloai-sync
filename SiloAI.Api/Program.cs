@@ -35,7 +35,7 @@ public static partial class Program
                 PasswordHash = AiCryptoTools.GetHashedStringSha256("Admin@123"),
                 Name = "System Administrator",
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now
             });
 
             db.SaveChanges();
