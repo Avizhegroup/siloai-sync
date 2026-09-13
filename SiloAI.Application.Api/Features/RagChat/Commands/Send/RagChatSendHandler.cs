@@ -53,7 +53,7 @@ public class RagChatSendHandler(
         var topK = request.TopK <= 0 ? 5 : Math.Clamp(request.TopK, 1, 20);
      
         var hits = await search.SearchAsync(
-            request.Message, topK, request.DocType.ToString(), request.Key, cancellationToken);
+            request.Message, topK, request.DocType, request.Key, cancellationToken);
 
         // Materialized above — no extra DB round-trip here.
         var systematicInstructions = instructions.FirstOrDefault(p => p.IsSystematic);

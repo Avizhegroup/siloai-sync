@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.VectorData;
 using SiloAI.Application.Shared.Contracts.Rag;
+using SiloAI.Application.Shared.Features;
 using SiloAI.Domains;
 using System.Linq.Expressions;
 
@@ -14,7 +15,7 @@ public class RagSearchService(
     public async Task<IReadOnlyList<RagSearchHit>> SearchAsync(
         string query,
         int topK,
-        string? docType,
+        RagDocType? docType,
         string? key,
         CancellationToken cancellationToken)
     {
@@ -26,7 +27,7 @@ public class RagSearchService(
 
         Expression<Func<RagDocumentChunk, bool>>? filter = null;
 
-        if (!string.IsNullOrWhiteSpace(docType) || !string.IsNullOrWhiteSpace(key))
+        if (docType.HasValue || !string.IsNullOrWhiteSpace(key))
         {
             var documentIdsFiltered = await BuildDocumentFilterAsync(docType, key, cancellationToken);
            
@@ -89,15 +90,15 @@ public class RagSearchService(
     }
 
     private async Task<List<Guid>> BuildDocumentFilterAsync(
-        string? docType,
+        RagDocType? docType,
         string? key,
         CancellationToken cancellationToken)
     {
         var query = context.RagDocuments.AsNoTracking().AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(docType))
+        if (docType.HasValue)
         {
-            query = query.Where(d => d.DocType == docType);
+            query = query.Where(d => d.DocType == ((int)docType.Value).ToString());
         }
 
         if (!string.IsNullOrWhiteSpace(key))

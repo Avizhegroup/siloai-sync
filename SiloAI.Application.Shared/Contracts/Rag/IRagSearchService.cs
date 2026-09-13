@@ -27,7 +27,7 @@ public interface IRagSearchService
     Task<IReadOnlyList<RagSearchHit>> SearchAsync(
         string query,
         int topK,
-        string? docType,
+        RagDocType? docType,
         string? key,
         CancellationToken cancellationToken);
 }

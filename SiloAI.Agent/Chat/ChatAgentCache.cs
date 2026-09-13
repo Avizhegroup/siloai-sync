@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Microsoft.Agents.AI;
+using SiloAI.Application.Shared.Features;
 
 namespace SiloAI.Agent.Chat;
 
@@ -76,7 +77,7 @@ public sealed class ChatAgentCache
         string? modelName,
         string instructions,
         bool includeAutoRagContext,
-        string? ragDocType,
+        RagDocType? ragDocType,
         string? ragKey)
         => $"{modelName}|{includeAutoRagContext}|{ragDocType}|{ragKey}|{instructions}";
 }

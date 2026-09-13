@@ -1,11 +1,12 @@
 using Microsoft.Agents.AI;
 using SiloAI.Application.Shared.Contracts.Rag;
+using SiloAI.Application.Shared.Features;
 
 namespace SiloAI.Agent.Rag;
 
 public class RagContextProviderFactory(IRagSearchService ragSearchService)
 {
-    public TextSearchProvider Create(int topK = 5, string? docType = null, string? key = null)
+    public TextSearchProvider Create(int topK = 5, RagDocType? docType = null, string? key = null)
     {
         return new TextSearchProvider(
             async (query, cancellationToken) =>

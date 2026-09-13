@@ -44,7 +44,7 @@ public class ChatAgentService(
         string instructions,
         string? modelName = null,
         bool includeAutoRagContext = true,
-        string? ragDocType = null,
+        RagDocType? ragDocType = null,
         string? ragKey = null)
     {
         var model = modelName ?? options.Value.MainModel;
