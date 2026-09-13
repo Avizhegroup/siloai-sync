@@ -6,6 +6,7 @@ Enhance the image quality through the following detailed steps:
 ### 1.1 Initial Image Analysis
 - Assess overall image quality (resolution, lighting conditions, blur level)
 - Detect image orientation and rotation issues
+- Identify the card type (old paper card vs. new plastic smart card)
 - Check for any obstructions, glare, or partial occlusions on the card
 
 ### 1.2 Noise Reduction
@@ -52,8 +53,13 @@ Enhance the image quality through the following detailed steps:
 Locate and analyze the national card structure:
 
 ### 2.1 Card Detection
+- Identify the Iranian national card in the image
+- Distinguish between old (paper) and new (smart card) versions
 
 ### 2.2 Layout Analysis
+- Recognize the standard Iranian national card layout
+- Locate the name field (نام و نام خانوادگی)
+- Locate the national ID field (کد ملی)
 
 ### 2.3 Region Extraction
 - Extract the full name text region
@@ -94,3 +100,15 @@ Return a simple JSON format with ONLY name and national ID:
 - Ensure valid JSON format
 - If a field is unreadable, use empty string ""
 
+## Example Output
+{
+  "nationalId": "۰۰۱۲۳۴۵۶۷۸",
+  "fullName": "علی احمدی"
+}
+
+
+## Privacy and Security Notes
+- Handle national card data with strict confidentiality
+- Do not store or cache extracted personal information
+- Process images securely and delete after extraction
+- Comply with Iranian data protection regulations

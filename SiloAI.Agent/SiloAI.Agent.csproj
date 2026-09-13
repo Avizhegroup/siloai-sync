@@ -31,27 +31,6 @@
       <None Update="Chat\chtbot-instructions-main.md">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
-      <None Update="Chat\chtbot-instructions-nationalcard.md">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="Chat\chtbot-instructions-plaque.md">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="Chat\chtbot-instructions-product-report-builder.md">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="Chat\chtbot-instructions-report-query.md">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="Chat\chtbot-instructions-report.md">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="Chat\chtbot-instructions-reports-truckcross.md">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
-      <None Update="Chat\chtbot-instructions-truckcross.md">
-        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      </None>
       <None Update="Knowledge\wms-documentation.md">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </None>
