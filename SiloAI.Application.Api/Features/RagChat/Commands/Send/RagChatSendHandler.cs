@@ -125,7 +125,7 @@ public class RagChatSendHandler(
         };
     }
 
-    private static string BuildAgentInstructions(IReadOnlyList<CachedRagInstruction> instructions)
+    internal static string BuildAgentInstructions(IReadOnlyList<CachedRagInstruction> instructions)
     {
         var docTypeInstructionsText = string.Join("\n---\n", instructions
             .OrderBy(i => i.CreateDateTime)

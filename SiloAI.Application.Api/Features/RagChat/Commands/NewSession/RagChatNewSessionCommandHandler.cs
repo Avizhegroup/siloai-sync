@@ -4,15 +4,22 @@ namespace SiloAI.Application.Api.Features;
 
 public class RagChatNewSessionCommandHandler(
     ChatAgentService agentService,
-    AiApiContext dbContext) : IRequestHandler<RagChatNewSessionCommand, RagChatResponse>
+    AiApiContext dbContext,
+    ChatAgentCache agentCache) : IRequestHandler<RagChatNewSessionCommand, RagChatResponse>
 {
     public async Task<RagChatResponse> Handle(RagChatNewSessionCommand request, CancellationToken cancellationToken)
     {
-        await agentService.InitChatAgent(new()
-        {
-            request.DocType
-        }
-        , request.RagModel);
+        var instructions = await agentCache.GetOrCreateInstructionsAsync((int)request.DocType, async () =>
+            (IReadOnlyList<CachedRagInstruction>)await dbContext.RagInstructions
+                .Where(p => p.DocType == (int)request.DocType && p.IsActive)
+                .AsNoTracking()
+                .Select(p => new CachedRagInstruction(p.Content, p.IsSystematic, p.CreateDateTime))
+                .ToListAsync(cancellationToken));
+
+        var agentInstructions = RagChatSendHandler.BuildAgentInstructions(instructions);
+
+        agentService.InitChatAgentWithInstructions(
+            agentInstructions, request.RagModel, includeAutoRagContext: false);
 
         var session = await agentService.CreateNewSessionAsync();
 
