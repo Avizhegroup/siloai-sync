@@ -2509,3 +2509,9 @@ button {
     height: auto !important;
   }
 }
+.rag-content-editor {
+  direction: ltr !important;
+  text-align: left !important;
+  font-family: Consolas, "Courier New", monospace !important;
+  white-space: pre !important;
+}
