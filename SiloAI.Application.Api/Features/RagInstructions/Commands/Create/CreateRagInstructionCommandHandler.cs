@@ -1,3 +1,4 @@
+using System.Net;
 using SiloAI.Agent.Chat;
 
 namespace SiloAI.Application.Api.Features;
@@ -23,6 +24,8 @@ public class CreateRagInstructionCommandHandler(AiApiContext context, ChatAgentC
 
         var now = DateTime.Now;
 
+        var rawContent = request.Content.HasValue() ? WebUtility.HtmlDecode(request.Content) : request.Content;
+
         RagInstruction instruction = new()
         {
             Id = Guid.NewGuid(),
@@ -30,7 +33,7 @@ public class CreateRagInstructionCommandHandler(AiApiContext context, ChatAgentC
             Key = string.IsNullOrWhiteSpace(request.Key) ? null : request.Key.Trim(),
             Category = request.Category,
             Tags = request.Tags,
-            Content = request.Content,
+            Content = rawContent,
             IsSystematic = request.IsSystematic,
             IsActive = true,
             CreateDateTime = now,

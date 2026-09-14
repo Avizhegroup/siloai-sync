@@ -1,3 +1,4 @@
+using System.Net;
 using SiloAI.Agent.Chat;
 
 namespace SiloAI.Application.Api.Features;
@@ -11,7 +12,7 @@ public class UpdateRagInstructionCommandHandler(AiApiContext context, ChatAgentC
 
         if (instruction is null)
         {
-            return null; 
+            return null;
         }
 
         if (request.IsSystematic)
@@ -30,10 +31,12 @@ public class UpdateRagInstructionCommandHandler(AiApiContext context, ChatAgentC
             }
         }
 
+        var rawContent = request.Content.HasValue() ? WebUtility.HtmlDecode(request.Content) : request.Content;
+
         instruction.Key = string.IsNullOrWhiteSpace(request.Key) ? null : request.Key.Trim();
         instruction.Category = request.Category;
         instruction.Tags = request.Tags;
-        instruction.Content = request.Content;
+        instruction.Content = rawContent;
         instruction.IsSystematic = request.IsSystematic;
         instruction.IsActive = request.IsActive;
         instruction.LastUpdateDateTime = DateTime.Now;
