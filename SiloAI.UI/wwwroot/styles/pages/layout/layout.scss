@@ -1,233 +1,339 @@
-﻿:root {
-    --sidebar-width: 240px;
-    --sidebar-bg: #1a1d23;
-    --sidebar-hover: #2a2d35;
-    --accent: #4f8ef7;
-}
+﻿// =============================================================
+// SiloAI — Layout & shared page components
+// Tokens are defined in abstracts/_tokens.scss — see /DESIGN.md
+// =============================================================
 
 html, body {
     height: 100%;
     margin: 0;
-    font-family: 'IRANSans', Tahoma, 'Segoe UI', sans-serif !important;
+    font-family: var(--font-sans) !important;
     direction: rtl;
+    background: var(--silo-bg);
+    color: var(--silo-text);
 }
 
-
+// ---------------------------------------------------------------
+// Sidebar
+// ---------------------------------------------------------------
 .sidebar {
     width: var(--sidebar-width);
     min-height: 100vh;
-    background: var(--sidebar-bg);
-    color: #e0e0e0;
+    background: var(--silo-surface);
+    color: var(--silo-text);
     display: flex;
     flex-direction: column;
     position: fixed;
     top: 0;
     right: 0;
     z-index: 100;
+    border-inline-start: 1px solid var(--silo-border);
 }
 
 .sidebar-brand {
-    padding: 24px 20px 16px;
-    border-bottom: 1px solid #2e3240;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 22px 20px 18px;
 }
 
+    // 3-bar "silo cross-section" brand mark — replaces the generic icon-font glyph.
+    .sidebar-brand::before {
+        content: '';
+        display: block;
+        flex: none;
+        width: 28px;
+        height: 28px;
+        background-image:
+            linear-gradient(var(--silo-ink), var(--silo-ink)),
+            linear-gradient(var(--silo-ink), var(--silo-ink)),
+            linear-gradient(var(--silo-ink), var(--silo-ink));
+        background-repeat: no-repeat;
+        background-position: top right, 6px 11px, 10px 22px;
+        background-size: 28px 5px, 20px 5px, 12px 5px;
+    }
+
     .sidebar-brand h5 {
-        color: #fff;
+        color: var(--silo-ink);
         font-weight: 700;
         margin: 0;
-        font-size: 1.1rem;
+        font-size: var(--fs-md);
     }
 
     .sidebar-brand small {
-        color: #666;
-        font-size: 0.75rem;
+        color: var(--silo-text-faint);
+        font-size: var(--fs-xs);
     }
 
 .sidebar-nav {
-    padding: 12px 0;
+    padding: 8px 12px;
     flex: 1;
 }
 
 .nav-item-ai {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 10px 20px;
-    color: #bbb;
+    gap: 10px;
+    padding: 9px 12px;
+    margin-bottom: 2px;
+    color: var(--silo-text-muted);
     text-decoration: none;
-    font-size: 0.9rem;
-    border-radius: 0;
+    font-size: var(--fs-sm);
+    font-weight: 500;
+    border-radius: var(--radius-sm);
+    border-inline-start: 3px solid transparent;
     transition: background .15s, color .15s;
 }
 
-    .nav-item-ai:hover, .nav-item-ai.active {
-        background: var(--sidebar-hover);
-        color: #fff;
+    .nav-item-ai:hover {
+        background: var(--silo-bg);
+        color: var(--silo-text);
         text-decoration: none;
     }
 
     .nav-item-ai.active {
-        border-right: 3px solid var(--accent);
+        background: var(--silo-accent-tint);
+        color: var(--silo-accent);
+        border-inline-start-color: var(--silo-accent);
+        font-weight: 700;
     }
 
 .sidebar-footer {
-    padding: 16px 20px;
-    border-top: 1px solid #2e3240;
-    font-size: 0.8rem;
-    color: #555;
+    padding: 14px 18px 18px;
+    border-top: 1px solid var(--silo-border);
+    font-size: var(--fs-sm);
+    color: var(--silo-text-muted);
 }
 
+// ---------------------------------------------------------------
+// Main content / topbar
+// ---------------------------------------------------------------
 .main-content {
     margin-right: var(--sidebar-width);
     min-height: 100vh;
-    background: #f4f6f9;
+    background: var(--silo-bg);
 }
 
 .topbar {
-    background: #fff;
-    border-bottom: 1px solid #e5e7eb;
-    padding: 14px 28px;
+    background: transparent;
+    border-bottom: none;
+    padding: 22px 28px 4px;
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    gap: 16px;
 }
 
 .topbar-title {
-    font-weight: 600;
-    color: #1a1d23;
-    font-size: 1rem;
+    font-weight: 700;
+    color: var(--silo-text);
+    font-size: var(--fs-xl);
 }
 
 .page-body {
-    padding: 28px;
+    padding: 20px 28px 40px;
+}
+
+// ---------------------------------------------------------------
+// Stat strip
+// One flat bordered strip divided by hairlines — not a card-kit
+// of identical shadowed boxes. See DESIGN.md §3.3.
+// ---------------------------------------------------------------
+.stat-strip {
+    display: flex;
+    flex-wrap: wrap;
+    background: var(--silo-surface);
+    border: 1px solid var(--silo-border);
+    border-radius: var(--radius-md);
+    margin-bottom: 20px;
+    overflow: hidden;
 }
 
 .stat-card {
-    background: #fff;
-    border-radius: 10px;
-    padding: 20px 24px;
-    border: 1px solid #e5e7eb;
-    transition: box-shadow .2s;
+    flex: 1;
+    min-width: 160px;
+    background: transparent;
+    border: none;
+    border-inline-start: 1px solid var(--silo-border);
+    border-radius: 0;
+    padding: 18px 22px;
+    transition: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    &:first-child {
+        border-inline-start: none;
+    }
+
+    &:hover {
+        box-shadow: none;
+        background: var(--silo-bg);
+    }
+
+    .stat-value {
+        font-family: var(--font-mono);
+        font-size: var(--fs-2xl);
+        font-weight: 700;
+        color: var(--silo-text);
+        letter-spacing: -.5px;
+    }
+
+    .stat-label {
+        color: var(--silo-text-muted);
+        font-size: var(--fs-xs);
+        margin-top: 3px;
+    }
+
+    .stat-icon {
+        font-size: 1.6rem;
+        opacity: .35;
+        color: var(--silo-text-faint);
+    }
+
+    // Semantic color modifiers — use these, don't invent new ones.
+    &.accent .stat-value { color: var(--silo-accent); }
+    &.amber .stat-value { color: var(--silo-amber); }
+    &.red .stat-value { color: var(--silo-red); }
+    &.green .stat-value { color: var(--silo-green); }
 }
 
-    .stat-card:hover {
-        box-shadow: 0 4px 12px rgba(0,0,0,.08);
-    }
-
-    .stat-card .stat-value {
-        font-size: 2rem;
-        font-weight: 700;
-        color: var(--accent);
-    }
-
-    .stat-card .stat-label {
-        color: #6b7280;
-        font-size: 0.85rem;
-        margin-top: 4px;
-    }
-
-    .stat-card .stat-icon {
-        font-size: 2rem;
-        opacity: .15;
-    }
-
+// ---------------------------------------------------------------
+// Panel / card
+// ---------------------------------------------------------------
 .card-ai {
-    background: #fff;
-    border-radius: 10px;
-    border: 1px solid #e5e7eb;
+    background: var(--silo-surface);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--silo-border);
+    box-shadow: none;
     overflow: hidden;
 }
 
 .card-ai-header {
-    padding: 16px 20px;
-    border-bottom: 1px solid #f0f0f0;
-    font-weight: 600;
-    font-size: 0.95rem;
-    color: #374151;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--silo-border);
+    font-weight: 700;
+    font-size: var(--fs-md);
+    color: var(--silo-text);
     display: flex;
     justify-content: space-between;
     align-items: center;
+
+    i {
+        color: var(--silo-text-faint);
+    }
+}
+
+// ---------------------------------------------------------------
+// Status badges (pills)
+// ---------------------------------------------------------------
+.badge-active,
+.badge-revoked,
+.badge-expired {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 11px;
+    border-radius: var(--radius-pill);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+
+    &::before {
+        content: '';
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+        flex: none;
+    }
 }
 
 .badge-active {
-    background: #dcfce7;
-    color: #16a34a;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 0.75rem;
+    background: var(--silo-green-tint);
+    color: var(--silo-green);
 }
 
 .badge-revoked {
-    background: #fee2e2;
-    color: #dc2626;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 0.75rem;
+    background: var(--silo-red-tint);
+    color: var(--silo-red);
 }
 
 .badge-expired {
-    background: #fef3c7;
-    color: #d97706;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 0.75rem;
+    background: var(--silo-amber-tint);
+    color: var(--silo-amber);
 }
 
+// ---------------------------------------------------------------
+// Monospace data helper — use on IDs, key labels, dates, amounts.
+// See DESIGN.md §5.
+// ---------------------------------------------------------------
+.mono {
+    font-family: var(--font-mono);
+    font-size: .85em;
+    color: var(--silo-text-muted);
+}
+
+// ---------------------------------------------------------------
+// Login
+// ---------------------------------------------------------------
 .login-bg {
     min-height: 100vh;
-    background: linear-gradient(135deg, #1a1d23 0%, #2a2d35 50%, #1a1d23 100%);
+    background: linear-gradient(135deg, var(--silo-ink) 0%, #2C3C66 50%, var(--silo-ink) 100%);
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .login-card {
-    background: #fff;
-    border-radius: 16px;
+    background: var(--silo-surface);
+    border-radius: var(--radius-lg);
     padding: 40px;
     width: 100%;
     max-width: 400px;
-    box-shadow: 0 20px 60px rgba(0,0,0,.3);
+    box-shadow: var(--shadow-login);
 }
 
 .login-logo {
     text-align: center;
     margin-bottom: 28px;
-}
 
-    .login-logo .logo-icon {
+    .logo-icon {
         font-size: 3rem;
-        color: var(--accent);
+        color: var(--silo-accent);
     }
 
-    .login-logo h4 {
+    h4 {
         margin: 8px 0 4px;
         font-weight: 700;
-        color: #1a1d23;
+        color: var(--silo-text);
     }
 
-    .login-logo p {
-        color: #6b7280;
-        font-size: 0.875rem;
+    p {
+        color: var(--silo-text-muted);
+        font-size: var(--fs-sm);
         margin: 0;
     }
+}
 
+// ---------------------------------------------------------------
+// Primary CTA button (login form)
+// ---------------------------------------------------------------
 .btn-ai-primary {
-    background: var(--accent);
+    background: var(--silo-accent);
     border: none;
     color: #fff;
     padding: 10px 20px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     font-weight: 600;
     width: 100%;
     transition: background .15s;
-}
 
-    .btn-ai-primary:hover {
-        background: #3a7be8;
+    &:hover {
+        background: var(--silo-accent-hover);
         color: #fff;
     }
 
-    .btn-ai-primary:disabled {
+    &:disabled {
         opacity: .65;
     }
+}

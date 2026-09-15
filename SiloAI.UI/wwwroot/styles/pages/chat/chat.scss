@@ -1,129 +1,164 @@
+﻿// =============================================================
+// SiloAI — Chat (RAG document Q&A)
+// Tokens are defined in abstracts/_tokens.scss — see DESIGN.md §3.10
+// =============================================================
+
 .chat-window {
-  height: calc(100vh - 320px);
-  min-height: 360px;
-  overflow-y: auto;
-  background: #f9fafb;
-  padding: 20px;
+    height: calc(100vh - 320px);
+    min-height: 360px;
+    overflow-y: auto;
+    background: var(--silo-bg);
+    padding: 20px;
 }
 
 .chat-empty {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--silo-text-faint);
 }
 
 .chat-row {
-  display: flex;
-  margin-bottom: 14px;
-
-  &-user {
-    justify-content: flex-end;
-  }
-
-  &-bot {
-    justify-content: flex-start;
-  }
-
-  .chat-bubble {
-    max-width: 78%;
-    border-radius: 12px;
-    padding: 10px 14px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, .06);
-    border: 1px solid #e5e7eb;
+    display: flex;
+    margin-bottom: 14px;
 
     &-user {
-      background: #eff6ff;
-      border-color: #dbeafe;
+        justify-content: flex-end;
     }
 
-    &-bot { background: #fff; }
-
-    &-header {
-      font-size: 0.75rem;
-      color: #6b7280;
-      margin-bottom: 6px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-
-      .chat-time {
-        margin-inline-start: auto;
-        font-size: 0.7rem;
-        color: #9ca3af;
-      }
+    &-bot {
+        justify-content: flex-start;
     }
 
-    &-body {
-      white-space: pre-wrap;
-      word-break: break-word;
-      font-size: 0.92rem;
-      color: #1f2937;
-      line-height: 1.7;
-    }
+    .chat-bubble {
+        max-width: 78%;
+        border-radius: 12px;
+        padding: 10px 14px;
+        box-shadow: none;
+        border: 1px solid var(--silo-border);
+        background: var(--silo-surface);
 
-    .chat-citations {
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px dashed #e5e7eb;
-
-      .chat-citations-title {
-        font-size: 0.78rem;
-        color: #6b7280;
-        margin-bottom: 6px;
-        font-weight: 600;
-      }
-
-      .chat-citation {
-        background: #f8fafc;
-        border: 1px solid #eef2f7;
-        border-radius: 8px;
-        padding: 8px 10px;
-        margin-bottom: 6px;
-        font-size: 0.78rem;
-
-        .chat-citation-meta {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          flex-wrap: wrap;
+        &-user {
+            background: var(--silo-accent-tint);
+            border-color: #D8E3F5;
         }
 
-        .chat-citation-badge {
-          background: var(--accent);
-          color: #fff;
-          border-radius: 6px;
-          padding: 1px 8px;
-          font-size: 0.7rem;
-          font-weight: 700;
+        &-bot {
+            background: var(--silo-surface);
         }
 
-        .chat-citation-snippet {
-          color: #4b5563;
-          margin-top: 4px;
-          line-height: 1.6;
+        &-header {
+            font-size: var(--fs-xs);
+            color: var(--silo-text-faint);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+
+            .chat-time {
+                margin-inline-start: auto;
+                font-size: .7rem;
+                font-family: var(--font-mono);
+                color: var(--silo-text-faint);
+            }
         }
-      }
+
+        &-body {
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-size: var(--fs-base);
+            color: var(--silo-text);
+            line-height: 1.8;
+        }
+
+        .chat-citations {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed var(--silo-border);
+
+            .chat-citations-title {
+                font-size: var(--fs-xs);
+                color: var(--silo-text-muted);
+                margin-bottom: 6px;
+                font-weight: 700;
+            }
+
+            .chat-citation {
+                background: var(--silo-bg);
+                border: 1px solid var(--silo-border);
+                border-radius: 8px;
+                padding: 8px 10px;
+                margin-bottom: 6px;
+                font-size: var(--fs-xs);
+
+                .chat-citation-meta {
+                    display: flex;
+                    align-items: center;
+                    gap: 7px;
+                    flex-wrap: wrap;
+                }
+
+                .chat-citation-badge {
+                    background: var(--silo-ink);
+                    color: #fff;
+                    border-radius: 5px;
+                    padding: 1px 8px;
+                    font-size: .68rem;
+                    font-family: var(--font-mono);
+                    font-weight: 700;
+                }
+
+                // similarity score / chunk index — technical data, monospace + faint.
+                .chat-citation-score {
+                    font-family: var(--font-mono);
+                    color: var(--silo-text-faint);
+                    font-size: .72rem;
+                }
+
+                .chat-citation-snippet {
+                    color: var(--silo-text-muted);
+                    margin-top: 4px;
+                    line-height: 1.7;
+                }
+            }
+        }
     }
-  }
 }
 
 .chat-input {
-  display: flex;
-  gap: 8px;
-  padding: 14px 16px;
-  border-top: 1px solid #f0f0f0;
-  background: #fff;
-  align-items: stretch;
+    display: flex;
+    gap: 8px;
+    padding: 14px 16px;
+    border-top: 1px solid var(--silo-border);
+    background: var(--silo-surface);
+    align-items: stretch;
+
+    textarea {
+        resize: none;
+        border: 1px solid var(--silo-border-strong);
+        border-radius: var(--radius-md);
+        font-family: var(--font-sans);
+
+        &:focus {
+            outline: 2px solid var(--silo-accent-tint);
+            border-color: var(--silo-accent);
+        }
+    }
 }
 
-.chat-input textarea { resize: none; }
-
 .chat-send-btn {
-  min-width: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    min-width: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--silo-accent);
+    border-color: var(--silo-accent);
+
+    &:hover {
+        background: var(--silo-accent-hover);
+        border-color: var(--silo-accent-hover);
+    }
 }

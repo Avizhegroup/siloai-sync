@@ -294,8 +294,8 @@ button {
 
 .btn-primary {
     color: #fff;
-    background-color: #003e81;
-    border-color: #003e81;
+    background-color: var(--silo-accent);
+    border-color: var(--silo-accent);
 }
 
 .k-dialog {
@@ -976,4 +976,243 @@ button {
     text-align: left !important;
     font-family: Consolas, "Courier New", monospace !important;
     white-space: pre !important;
+}
+
+
+// =============================================================
+// SiloAI Design System — re-skin section
+// Everything below re-styles Bootstrap primitives and Telerik
+// components to the tokens defined in abstracts/_tokens.scss.
+// See /DESIGN.md for the full spec. Placed at the end of this
+// file so it wins the cascade over the legacy rules above
+// (equal-specificity CSS applies in source order) without
+// having to touch or audit the legacy rules themselves.
+// =============================================================
+
+// ---------------------------------------------------------------
+// Links
+// ---------------------------------------------------------------
+a {
+    color: var(--silo-accent);
+
+    &:hover {
+        color: var(--silo-accent-hover);
+    }
+}
+
+// ---------------------------------------------------------------
+// Buttons
+// ---------------------------------------------------------------
+.btn {
+    border-radius: var(--radius-md);
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: var(--fs-sm);
+}
+
+.btn-primary {
+    &:hover, &:focus, &:active {
+        background-color: var(--silo-accent-hover) !important;
+        border-color: var(--silo-accent-hover) !important;
+        color: #fff;
+    }
+
+    &:disabled {
+        background-color: var(--silo-accent);
+        border-color: var(--silo-accent);
+        opacity: .6;
+    }
+}
+
+.btn-outline-primary {
+    color: var(--silo-accent);
+    border-color: var(--silo-border-strong);
+
+    &:hover {
+        background-color: var(--silo-accent);
+        border-color: var(--silo-accent);
+        color: #fff;
+    }
+}
+
+.btn-outline-secondary {
+    color: var(--silo-text-muted);
+    border-color: var(--silo-border-strong);
+
+    &:hover {
+        background-color: var(--silo-text-muted);
+        border-color: var(--silo-text-muted);
+        color: #fff;
+    }
+}
+
+.btn-outline-danger {
+    color: var(--silo-red);
+    border-color: var(--silo-border-strong);
+
+    &:hover {
+        background-color: var(--silo-red);
+        border-color: var(--silo-red);
+        color: #fff;
+    }
+}
+
+.btn-outline-info {
+    color: var(--silo-accent);
+    border-color: var(--silo-border-strong);
+
+    &:hover {
+        background-color: var(--silo-accent);
+        border-color: var(--silo-accent);
+        color: #fff;
+    }
+}
+
+.btn-success {
+    background-color: var(--silo-green);
+    border-color: var(--silo-green);
+
+    &:hover {
+        background-color: #17714A;
+        border-color: #17714A;
+    }
+}
+
+// ---------------------------------------------------------------
+// Tables
+// ---------------------------------------------------------------
+.table {
+    font-size: var(--fs-base);
+    color: var(--silo-text);
+
+    thead.table-light th,
+    > :not(caption) > * > th {
+        background: var(--silo-bg);
+        color: var(--silo-text-faint);
+        font-size: var(--fs-xs);
+        font-weight: 600;
+        border-bottom: 1px solid var(--silo-border);
+        text-transform: none;
+    }
+
+    td, th {
+        font-family: var(--font-sans) !important;
+        border-color: var(--silo-border);
+        vertical-align: middle;
+    }
+
+    &.table-hover > tbody > tr:hover > * {
+        background-color: var(--silo-bg);
+    }
+}
+
+// ---------------------------------------------------------------
+// Forms
+// ---------------------------------------------------------------
+.form-control,
+.form-select {
+    border-color: var(--silo-border-strong);
+    border-radius: var(--radius-md);
+    font-size: var(--fs-base);
+
+    &:focus {
+        border-color: var(--silo-accent);
+        box-shadow: 0 0 0 3px var(--silo-accent-tint);
+    }
+}
+
+.form-label {
+    font-size: var(--fs-sm);
+    color: var(--silo-text-muted);
+}
+
+// ---------------------------------------------------------------
+// Alerts — mapped to the same tint/solid pairs as status badges,
+// so an alert and a badge of the same meaning read identically.
+// ---------------------------------------------------------------
+.alert-success {
+    background: var(--silo-green-tint);
+    border-color: var(--silo-green-tint);
+    color: var(--silo-green);
+}
+
+.alert-danger {
+    background: var(--silo-red-tint);
+    border-color: var(--silo-red-tint);
+    color: var(--silo-red);
+}
+
+.alert-warning {
+    background: var(--silo-amber-tint);
+    border-color: var(--silo-amber-tint);
+    color: var(--silo-amber);
+}
+
+// ---------------------------------------------------------------
+// Misc primitives
+// ---------------------------------------------------------------
+.spinner-border {
+    color: var(--silo-accent);
+}
+
+code {
+    font-family: var(--font-mono);
+    color: var(--silo-text-muted);
+    background: var(--silo-bg);
+    padding: 1px 5px;
+    border-radius: 4px;
+}
+
+.text-success { color: var(--silo-green) !important; }
+.text-danger { color: var(--silo-red) !important; }
+.text-muted { color: var(--silo-text-muted) !important; }
+
+// ---------------------------------------------------------------
+// Telerik — currently only TelerikNotification is used in
+// production. Extend this section if grids/dialogs are added.
+// See DESIGN.md §3.12.
+// ---------------------------------------------------------------
+.k-notification-container {
+    font-family: var(--font-sans);
+}
+
+.k-notification {
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    font-size: var(--fs-sm);
+
+    &.k-notification-success {
+        background: var(--silo-green-tint);
+        color: var(--silo-green);
+        border-color: var(--silo-green-tint);
+    }
+
+    &.k-notification-error {
+        background: var(--silo-red-tint);
+        color: var(--silo-red);
+        border-color: var(--silo-red-tint);
+    }
+
+    &.k-notification-warning {
+        background: var(--silo-amber-tint);
+        color: var(--silo-amber);
+        border-color: var(--silo-amber-tint);
+    }
+
+    &.k-notification-info {
+        background: var(--silo-accent-tint);
+        color: var(--silo-accent);
+        border-color: var(--silo-accent-tint);
+    }
+}
+
+.k-button.k-primary,
+.k-button-solid-primary {
+    background-color: var(--silo-accent);
+    border-color: var(--silo-accent);
+
+    &:hover {
+        background-color: var(--silo-accent-hover);
+        border-color: var(--silo-accent-hover);
+    }
 }

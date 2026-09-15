@@ -117,10 +117,7 @@
             </div>
             <div class="col-md-12">
                 <label class="form-label fw-semibold">محتوای دستورالعمل</label>
-                <textarea class="form-control rag-content-editor"
-                          rows="25"
-                          @bind="Request.Content"
-                          spellcheck="false"></textarea>
+                <TelerikEditor @bind-Value="Request.Content" Height="300px"></TelerikEditor>
             </div>
             <div class="col-md-12">
                 <div class="form-check">

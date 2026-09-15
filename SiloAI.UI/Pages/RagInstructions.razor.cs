@@ -80,6 +80,8 @@ public partial class RagInstructions
     {
         if (string.IsNullOrWhiteSpace(Request.Content)) return;
 
+        System.Diagnostics.Debug.WriteLine($"[RagInstructions.SaveAsync] EditingId={EditingId}, Content.Length={Request.Content?.Length}, Content='{Request.Content}'");
+
         IsSaving = true;
         try
         {

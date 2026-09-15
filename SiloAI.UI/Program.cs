@@ -4,7 +4,12 @@ using SiloAI.Identity.Client;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddServerSideBlazor()
-    .AddCircuitOptions(options => { options.DetailedErrors = true; });
+    .AddCircuitOptions(options => { options.DetailedErrors = true; })
+    .AddHubOptions(options =>
+    {
+     
+        options.MaximumReceiveMessageSize = 10 * 1024 * 1024; // 10 MB
+    });
 
 builder.Services.AddRazorPages();
 

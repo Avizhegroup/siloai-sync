@@ -1,0 +1,73 @@
+﻿// =============================================================
+// SiloAI Design Tokens — single source of truth.
+// See /DESIGN.md for the rationale behind each value.
+// Do not add new hex colors anywhere else in the codebase —
+// add the token here first.
+// =============================================================
+
+:root {
+    // ---- Color: neutrals ----
+    --silo-bg: #F6F7F9;
+    --silo-surface: #FFFFFF;
+    --silo-border: #E3E6EB;
+    --silo-border-strong: #D3D8E0;
+    --silo-text: #12151C;
+    --silo-text-muted: #626B79;
+    --silo-text-faint: #98A1AF;
+
+    // ---- Color: brand / structural ----
+    --silo-ink: #1E2A4A;
+    --silo-accent: #2F5AA8;
+    --silo-accent-hover: #284C8F;
+    --silo-accent-tint: #EAF0FA;
+
+    // ---- Color: value (credit / amount — reserved for this meaning only) ----
+    --silo-amber: #C98A2C;
+    --silo-amber-tint: #FBF1DF;
+
+    // ---- Color: status ----
+    --silo-green: #1E8A5B;
+    --silo-green-tint: #E6F5EE;
+    --silo-red: #C23B3B;
+    --silo-red-tint: #FBEAEA;
+
+    // ---- Typography ----
+    --font-sans: 'IRANSans', Tahoma, 'Segoe UI', sans-serif;
+    --font-mono: ui-monospace, 'JetBrains Mono', 'Cascadia Code', Consolas, 'Courier New', monospace;
+
+    --fs-xs: .76rem;
+    --fs-sm: .82rem;
+    --fs-base: .875rem;
+    --fs-md: .95rem;
+    --fs-lg: 1.1rem;
+    --fs-xl: 1.3rem;
+    --fs-2xl: 1.7rem;
+
+    // ---- Spacing (4px base unit) ----
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-7: 32px;
+    --space-8: 40px;
+
+    // ---- Radius ----
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-pill: 999px;
+
+    // ---- Shadow (used sparingly — see DESIGN.md §5) ----
+    --shadow-sm: 0 1px 2px rgba(18, 21, 28, .04);
+    --shadow-md: 0 8px 24px rgba(18, 21, 28, .08);
+    --shadow-login: 0 20px 60px rgba(18, 21, 28, .25);
+
+    // ---- Legacy alias ----
+    // layout.scss previously defined --sidebar-width/--sidebar-bg/--accent
+    // directly. Kept as aliases so nothing outside this redesign breaks if
+    // it referenced these names.
+    --sidebar-width: 240px;
+    --accent: var(--silo-accent);
+}

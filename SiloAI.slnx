@@ -1,9 +1,12 @@
 <Solution>
   <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="DESIGN.md" />
     <File Path="Directory.build.props" />
     <File Path="Directory.Packages.props" />
   </Folder>
   <Folder Name="/Solution Items/Docs/">
+    <File Path="docs/blazor-refactor.md" />
     <File Path="docs/RAG-Chat-Guide.md" />
   </Folder>
   <Folder Name="/src/" />
