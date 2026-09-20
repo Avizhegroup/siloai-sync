@@ -5,9 +5,9 @@ namespace SiloAI.Agent;
 
 public class AiCostCalculator(IConfiguration configuration)
 {
-    public decimal Calculate(ChatTokenUsageDto tokenUsage, decimal priceMultiplier = 1.0m)
+    public decimal Calculate(ChatTokenUsageDto tokenUsage, decimal priceMultiplier)
     {
-        var effectiveMultiplier = priceMultiplier < 1.0m ? 1.0m : priceMultiplier;
+        var effectiveMultiplier = priceMultiplier;
 
         var modelName = configuration["OpenAI:MainModel"];
 
