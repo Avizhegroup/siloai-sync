@@ -1,4 +1,4 @@
-namespace SiloAI.Application.Api.Features;
+﻿namespace SiloAI.Application.Api.Features;
 
 public class UpdateCustomerCommandHandler(AiApiContext context) : IRequestHandler<UpdateCustomerCommand, CustomerDto?>
 {
@@ -11,7 +11,7 @@ public class UpdateCustomerCommandHandler(AiApiContext context) : IRequestHandle
 
         customer.Name = request.Name;
         customer.RemainingCredit = request.RemainingCredit;
-
+        customer.PriceMultiplier = request.PriceMultiplier;
         await context.SaveChangesAsync(cancellationToken);
 
         return new CustomerDto
@@ -19,7 +19,8 @@ public class UpdateCustomerCommandHandler(AiApiContext context) : IRequestHandle
             Id = customer.Id,
             Name = customer.Name,
             RemainingCredit = customer.RemainingCredit,
-            CreatedAt = customer.CreatedAt
+            CreatedAt = customer.CreatedAt,
+            PriceMultiplier = customer.PriceMultiplier
         };
     }
 }

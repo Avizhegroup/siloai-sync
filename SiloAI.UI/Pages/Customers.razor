@@ -118,13 +118,17 @@ else
         </div>
         <div class="p-4">
             <div class="row g-3 align-items-end">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <label class="form-label fw-semibold">نام مشتری</label>
                     <input type="text" class="form-control" placeholder="نام مشتری را وارد کنید" @bind="_newName" />
                 </div>
                 <div class="col-md-3">
                     <label class="form-label fw-semibold">اعتبار اولیه</label>
                     <input type="number" class="form-control" placeholder="0" @bind="_newCredit" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold">ضریب عددی</label>
+                    <input type="number" step="0.1" min="1" class="form-control" @bind="_newPriceMultiplier" />
                 </div>
                 <div class="col-md-3">
                     <button class="btn btn-primary w-100" @onclick="CreateCustomer" disabled="@_isLoading">
@@ -162,6 +166,7 @@ else
                         <tr>
                             <th>نام</th>
                             <th>اعتبار باقیمانده(دلار)</th>
+                            <th>ضریب عددی</th>
                             <th>تاریخ ثبت</th>
                             <th class="text-end">عملیات</th>
                         </tr>
@@ -170,7 +175,7 @@ else
                         @if (_customers is { Count: 0 })
                         {
                             <tr>
-                                <td colspan="4" class="text-center text-muted py-4">
+                                <td colspan="5" class="text-center text-muted py-4">
                                     <i class="bi bi-people me-2"></i>هیچ مشتری‌ای ثبت نشده است.
                                 </td>
                             </tr>
@@ -198,6 +203,23 @@ else
                                         <span class="@(customer.RemainingCredit <= 0 ? "text-danger fw-bold" : "text-success fw-bold")">
                                             $ @customer.RemainingCredit.ToString("N2")
                                         </span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (_editingId == customer.Id)
+                                    {
+                                        <input type="number"
+                                               step="0.1"
+                                               min="1"
+                                               class="form-control form-control-sm"
+                                               @bind="_editPriceMultiplier"
+                                               style="width:90px; display:inline-block" />
+                                    }
+                                    else
+                                    {
+                                    <span class="fw-bold text-dark">
+                                        @customer.PriceMultiplier.ToString("0.##")
+                                    </span>
                                     }
                                 </td>
                                 <td class="text-muted">@customer.CreatedAt.ToLocalTime().ToString("yyyy/MM/dd")</td>

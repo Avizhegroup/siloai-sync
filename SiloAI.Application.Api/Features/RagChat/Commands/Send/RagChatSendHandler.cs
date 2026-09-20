@@ -1,4 +1,4 @@
-using SiloAI.Agent.Chat;
+﻿using SiloAI.Agent.Chat;
 using System.Text;
 
 namespace SiloAI.Application.Api.Features;
@@ -75,13 +75,15 @@ public class RagChatSendHandler(
             Datetime = DateTime.Now
         };
 
-        var result = await agentService.SendWithAgentSessionAsync(existingSessionJson, query);
-
         var customer = await dbContext.Customers.FirstOrDefaultAsync(c => c.Id == request.CustomerId,cancellationToken);
+
+        var priceMultiplier = customer?.PriceMultiplier ?? 1.0m;
+
+        var result = await agentService.SendWithAgentSessionAsync(existingSessionJson,query,priceMultiplier);
 
         if (customer is not null)
         {
-            customer.RemainingCredit = Math.Max( 0, customer.RemainingCredit - result.PriceUsage);
+            customer.RemainingCredit = Math.Max(0,customer.RemainingCredit - result.PriceUsage);
         }
 
         var now = DateTime.UtcNow;

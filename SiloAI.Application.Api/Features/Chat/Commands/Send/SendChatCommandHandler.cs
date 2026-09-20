@@ -1,4 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SiloAI.Agent.Chat;
 
@@ -47,11 +47,14 @@ public class SendChatCommandHandler(
             Datetime = DateTime.Now
         };
 
-        var result = await agentService.SendWithAgentSessionAsync(existingSessionJson, query);
+        var customer = await dbContext.Customers.FirstOrDefaultAsync(c => c.Id == request.CustomerId, cancellationToken);
+
+        var priceMultiplier = customer?.PriceMultiplier ?? 1.0m;
+
+        var result = await agentService.SendWithAgentSessionAsync(existingSessionJson, query ,priceMultiplier);
 
         var priceUsage = result.PriceUsage;
 
-        var customer = await dbContext.Customers.FirstOrDefaultAsync(c => c.Id == request.CustomerId, cancellationToken);
      
         if (customer is not null)
         {

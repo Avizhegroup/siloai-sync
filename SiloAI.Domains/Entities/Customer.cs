@@ -1,4 +1,4 @@
-namespace SiloAI.Domains;
+﻿namespace SiloAI.Domains;
 
 [Table("tbl_AiCustomers")]
 public class Customer
@@ -17,6 +17,9 @@ public class Customer
 
     [Column("fld_CreatedAt")]
     public DateTime CreatedAt { get; set; }
+
+    [Column("fld_PriceMultiplier")]
+    public decimal PriceMultiplier { get; set; } = 1.0m;
 
     public ICollection<AiApiKey> AiApiKeys { get; set; } = new List<AiApiKey>();
 }

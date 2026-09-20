@@ -1,15 +1,17 @@
-namespace SiloAI.UI.Pages;
+﻿namespace SiloAI.UI.Pages;
 
 public partial class Customers
 {
     private List<CustomerDto>? _customers;
     private string _newName = string.Empty;
+    private decimal _newPriceMultiplier = 1.0m; 
     private decimal _newCredit = 0;
     private bool _isLoading;
 
     private int? _editingId;
     private string _editName = string.Empty;
     private decimal _editCredit;
+    private decimal _editPriceMultiplier = 1.0m;
 
     private CustomerDto? _selectedCustomer;
     private bool _showApiKeys;
@@ -51,17 +53,26 @@ public partial class Customers
             Notification.Show("نام مشتری الزامی است.", "error");
             return;
         }
+
+        if (_newPriceMultiplier < 1.0m)
+        {
+            Notification.Show("ضریب عددی نمی‌تواند کمتر از ۱ باشد.", "error");
+            return;
+        }
+
         _isLoading = true;
         try
         {
             var response = await ApiClient.PostAsJsonAsync("admin/customers", new CreateCustomerRequest
             {
                 Name = _newName,
-                RemainingCredit = _newCredit
+                RemainingCredit = _newCredit,
+                PriceMultiplier = _newPriceMultiplier
             });
             response.EnsureSuccessStatusCode();
             _newName = string.Empty;
             _newCredit = 0;
+            _newPriceMultiplier = 1.0m;
             await LoadCustomers();
         }
         catch (Exception ex)
@@ -79,6 +90,7 @@ public partial class Customers
         _editingId = customer.Id;
         _editName = customer.Name;
         _editCredit = Math.Round(customer.RemainingCredit, 2);
+        _editPriceMultiplier = customer.PriceMultiplier < 1.0m ? 1.0m : customer.PriceMultiplier;
     }
 
     private void CancelEdit()
@@ -94,7 +106,8 @@ public partial class Customers
             var response = await ApiClient.PutAsJsonAsync($"admin/customers/{id}", new UpdateCustomerRequest
             {
                 Name = _editName,
-                RemainingCredit = _editCredit
+                RemainingCredit = _editCredit,
+                PriceMultiplier = _editPriceMultiplier
             });
             response.EnsureSuccessStatusCode();
             _editingId = null;

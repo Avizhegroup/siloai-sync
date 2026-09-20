@@ -1,4 +1,4 @@
-namespace SiloAI.Application.Api.Features;
+﻿namespace SiloAI.Application.Api.Features;
 
 public class CreateCustomerCommandHandler(AiApiContext context) : IRequestHandler<CreateCustomerCommand, CustomerDto>
 {
@@ -8,7 +8,8 @@ public class CreateCustomerCommandHandler(AiApiContext context) : IRequestHandle
         {
             Name = request.Name,
             RemainingCredit = request.RemainingCredit,
-            CreatedAt = DateTime.Now
+            CreatedAt = DateTime.Now,
+            PriceMultiplier = request.PriceMultiplier
         };
 
         context.Customers.Add(customer);
@@ -19,7 +20,8 @@ public class CreateCustomerCommandHandler(AiApiContext context) : IRequestHandle
             Id = customer.Id,
             Name = customer.Name,
             RemainingCredit = customer.RemainingCredit,
-            CreatedAt = customer.CreatedAt
+            CreatedAt = customer.CreatedAt,
+            PriceMultiplier = customer.PriceMultiplier
         };
     }
 }

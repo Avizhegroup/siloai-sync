@@ -5,8 +5,10 @@ namespace SiloAI.Agent;
 
 public class AiCostCalculator(IConfiguration configuration)
 {
-    public decimal Calculate(ChatTokenUsageDto tokenUsage)
+    public decimal Calculate(ChatTokenUsageDto tokenUsage, decimal priceMultiplier)
     {
+        var effectiveMultiplier = priceMultiplier;
+
         var modelName = configuration["OpenAI:MainModel"];
 
         var inputPrice = configuration.GetValue<decimal>($"AiPricing:Models:{modelName}:InputPerMillionTokens");
@@ -24,6 +26,6 @@ public class AiCostCalculator(IConfiguration configuration)
             +
             (tokenUsage.OutputTokenCount / 1_000_000m * outputPrice);
 
-        return priceUsage;
+        return priceUsage * effectiveMultiplier;
     }
 }

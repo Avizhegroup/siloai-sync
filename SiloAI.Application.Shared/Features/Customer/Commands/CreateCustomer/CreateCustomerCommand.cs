@@ -1,7 +1,8 @@
-namespace SiloAI.Application.Shared.Features;
+﻿namespace SiloAI.Application.Shared.Features;
 
 public class CreateCustomerCommand : IRequest<CustomerDto>
 {
     public string Name { get; set; }
     public decimal RemainingCredit { get; set; }
+    public decimal PriceMultiplier { get; set; }
 }

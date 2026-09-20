@@ -1,4 +1,4 @@
-namespace SiloAI.Domains;
+﻿namespace SiloAI.Domains;
 
 public class AiApiContext(DbContextOptions<AiApiContext> options) : DbContext(options)
 {
@@ -54,5 +54,11 @@ public class AiApiContext(DbContextOptions<AiApiContext> options) : DbContext(op
                 .HasColumnType("decimal(18,8)")
                 .IsRequired();
         });
+
+        modelBuilder.Entity<Customer>()
+            .Property(c => c.PriceMultiplier)
+            .HasColumnName("fld_PriceMultiplier")
+            .HasColumnType("decimal(18, 2)")
+            .HasDefaultValue(1.0m);
     }
 }
