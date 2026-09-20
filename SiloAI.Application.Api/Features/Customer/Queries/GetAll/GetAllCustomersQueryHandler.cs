@@ -1,4 +1,4 @@
-namespace SiloAI.Application.Api.Features;
+﻿namespace SiloAI.Application.Api.Features;
 
 public class GetAllCustomersQueryHandler(AiApiContext context) : IRequestHandler<GetAllCustomersQuery, List<CustomerDto>>
 {
@@ -12,7 +12,8 @@ public class GetAllCustomersQueryHandler(AiApiContext context) : IRequestHandler
                 Id = c.Id,
                 Name = c.Name,
                 RemainingCredit = c.RemainingCredit,
-                CreatedAt = c.CreatedAt
+                CreatedAt = c.CreatedAt,
+                PriceMultiplier = c.PriceMultiplier
             })
             .ToListAsync(cancellationToken);
     }

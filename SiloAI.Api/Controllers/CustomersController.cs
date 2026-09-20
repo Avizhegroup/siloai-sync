@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -26,7 +26,8 @@ public class CustomersController(IMediator mediator) : ControllerBase
         var result = await mediator.Send(new CreateCustomerCommand
         {
             Name = request.Name,
-            RemainingCredit = request.RemainingCredit
+            RemainingCredit = request.RemainingCredit,
+            PriceMultiplier = request.PriceMultiplier
         }, cancellationToken);
         return Ok(result);
     }
@@ -38,7 +39,8 @@ public class CustomersController(IMediator mediator) : ControllerBase
         {
             Id = id,
             Name = request.Name,
-            RemainingCredit = request.RemainingCredit
+            RemainingCredit = request.RemainingCredit,
+            PriceMultiplier = request.PriceMultiplier   
         }, cancellationToken);
         return result is null ? NotFound() : Ok(result);
     }

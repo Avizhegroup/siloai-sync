@@ -84,7 +84,7 @@ public class ChatAgentService(
         };
     }
 
-    public async Task<ChatAgentResponse> SendWithAgentSessionAsync(string? sessionJson,CopilotMessageRequest query)
+    public async Task<ChatAgentResponse> SendWithAgentSessionAsync(string? sessionJson,CopilotMessageRequest query, decimal priceMultiplier)
     {
         AgentSession session;
 
@@ -111,7 +111,7 @@ public class ChatAgentService(
             TotalTokenCount = result?.Usage?.TotalTokenCount ?? 0
         };
 
-        var priceUsage = costCalculator.Calculate(tokenUsage);
+        var priceUsage = costCalculator.Calculate(tokenUsage, priceMultiplier);
 
         var serializedElement = await writer.SerializeSessionAsync(session);
 
