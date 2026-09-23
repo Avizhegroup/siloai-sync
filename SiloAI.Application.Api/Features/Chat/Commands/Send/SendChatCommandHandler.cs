@@ -7,7 +7,9 @@ public class SendChatCommandHandler(
     ChatAgentService agentService,
     AiApiContext dbContext,
     IServiceScopeFactory scopeFactory,
-    ILogger<SendChatCommandHandler> logger)
+    ILogger<SendChatCommandHandler> logger,
+    IPricingEngine pricingEngine,
+    ICreditLedgerService ledgerService)
     : IRequestHandler<SendChatCommand, SendChatResponse>
 {
     public async Task<SendChatResponse> Handle(SendChatCommand request, CancellationToken cancellationToken)
@@ -51,15 +53,6 @@ public class SendChatCommandHandler(
 
         var priceUsage = result.PriceUsage;
 
-        var customer = await dbContext.Customers.FirstOrDefaultAsync(c => c.Id == request.CustomerId, cancellationToken);
-     
-        if (customer is not null)
-        {
-            customer.RemainingCredit -= priceUsage;
-
-            await dbContext.SaveChangesAsync(cancellationToken);
-        }
-
         var now = DateTime.Now;
 
         if (chatSession is null)
@@ -74,6 +67,60 @@ public class SendChatCommandHandler(
             dbContext.AiChatSessions.Add(chatSession);
         }
 
+        if (request.CustomerId.HasValue)
+        {
+            var customerId = request.CustomerId.Value;
+
+            // The turn index is fixed before charging so a retried request for the same
+            // turn reproduces the same idempotency key and can never be charged twice.
+            var turnIndex = chatSession.TurnIndex + 1;
+
+            var charge = await pricingEngine.CalculateAsync(
+                new TokenUsageInput(
+                    result.TokenUsage.InputTokenCount,
+                    result.TokenUsage.CachedInputTokenCount,
+                    result.TokenUsage.OutputTokenCount),
+                UsageFeature.SupportChat,
+                cancellationToken);
+
+            var usageRecord = new UsageRecord
+            {
+                Id = Guid.NewGuid(),
+                CustomerId = customerId,
+                Feature = UsageFeature.SupportChat,
+                Model = string.Empty,
+                InputTokens = (int)Math.Min(int.MaxValue, result.TokenUsage.InputTokenCount),
+                CachedTokens = (int)Math.Min(int.MaxValue, result.TokenUsage.CachedInputTokenCount),
+                OutputTokens = (int)Math.Min(int.MaxValue, result.TokenUsage.OutputTokenCount),
+                CostUsd = charge.CostUsd,
+                FxRateUsed = charge.FxRateUsed,
+                MultiplierUsed = charge.MultiplierUsed,
+                FloorTomanUsed = charge.FloorTomanUsed,
+                ChargeToman = charge.ChargeToman,
+                ConversationId = chatSession.Id,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var chargeOutcome = await ledgerService.ChargeAsync(
+                customerId, charge, usageRecord,
+                idempotencyKey: $"chat:{chatSession.Id}:{turnIndex}",
+                cancellationToken);
+
+            if (chargeOutcome == ChargeOutcome.InsufficientBalance)
+                throw new InsufficientCreditException();
+
+            if (chargeOutcome == ChargeOutcome.Success)
+                chatSession.TurnIndex = turnIndex;
+
+            // Legacy credit cache, kept in sync until it is fully removed.
+            await dbContext.Customers
+                .Where(c => c.Id == customerId)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(c => c.RemainingCredit,
+                        c => Math.Max(0, c.RemainingCredit - priceUsage)),
+                    cancellationToken);
+        }
+
         var updatedSessionJson = result.SerializedSession;
 
         chatSession.UpdatedAt = now;
@@ -83,7 +130,7 @@ public class SendChatCommandHandler(
         var instructionKey = request.DocType;
         var userAsk = request.Message;
         var botAnswer = result.Response;
-        var customerId = request.CustomerId;
+        var conversationCustomerId = request.CustomerId;
 
         _ = Task.Run(async () =>
         {
@@ -98,7 +145,7 @@ public class SendChatCommandHandler(
                     InstructionKey = (int)instructionKey,
                     CreditUsage = null,
                     LocalConversationId = 0,
-                    CustomerId = customerId ?? 0,
+                    CustomerId = conversationCustomerId ?? 0,
                     CreatedAt = DateTime.Now
                 });
                 await db.SaveChangesAsync();
