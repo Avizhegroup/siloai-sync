@@ -127,7 +127,7 @@ namespace SiloAI.Domains.Migrations
                         column: x => x.fld_UsageRecordId,
                         principalTable: "tbl_UsageRecords",
                         principalColumn: "fld_Id",
-                        onDelete: ReferentialAction.SetNull);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateIndex(

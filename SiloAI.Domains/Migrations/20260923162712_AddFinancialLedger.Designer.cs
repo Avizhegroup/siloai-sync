@@ -12,7 +12,7 @@ using SiloAI.Domains;
 namespace SiloAI.Domains.Migrations
 {
     [DbContext(typeof(AiApiContext))]
-    [Migration("20260923090311_AddFinancialLedger")]
+    [Migration("20260923162712_AddFinancialLedger")]
     partial class AddFinancialLedger
     {
         /// <inheritdoc />
@@ -696,7 +696,7 @@ namespace SiloAI.Domains.Migrations
                     b.HasOne("SiloAI.Domains.UsageRecord", "UsageRecord")
                         .WithMany()
                         .HasForeignKey("UsageRecordId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Account");
 

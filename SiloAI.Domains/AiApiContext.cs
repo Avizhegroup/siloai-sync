@@ -82,7 +82,10 @@ public class AiApiContext(DbContextOptions<AiApiContext> options) : DbContext(op
             b.HasOne(x => x.UsageRecord)
                 .WithMany()
                 .HasForeignKey(x => x.UsageRecordId)
-                .OnDelete(DeleteBehavior.SetNull);
+                // NO ACTION: SQL Server rejects SetNull here as a second cascade path
+                // from tbl_AiCustomers (via tbl_UsageRecords). The ledger is append-only
+                // anyway, so a transaction row must never be rewritten on usage deletes.
+                .OnDelete(DeleteBehavior.Restrict);
             b.HasIndex(x => x.IdempotencyKey)
                 .IsUnique()
                 .HasDatabaseName("UX_tbl_LedgerTransactions_fld_IdempotencyKey");

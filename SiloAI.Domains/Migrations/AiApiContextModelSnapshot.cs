@@ -693,7 +693,7 @@ namespace SiloAI.Domains.Migrations
                     b.HasOne("SiloAI.Domains.UsageRecord", "UsageRecord")
                         .WithMany()
                         .HasForeignKey("UsageRecordId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Account");
 
