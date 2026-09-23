@@ -1,4 +1,5 @@
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.DependencyInjection;
 using SiloAI.Application.Shared.Contracts.Financial;
 
 namespace SiloAI.Application.Api.Services;
@@ -9,13 +10,19 @@ namespace SiloAI.Application.Api.Services;
 /// funds cover only one of them — the database row lock guarantees it. The ledger row
 /// and the usage record are inserted in the same database transaction, and the unique
 /// index on IdempotencyKey is the real guard against double-charging on retries.
+///
+/// Uses its own <see cref="AiApiContext"/> instance (via the scoped factory) so the
+/// ledger transaction never sweeps up unrelated entities tracked by a caller's context.
 /// </summary>
-public class CreditLedgerService(AiApiContext dbContext) : ICreditLedgerService
+public class CreditLedgerService(IServiceScopeFactory scopeFactory) : ICreditLedgerService
 {
     public async Task<ChargeOutcome> ChargeAsync(
         int customerId, ChargeResult charge, UsageRecord usageRecord,
         string idempotencyKey, CancellationToken cancellationToken)
     {
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AiApiContext>();
+
         // Fast path: drop retried requests before opening a transaction. The unique
         // index is still the real guarantee against a race between two live requests.
         var alreadyCharged = await dbContext.LedgerTransactions
@@ -83,6 +90,9 @@ public class CreditLedgerService(AiApiContext dbContext) : ICreditLedgerService
         if (string.IsNullOrWhiteSpace(reference))
             throw new InvalidOperationException("A top-up reference (e.g. the payment gateway transaction id) is required.");
 
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AiApiContext>();
+
         var alreadyToppedUp = await dbContext.LedgerTransactions
             .AsNoTracking()
             .AnyAsync(t => t.IdempotencyKey == reference, cancellationToken);
@@ -140,6 +150,9 @@ public class CreditLedgerService(AiApiContext dbContext) : ICreditLedgerService
 
     public async Task<decimal> GetBalanceAsync(int customerId, CancellationToken cancellationToken)
     {
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AiApiContext>();
+
         return await dbContext.LedgerAccounts
             .AsNoTracking()
             .Where(a => a.CustomerId == customerId)
@@ -151,10 +164,16 @@ public class CreditLedgerService(AiApiContext dbContext) : ICreditLedgerService
     {
         for (Exception? ex = exception; ex is not null; ex = ex.InnerException)
         {
+            // SQL Server: 2601 (unique index) / 2627 (primary key / unique constraint)
             if (ex is SqlException { Number: 2601 or 2627 })
+                return true;
+
+            // Provider-agnostic fallback for other engines (e.g. SQLite error 19).
+            if (ex.GetType().Name == "SqliteException" && ex.Message.Contains("UNIQUE constraint failed"))
                 return true;
         }
 
         return false;
     }
 }
+
