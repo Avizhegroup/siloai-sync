@@ -12,7 +12,7 @@ using SiloAI.Domains;
 namespace SiloAI.Domains.Migrations
 {
     [DbContext(typeof(AiApiContext))]
-    [Migration("20260923085946_AddFinancialLedger")]
+    [Migration("20260923090311_AddFinancialLedger")]
     partial class AddFinancialLedger
     {
         /// <inheritdoc />
@@ -137,6 +137,10 @@ namespace SiloAI.Domains.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("fld_SessionState");
 
+                    b.Property<int>("TurnIndex")
+                        .HasColumnType("int")
+                        .HasColumnName("fld_TurnIndex");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2")
                         .HasColumnName("fld_UpdatedAt");
@@ -220,6 +224,162 @@ namespace SiloAI.Domains.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("tbl_AiCustomers");
+                });
+
+            modelBuilder.Entity("SiloAI.Domains.FxRateSetting", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("fld_Id");
+
+                    b.Property<DateTime>("EffectiveFrom")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fld_EffectiveFrom");
+
+                    b.Property<decimal>("TomanPerUsd")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("fld_TomanPerUsd");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EffectiveFrom")
+                        .HasDatabaseName("IX_tbl_FxRateSettings_fld_EffectiveFrom");
+
+                    b.ToTable("tbl_FxRateSettings");
+                });
+
+            modelBuilder.Entity("SiloAI.Domains.LedgerAccount", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("fld_Id");
+
+                    b.Property<decimal>("BalanceToman")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("fld_BalanceToman");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fld_CreatedAt");
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("int")
+                        .HasColumnName("fld_CustomerId");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion")
+                        .HasColumnName("fld_RowVersion");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fld_UpdatedAt");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_tbl_LedgerAccounts_fld_CustomerId");
+
+                    b.ToTable("tbl_LedgerAccounts");
+                });
+
+            modelBuilder.Entity("SiloAI.Domains.LedgerTransaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("fld_Id");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("fld_AccountId");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("fld_Amount");
+
+                    b.Property<decimal>("BalanceAfter")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("fld_BalanceAfter");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fld_CreatedAt");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .HasColumnName("fld_Description");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("fld_IdempotencyKey");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int")
+                        .HasColumnName("fld_Type");
+
+                    b.Property<Guid?>("UsageRecordId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("fld_UsageRecordId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId")
+                        .HasDatabaseName("IX_tbl_LedgerTransactions_fld_AccountId");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("IX_tbl_LedgerTransactions_fld_CreatedAt");
+
+                    b.HasIndex("IdempotencyKey")
+                        .IsUnique()
+                        .HasDatabaseName("UX_tbl_LedgerTransactions_fld_IdempotencyKey");
+
+                    b.HasIndex("UsageRecordId");
+
+                    b.ToTable("tbl_LedgerTransactions");
+                });
+
+            modelBuilder.Entity("SiloAI.Domains.PricingSetting", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("fld_Id");
+
+                    b.Property<DateTime>("EffectiveFrom")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fld_EffectiveFrom");
+
+                    b.Property<int>("Feature")
+                        .HasColumnType("int")
+                        .HasColumnName("fld_Feature");
+
+                    b.Property<decimal>("FloorToman")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("fld_FloorToman");
+
+                    b.Property<decimal>("FloorUsd")
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("fld_FloorUsd");
+
+                    b.Property<decimal>("Multiplier")
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("fld_Multiplier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Feature", "EffectiveFrom")
+                        .HasDatabaseName("IX_tbl_PricingSettings_fld_Feature_fld_EffectiveFrom");
+
+                    b.ToTable("tbl_PricingSettings");
                 });
 
             modelBuilder.Entity("SiloAI.Domains.RagDocument", b =>
@@ -433,6 +593,78 @@ namespace SiloAI.Domains.Migrations
                     b.ToTable("tbl_RagInstructions");
                 });
 
+            modelBuilder.Entity("SiloAI.Domains.UsageRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("fld_Id");
+
+                    b.Property<int>("CachedTokens")
+                        .HasColumnType("int")
+                        .HasColumnName("fld_CachedTokens");
+
+                    b.Property<decimal>("ChargeToman")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("fld_ChargeToman");
+
+                    b.Property<Guid?>("ConversationId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("fld_ConversationId");
+
+                    b.Property<decimal>("CostUsd")
+                        .HasColumnType("decimal(18,8)")
+                        .HasColumnName("fld_CostUsd");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fld_CreatedAt");
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("int")
+                        .HasColumnName("fld_CustomerId");
+
+                    b.Property<int>("Feature")
+                        .HasColumnType("int")
+                        .HasColumnName("fld_Feature");
+
+                    b.Property<decimal>("FloorTomanUsed")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("fld_FloorTomanUsed");
+
+                    b.Property<decimal>("FxRateUsed")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("fld_FxRateUsed");
+
+                    b.Property<int>("InputTokens")
+                        .HasColumnType("int")
+                        .HasColumnName("fld_InputTokens");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("fld_Model");
+
+                    b.Property<decimal>("MultiplierUsed")
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("fld_MultiplierUsed");
+
+                    b.Property<int>("OutputTokens")
+                        .HasColumnType("int")
+                        .HasColumnName("fld_OutputTokens");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("IX_tbl_UsageRecords_fld_CreatedAt");
+
+                    b.HasIndex("CustomerId")
+                        .HasDatabaseName("IX_tbl_UsageRecords_fld_CustomerId");
+
+                    b.ToTable("tbl_UsageRecords");
+                });
+
             modelBuilder.Entity("SiloAI.Domains.AiApiKey", b =>
                 {
                     b.HasOne("SiloAI.Domains.Customer", "Customer")
@@ -440,6 +672,35 @@ namespace SiloAI.Domains.Migrations
                         .HasForeignKey("CustomerId");
 
                     b.Navigation("Customer");
+                });
+
+            modelBuilder.Entity("SiloAI.Domains.LedgerAccount", b =>
+                {
+                    b.HasOne("SiloAI.Domains.Customer", "Customer")
+                        .WithOne("LedgerAccount")
+                        .HasForeignKey("SiloAI.Domains.LedgerAccount", "CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Customer");
+                });
+
+            modelBuilder.Entity("SiloAI.Domains.LedgerTransaction", b =>
+                {
+                    b.HasOne("SiloAI.Domains.LedgerAccount", "Account")
+                        .WithMany("Transactions")
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SiloAI.Domains.UsageRecord", "UsageRecord")
+                        .WithMany()
+                        .HasForeignKey("UsageRecordId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Account");
+
+                    b.Navigation("UsageRecord");
                 });
 
             modelBuilder.Entity("SiloAI.Domains.RagDocumentChunk", b =>
@@ -453,9 +714,29 @@ namespace SiloAI.Domains.Migrations
                     b.Navigation("Document");
                 });
 
+            modelBuilder.Entity("SiloAI.Domains.UsageRecord", b =>
+                {
+                    b.HasOne("SiloAI.Domains.Customer", "Customer")
+                        .WithMany("UsageRecords")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Customer");
+                });
+
             modelBuilder.Entity("SiloAI.Domains.Customer", b =>
                 {
                     b.Navigation("AiApiKeys");
+
+                    b.Navigation("LedgerAccount");
+
+                    b.Navigation("UsageRecords");
+                });
+
+            modelBuilder.Entity("SiloAI.Domains.LedgerAccount", b =>
+                {
+                    b.Navigation("Transactions");
                 });
 
             modelBuilder.Entity("SiloAI.Domains.RagDocument", b =>
