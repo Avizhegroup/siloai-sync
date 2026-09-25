@@ -141,12 +141,18 @@ public class RagChatSendHandler(
             if (chargeOutcome == ChargeOutcome.Success)
                 chatSession.TurnIndex = turnIndex;
 
-            // Legacy credit cache, kept in sync until it is fully removed.
+            // Legacy credit cache (USD) — decrement by the same Toman amount that was
+            // actually charged, converted back with the same snapshot rate, so the two
+            // columns stay consistent until the legacy column is removed.
+            var chargeUsd = charge.FxRateUsed > 0
+                ? Math.Round(charge.ChargeToman / charge.FxRateUsed, 8)
+                : 0m;
+
             await dbContext.Customers
                 .Where(c => c.Id == customerId)
                 .ExecuteUpdateAsync(s => s
                     .SetProperty(c => c.RemainingCredit,
-                        c => Math.Max(0, c.RemainingCredit - result.PriceUsage)),
+                        c => Math.Max(0, c.RemainingCredit - chargeUsd)),
                     cancellationToken);
         }
 
@@ -229,12 +235,11 @@ public class RagChatSendHandler(
         if (customerId is null)
             return true;
 
-        var customer = await dbContext.Customers
-            .AsNoTracking()
-            .FirstOrDefaultAsync(
-                c => c.Id == customerId.Value,
-                cancellationToken);
+        // The ledger is the single source of truth for balances; the legacy
+        // Customer.RemainingCredit column is only a display cache and must not
+        // gate real (paid) AI calls.
+        var balance = await ledgerService.GetBalanceAsync(customerId.Value, cancellationToken);
 
-        return customer is not null && customer.RemainingCredit > 0;
+        return balance > 0;
     }
 }
