@@ -8,7 +8,9 @@ public class RagChatSendHandler(
     IRagSearchService search,
     IMediator mediator,
     AiApiContext dbContext,
-    ChatAgentCache agentCache) : IRequestHandler<RagChatSendCommand, RagChatResponse>
+    ChatAgentCache agentCache,
+    IPricingEngine pricingEngine,
+    ICreditLedgerService ledgerService) : IRequestHandler<RagChatSendCommand, RagChatResponse>
 {
     public async Task<RagChatResponse> Handle(RagChatSendCommand request, CancellationToken cancellationToken)
     {
@@ -77,14 +79,8 @@ public class RagChatSendHandler(
 
         var result = await agentService.SendWithAgentSessionAsync(existingSessionJson, query);
 
-        var customer = await dbContext.Customers.FirstOrDefaultAsync(c => c.Id == request.CustomerId,cancellationToken);
-
-        if (customer is not null)
-        {
-            customer.RemainingCredit = Math.Max( 0, customer.RemainingCredit - result.PriceUsage);
-        }
-
         var now = DateTime.UtcNow;
+
         if (chatSession is null)
         {
             chatSession = new AiChatSession
@@ -99,6 +95,66 @@ public class RagChatSendHandler(
 
         chatSession.SessionState = result.SerializedSession;
         chatSession.UpdatedAt = now;
+
+        if (request.CustomerId.HasValue)
+        {
+            var customerId = request.CustomerId.Value;
+
+            // The turn index is fixed before charging so a retried request for the same
+            // turn reproduces the same idempotency key and can never be charged twice.
+            var turnIndex = chatSession.TurnIndex + 1;
+
+            var charge = await pricingEngine.CalculateAsync(
+                new TokenUsageInput(
+                    result.TokenUsage.InputTokenCount,
+                    result.TokenUsage.CachedInputTokenCount,
+                    result.TokenUsage.OutputTokenCount),
+                UsageFeature.SupportChat,
+                cancellationToken);
+
+            var usageRecord = new UsageRecord
+            {
+                Id = Guid.NewGuid(),
+                CustomerId = customerId,
+                Feature = UsageFeature.SupportChat,
+                Model = request.RagModel ?? string.Empty,
+                InputTokens = (int)Math.Min(int.MaxValue, result.TokenUsage.InputTokenCount),
+                CachedTokens = (int)Math.Min(int.MaxValue, result.TokenUsage.CachedInputTokenCount),
+                OutputTokens = (int)Math.Min(int.MaxValue, result.TokenUsage.OutputTokenCount),
+                CostUsd = charge.CostUsd,
+                FxRateUsed = charge.FxRateUsed,
+                MultiplierUsed = charge.MultiplierUsed,
+                FloorTomanUsed = charge.FloorTomanUsed,
+                ChargeToman = charge.ChargeToman,
+                ConversationId = chatSession.Id,
+                CreatedAt = now
+            };
+
+            var chargeOutcome = await ledgerService.ChargeAsync(
+                customerId, charge, usageRecord,
+                idempotencyKey: $"ragchat:{chatSession.Id}:{turnIndex}",
+                cancellationToken);
+
+            if (chargeOutcome == ChargeOutcome.InsufficientBalance)
+                throw new InsufficientCreditException();
+
+            if (chargeOutcome == ChargeOutcome.Success)
+                chatSession.TurnIndex = turnIndex;
+
+            // Legacy credit cache (USD) — decrement by the same Toman amount that was
+            // actually charged, converted back with the same snapshot rate, so the two
+            // columns stay consistent until the legacy column is removed.
+            var chargeUsd = charge.FxRateUsed > 0
+                ? Math.Round(charge.ChargeToman / charge.FxRateUsed, 8)
+                : 0m;
+
+            await dbContext.Customers
+                .Where(c => c.Id == customerId)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(c => c.RemainingCredit,
+                        c => Math.Max(0, c.RemainingCredit - chargeUsd)),
+                    cancellationToken);
+        }
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -179,12 +235,11 @@ public class RagChatSendHandler(
         if (customerId is null)
             return true;
 
-        var customer = await dbContext.Customers
-            .AsNoTracking()
-            .FirstOrDefaultAsync(
-                c => c.Id == customerId.Value,
-                cancellationToken);
+        // The ledger is the single source of truth for balances; the legacy
+        // Customer.RemainingCredit column is only a display cache and must not
+        // gate real (paid) AI calls.
+        var balance = await ledgerService.GetBalanceAsync(customerId.Value, cancellationToken);
 
-        return customer is not null && customer.RemainingCredit > 0;
+        return balance > 0;
     }
 }

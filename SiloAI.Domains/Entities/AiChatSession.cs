@@ -25,6 +25,10 @@ public class AiChatSession
     [Column("fld_SessionState")]
     public string SessionState { get; set; }
 
+    /// <summary>Number of user turns sent in this session; used in ledger idempotency keys.</summary>
+    [Column("fld_TurnIndex")]
+    public int TurnIndex { get; set; }
+
     [Column("fld_CreatedAt")]
     public DateTime CreatedAt { get; set; }
 

@@ -1,0 +1,333 @@
+@page "/financial"
+@attribute [Authorize]
+@using Telerik.Blazor.Components
+@using Telerik.SvgIcons
+
+<PageTitle>امور مالی — پنل مدیریت هوش مصنوعی سیلو</PageTitle>
+
+@if (_isLoading && _accounts is null)
+{
+    <div class="p-4 text-center text-muted">
+        <div class="spinner-border spinner-border-sm me-2"></div>در حال بارگذاری...
+    </div>
+}
+else
+{
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="stat-card d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-value">@((_accounts ?? []).Sum(a => a.BalanceToman).ToString("N0"))</div>
+                    <div class="stat-label">مجموع موجودی حساب‌ها (تومان)</div>
+                </div>
+                <i class="bi bi-wallet2 stat-icon"></i>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-value">@((_transactions ?? []).Count(t => t.Type == LedgerTransactionType.TopUp))</div>
+                    <div class="stat-label">شارژهای اخیر</div>
+                </div>
+                <i class="bi bi-plus-circle stat-icon text-success"></i>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="stat-value text-danger">@((_usageRecords ?? []).Sum(u => u.ChargeToman).ToString("N0"))</div>
+                    <div class="stat-label">مصرف کسرشده اخیر (تومان)</div>
+                </div>
+                <i class="bi bi-graph-down-arrow stat-icon text-danger"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-ai mb-4">
+        <div class="card-ai-header">
+            <span><i class="bi bi-plus-circle me-2"></i>شارژ حساب مشتری</span>
+        </div>
+        <div class="p-4">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">مشتری</label>
+                    <TelerikDropDownList Data="@(_customers ?? [])"
+                                         @bind-Value="_topUpCustomerId"
+                                         TextField="Name"
+                                         ValueField="Id"
+                                         DefaultText="انتخاب مشتری"
+                                         Width="100%">
+                    </TelerikDropDownList>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">مبلغ (تومان)</label>
+                    <TelerikNumericTextBox @bind-Value="_topUpAmount" Min="0m" Format="N0" Width="100%" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">مرجع شارژ (شناسه درگاه)</label>
+                    <TelerikTextBox @bind-Value="_topUpReference" Placeholder="مثلاً: pay-123456" Width="100%" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold">توضیح (اختیاری)</label>
+                    <TelerikTextBox @bind-Value="_topUpDescription" Width="100%" />
+                </div>
+                <div class="col-md-12 d-flex justify-content-end">
+                    <TelerikButton OnClick="SubmitTopUp"
+                                   Enabled="@(!_isSaving)"
+                                   ThemeColor="primary"
+                                   Icon="@SvgIcon.Plus">
+                        ثبت شارژ
+                    </TelerikButton>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <TelerikTabStrip ActiveTabIndex="@_activeTab" ActiveTabIndexChanged="OnTabChanged" Class="card-ai">
+        <TabStripTab Title="حساب‌ها">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>مشتری</th>
+                            <th>موجودی (تومان)</th>
+                            <th>آخرین به‌روزرسانی</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (_accounts is { Count: 0 })
+                        {
+                            <tr>
+                                <td colspan="3" class="text-center text-muted py-4">
+                                    <i class="bi bi-wallet2 me-2"></i>هیچ حسابی ثبت نشده است.
+                                </td>
+                            </tr>
+                        }
+                        @foreach (var account in _accounts ?? [])
+                        {
+                            <tr>
+                                <td class="fw-semibold">@account.CustomerName</td>
+                                <td>
+                                    <span class="@(account.BalanceToman <= 0 ? "text-danger fw-bold" : "text-success fw-bold")">
+                                        @account.BalanceToman.ToString("N0")
+                                    </span>
+                                </td>
+                                <td class="text-muted">@account.UpdatedAt.ToLocalTime().ToString("yyyy/MM/dd HH:mm")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </TabStripTab>
+
+        <TabStripTab Title="تراکنش‌ها">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>مشتری</th>
+                            <th>نوع</th>
+                            <th>مبلغ (تومان)</th>
+                            <th>موجودی پس از تراکنش</th>
+                            <th>کلید یکتا</th>
+                            <th>تاریخ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (_transactions is { Count: 0 })
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <i class="bi bi-journal-text me-2"></i>هیچ تراکنشی ثبت نشده است.
+                                </td>
+                            </tr>
+                        }
+                        @foreach (var tx in _transactions ?? [])
+                        {
+                            <tr>
+                                <td class="fw-semibold">@tx.CustomerName</td>
+                                <td>
+                                    @if (tx.Type == LedgerTransactionType.TopUp)
+                                    {
+                                        <span class="badge-active">@tx.Type.ToDisplay()</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-revoked">@tx.Type.ToDisplay()</span>
+                                    }
+                                </td>
+                                <td class="font-monospace" dir="ltr">@tx.Amount.ToString("N0")</td>
+                                <td class="font-monospace" dir="ltr">@tx.BalanceAfter.ToString("N0")</td>
+                                <td class="text-muted small font-monospace" dir="ltr">@tx.IdempotencyKey</td>
+                                <td class="text-muted">@tx.CreatedAt.ToLocalTime().ToString("yyyy/MM/dd HH:mm")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </TabStripTab>
+
+        <TabStripTab Title="سوابق مصرف">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>مشتری</th>
+                            <th>قابلیت</th>
+                            <th>مدل</th>
+                            <th>توکن‌ها (ورودی/کش/خروجی)</th>
+                            <th>هزینه (دلار)</th>
+                            <th>نرخ ارز</th>
+                            <th>ضریب</th>
+                            <th>کسر نهایی (تومان)</th>
+                            <th>تاریخ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (_usageRecords is { Count: 0 })
+                        {
+                            <tr>
+                                <td colspan="9" class="text-center text-muted py-4">
+                                    <i class="bi bi-cpu me-2"></i>هیچ مصرفی ثبت نشده است.
+                                </td>
+                            </tr>
+                        }
+                        @foreach (var usage in _usageRecords ?? [])
+                        {
+                            <tr>
+                                <td class="fw-semibold">@usage.CustomerName</td>
+                                <td><span class="badge bg-secondary">@usage.Feature.ToDisplay()</span></td>
+                                <td class="text-muted small font-monospace" dir="ltr">@usage.Model</td>
+                                <td class="font-monospace" dir="ltr">@usage.InputTokens / @usage.CachedTokens / @usage.OutputTokens</td>
+                                <td class="font-monospace" dir="ltr">$@usage.CostUsd.ToString("N6")</td>
+                                <td class="font-monospace" dir="ltr">@usage.FxRateUsed.ToString("N0")</td>
+                                <td class="font-monospace" dir="ltr">@usage.MultiplierUsed.ToString("N2")</td>
+                                <td class="fw-bold">@usage.ChargeToman.ToString("N0")</td>
+                                <td class="text-muted">@usage.CreatedAt.ToLocalTime().ToString("yyyy/MM/dd HH:mm")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </TabStripTab>
+
+        <TabStripTab Title="قیمت‌گذاری">
+            <div class="p-4">
+                <div class="row g-3 align-items-end mb-4">
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">قابلیت</label>
+                        <TelerikDropDownList Data="@_features"
+                                             @bind-Value="_pricingFeature"
+                                             Width="100%">
+                            <ItemTemplate Context="feature">
+                                @feature.ToDisplay()
+                            </ItemTemplate>
+                            <ValueTemplate Context="feature">
+                                @feature.ToDisplay()
+                            </ValueTemplate>
+                        </TelerikDropDownList>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">ضریب (M)</label>
+                        <TelerikNumericTextBox @bind-Value="_pricingMultiplier" Min="0m" Format="N2" Width="100%" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">کف (تومان)</label>
+                        <TelerikNumericTextBox @bind-Value="_pricingFloorToman" Min="0m" Format="N0" Width="100%" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-semibold">کف (دلار)</label>
+                        <TelerikNumericTextBox @bind-Value="_pricingFloorUsd" Min="0m" Format="N4" Width="100%" />
+                    </div>
+                    <div class="col-md-3 d-flex justify-content-end">
+                        <TelerikButton OnClick="SubmitPricingSetting"
+                                       Enabled="@(!_isSaving)"
+                                       ThemeColor="primary"
+                                       Icon="@SvgIcon.Plus">
+                            ثبت نسخهٔ جدید
+                        </TelerikButton>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>قابلیت</th>
+                                <th>ضریب (M)</th>
+                                <th>کف (تومان)</th>
+                                <th>کف (دلار)</th>
+                                <th>اعمال از</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (_pricingSettings is { Count: 0 })
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">
+                                        <i class="bi bi-gear me-2"></i>هیچ تنظیمی ثبت نشده است.
+                                    </td>
+                                </tr>
+                            }
+                            @foreach (var pricing in _pricingSettings ?? [])
+                            {
+                                <tr>
+                                    <td><span class="badge bg-secondary">@pricing.Feature.ToDisplay()</span></td>
+                                    <td class="font-monospace" dir="ltr">@pricing.Multiplier.ToString("N2")</td>
+                                    <td class="font-monospace" dir="ltr">@pricing.FloorToman.ToString("N0")</td>
+                                    <td class="font-monospace" dir="ltr">$@pricing.FloorUsd.ToString("N4")</td>
+                                    <td class="text-muted">@pricing.EffectiveFrom.ToLocalTime().ToString("yyyy/MM/dd HH:mm")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </TabStripTab>
+
+        <TabStripTab Title="نرخ ارز">
+            <div class="p-4">
+                <div class="row g-3 align-items-end mb-4">
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">تومان به ازای هر دلار</label>
+                        <TelerikNumericTextBox @bind-Value="_fxTomanPerUsd" Min="0m" Format="N0" Width="100%" />
+                    </div>
+                    <div class="col-md-3 d-flex justify-content-start">
+                        <TelerikButton OnClick="SubmitFxRate"
+                                       Enabled="@(!_isSaving)"
+                                       ThemeColor="primary"
+                                       Icon="@SvgIcon.Plus">
+                            ثبت نرخ جدید
+                        </TelerikButton>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>نرخ (تومان/دلار)</th>
+                                <th>اعمال از</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (_fxRates is { Count: 0 })
+                            {
+                                <tr>
+                                    <td colspan="2" class="text-center text-muted py-4">
+                                        <i class="bi bi-currency-exchange me-2"></i>هیچ نرخی ثبت نشده است.
+                                    </td>
+                                </tr>
+                            }
+                            @foreach (var rate in _fxRates ?? [])
+                            {
+                                <tr>
+                                    <td class="font-monospace fw-bold" dir="ltr">@rate.TomanPerUsd.ToString("N0")</td>
+                                    <td class="text-muted">@rate.EffectiveFrom.ToLocalTime().ToString("yyyy/MM/dd HH:mm")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </TabStripTab>
+    </TelerikTabStrip>
+}

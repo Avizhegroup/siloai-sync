@@ -18,5 +18,9 @@ public class Customer
     [Column("fld_CreatedAt")]
     public DateTime CreatedAt { get; set; }
 
+    public LedgerAccount? LedgerAccount { get; set; }
+
     public ICollection<AiApiKey> AiApiKeys { get; set; } = new List<AiApiKey>();
+
+    public ICollection<UsageRecord> UsageRecords { get; set; } = new List<UsageRecord>();
 }
