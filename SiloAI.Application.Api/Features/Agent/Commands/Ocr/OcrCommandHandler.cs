@@ -1,23 +1,30 @@
-using Microsoft.Extensions.Options;
 using SiloAI.Agent.Chat;
-using SiloAI.Agent.Rag;
+using SiloAI.Application.Shared.Contracts.AiModels;
 
 namespace SiloAI.Application.Api.Features;
 
 public class OcrCommandHandler(
     ChatAgentService agentService,
     AiApiContext dbContext,
-    IOptions<OpenAIOptions> openAiOptions,
     IPricingEngine pricingEngine,
-    ICreditLedgerService ledgerService) : IRequestHandler<OcrCommand, OcrResponse>
+    ICreditLedgerService ledgerService,
+    IAiModelResolver modelResolver) : IRequestHandler<OcrCommand, OcrResponse>
 {
     public async Task<OcrResponse> Handle(OcrCommand request, CancellationToken cancellationToken)
     {
         if (!await HasCreditAsync(request.CustomerId, cancellationToken))
             throw new InsufficientCreditException();
 
-        await agentService.InitChatAgent(modelName: openAiOptions.Value.VoiceModel);
+        var resolvedModel = await modelResolver.ResolveAsync(request.CustomerId, UsageFeature.Ocr, cancellationToken);
 
+        await agentService.InitChatAgent(modelName: resolvedModel.Identifier);
+
+        // NOTE (still open, not part of this change): SendImageAndGetTextAsync only returns the
+        // extracted text, not token usage, so the charge below is always priced as (0, 0, 0)
+        // input/output/cached — i.e. always the feature's floor charge, never the real usage
+        // cost. And the idempotency key is a fresh GUID generated on every call, so a client
+        // retry after a timeout is NOT protected against double-charging the way ragchat/chat
+        // turns are. Both were flagged previously and are unrelated to AI model management.
         var extractedText = await agentService.SendImageAndGetTextAsync(request.ImageData
             , request.MediaType
             , request.DocType);
@@ -25,11 +32,11 @@ public class OcrCommandHandler(
         if (request.CustomerId.HasValue)
         {
             var customerId = request.CustomerId.Value;
-            var model = openAiOptions.Value.VoiceModel;
 
             var charge = await pricingEngine.CalculateAsync(
                 new TokenUsageInput(0, 0, 0),
                 UsageFeature.Ocr,
+                resolvedModel.AiModelId,
                 cancellationToken);
 
             var usageRecord = new UsageRecord
@@ -37,7 +44,7 @@ public class OcrCommandHandler(
                 Id = Guid.NewGuid(),
                 CustomerId = customerId,
                 Feature = UsageFeature.Ocr,
-                Model = model,
+                Model = resolvedModel.Identifier,
                 InputTokens = 0,
                 CachedTokens = 0,
                 OutputTokens = 0,

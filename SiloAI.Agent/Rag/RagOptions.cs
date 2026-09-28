@@ -22,7 +22,11 @@ public class RagOptions
 }
 
 /// <summary>
-/// Strongly-typed OpenAI configuration for embedding / chat usage.
+/// Strongly-typed OpenAI configuration — provider credentials/endpoint only. Which model to use
+/// for a given call (chat, RAG, OCR, embeddings) is no longer configured here: it is resolved
+/// per customer/feature from the database via IAiModelResolver (see tbl_AiModels /
+/// tbl_CustomerModelAssignments), so different customers and different tasks can use different
+/// models with their own pricing.
 /// </summary>
 public class OpenAIOptions
 {
@@ -30,23 +34,6 @@ public class OpenAIOptions
 
     public string? ApiKey { get; set; }
 
-    public string EmbeddingModel { get; set; } = "text-embedding-3-small";
-
-    /// <summary>
-    /// Dimension count of the embedding vector. Must match the size of the VECTOR(N) column
-    /// declared in the EF migration. 1536 for text-embedding-3-small, 3072 for -3-large.
-    /// </summary>
-    public int EmbeddingDimensions { get; set; } = 1536;
-
     /// <summary>Optional custom endpoint (e.g. Azure OpenAI, GitHub Models gateway).</summary>
     public string? Endpoint { get; set; }
-
-    /// <summary>Model used for general chat interactions.</summary>
-    public string? MainModel { get; set; }
-
-    /// <summary>Model used for voice / OCR interactions.</summary>
-    public string? VoiceModel { get; set; }
-
-    /// <summary>Model used for RAG (retrieval-augmented generation) chat.</summary>
-    public string? RagModel { get; set; }
 }

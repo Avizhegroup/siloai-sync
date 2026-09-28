@@ -1,0 +1,285 @@
+@page "/ai-models"
+@attribute [Authorize]
+@using Telerik.Blazor.Components
+
+<PageTitle>مدیریت مدل‌های هوش مصنوعی — پنل مدیریت هوش مصنوعی سیلو</PageTitle>
+
+<TelerikTabStrip @bind-ActiveTabIndex="@_activeTab">
+    <TabStripTab Title="کاتالوگ مدل‌ها">
+        <div class="card-ai mt-3">
+            <div class="card-ai-header">
+                <span><i class="bi bi-cpu me-2"></i>مدل‌های تعریف‌شده</span>
+                <button class="btn btn-sm btn-primary" @onclick="OpenCreateForm">
+                    <i class="bi bi-plus-lg me-1"></i>مدل جدید
+                </button>
+            </div>
+            <div class="p-3">
+                @if (_isLoading && _models is null)
+                {
+                    <div class="p-4 text-center text-muted">
+                        <div class="spinner-border spinner-border-sm me-2"></div>در حال بارگذاری...
+                    </div>
+                }
+                else
+                {
+                    <TelerikGrid Data="@_models" Pageable="true" PageSize="15" Sortable="true" Class="silo-telerik-grid">
+                        <GridColumns>
+                            <GridColumn Field="@nameof(AiModelDto.Name)" Title="نام" Width="200px" />
+                            <GridColumn Field="@nameof(AiModelDto.Identifier)" Title="شناسه" Width="220px" />
+                            <GridColumn Title="نوع" Width="130px">
+                                <Template>
+                                    @{ var m = (AiModelDto)context; }
+                                    <span class="badge @(m.Kind == AiModelKind.Rag ? "bg-info" : "bg-secondary")">
+                                        @m.Kind.ToDisplay()
+                                    </span>
+                                    @if (m.IsDefaultRagModel)
+                                    {
+                                        <span class="badge bg-success ms-1">پیش‌فرض</span>
+                                    }
+                                </Template>
+                            </GridColumn>
+                            <GridColumn Title="قابلیت‌ها" Width="220px">
+                                <Template>
+                                    @{ var m = (AiModelDto)context; }
+                                    @if (m.Kind == AiModelKind.Normal)
+                                    {
+                                        <span class="small text-muted">@CapabilitiesSummary(m)</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="small text-muted">ابعاد بردار: @m.EmbeddingDimensions</span>
+                                    }
+                                </Template>
+                            </GridColumn>
+                            <GridColumn Title="قیمت (هر میلیون توکن، دلار)" Width="220px">
+                                <Template>
+                                    @{ var m = (AiModelDto)context; }
+                                    <span class="small">
+                                        ورودی: @m.InputPricePerMillionTokens.ToString("0.####") |
+                                        خروجی: @m.OutputPricePerMillionTokens.ToString("0.####") |
+                                        کش: @m.CachedInputPricePerMillionTokens.ToString("0.####")
+                                    </span>
+                                </Template>
+                            </GridColumn>
+                            <GridColumn Title="وضعیت" Width="110px">
+                                <Template>
+                                    @{ var m = (AiModelDto)context; }
+                                    <span class="badge @(m.IsActive ? "badge-active" : "badge-revoked")">
+                                        @(m.IsActive ? "فعال" : "غیرفعال")
+                                    </span>
+                                </Template>
+                            </GridColumn>
+                            <GridColumn Title="عملیات" Width="230px" Filterable="false" Sortable="false">
+                                <Template>
+                                    @{ var m = (AiModelDto)context; }
+                                    <button class="btn btn-sm btn-outline-primary me-1" @onclick="() => OpenEditForm(m)">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    @if (m.Kind == AiModelKind.Rag && !m.IsDefaultRagModel)
+                                    {
+                                        <button class="btn btn-sm btn-outline-success me-1" @onclick="() => SetDefaultRag(m)">
+                                            تنظیم به‌عنوان پیش‌فرض
+                                        </button>
+                                    }
+                                    <button class="btn btn-sm @(m.IsActive ? "btn-outline-danger" : "btn-outline-secondary")"
+                                            @onclick="() => ToggleActive(m)">
+                                        @(m.IsActive ? "غیرفعال‌سازی" : "فعال‌سازی")
+                                    </button>
+                                </Template>
+                            </GridColumn>
+                        </GridColumns>
+                        <NoDataTemplate>
+                            <div class="text-center text-muted py-4">
+                                <i class="bi bi-cpu me-2"></i>هیچ مدلی تعریف نشده است.
+                            </div>
+                        </NoDataTemplate>
+                    </TelerikGrid>
+                }
+            </div>
+        </div>
+
+        @if (_showForm)
+        {
+            <div class="card-ai mt-3">
+                <div class="card-ai-header">
+                    <span><i class="bi bi-sliders me-2"></i>@(_form.Id == Guid.Empty ? "مدل جدید" : "ویرایش مدل")</span>
+                    <button class="btn btn-sm btn-outline-secondary" @onclick="CloseForm">
+                        <i class="bi bi-x me-1"></i>بستن
+                    </button>
+                </div>
+                <div class="p-4">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">نام نمایشی</label>
+                            <input class="form-control" @bind="_form.Name" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">شناسه مدل (برای فراخوانی API)</label>
+                            <input class="form-control" placeholder="مثلاً: openai/gpt-4.1-mini" @bind="_form.Identifier" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">نوع مدل</label>
+                            <select class="form-select" @bind="_form.Kind">
+                                <option value="@AiModelKind.Normal">مدل عمومی (چت/تصویر/فایل/صدا)</option>
+                                <option value="@AiModelKind.Rag">مدل بازیابی (RAG / Embedding)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    @if (_form.Kind == AiModelKind.Normal)
+                    {
+                        <div class="row g-3 mt-1">
+                            <div class="col-12"><label class="form-label fw-semibold mb-1">قابلیت‌های ورودی/خروجی</label></div>
+                            <div class="col-md-3">
+                                <div class="form-check"><input class="form-check-input" type="checkbox" id="ti" @bind="_form.SupportsTextInput"><label class="form-check-label" for="ti">متن (ورودی)</label></div>
+                                <div class="form-check"><input class="form-check-input" type="checkbox" id="to" @bind="_form.SupportsTextOutput"><label class="form-check-label" for="to">متن (خروجی)</label></div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check"><input class="form-check-input" type="checkbox" id="ii" @bind="_form.SupportsImageInput"><label class="form-check-label" for="ii">تصویر (ورودی)</label></div>
+                                <div class="form-check"><input class="form-check-input" type="checkbox" id="io" @bind="_form.SupportsImageOutput"><label class="form-check-label" for="io">تصویر (خروجی)</label></div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check"><input class="form-check-input" type="checkbox" id="fi" @bind="_form.SupportsFileInput"><label class="form-check-label" for="fi">فایل (ورودی)</label></div>
+                                <div class="form-check"><input class="form-check-input" type="checkbox" id="fo" @bind="_form.SupportsFileOutput"><label class="form-check-label" for="fo">فایل (خروجی)</label></div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-check"><input class="form-check-input" type="checkbox" id="vi" @bind="_form.SupportsVoiceInput"><label class="form-check-label" for="vi">صدا (ورودی)</label></div>
+                                <div class="form-check"><input class="form-check-input" type="checkbox" id="vo" @bind="_form.SupportsVoiceOutput"><label class="form-check-label" for="vo">صدا (خروجی)</label></div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold">ابعاد بردار (Embedding Dimensions)</label>
+                                <input type="number" class="form-control" @bind="_form.EmbeddingDimensions" />
+                                <div class="form-text">باید دقیقاً با عرض ستون VECTOR در پایگاه‌داده (فعلاً ۱۵۳۶) یکسان باشد تا بتوان آن را مدل پیش‌فرض RAG کرد.</div>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="row g-3 mt-1">
+                        <div class="col-12"><label class="form-label fw-semibold mb-1">قیمت (دلار به ازای هر ۱٬۰۰۰٬۰۰۰ توکن)</label></div>
+                        <div class="col-md-3">
+                            <label class="form-label small">ورودی</label>
+                            <input type="number" step="0.0001" class="form-control" @bind="_form.InputPricePerMillionTokens" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small">خروجی</label>
+                            <input type="number" step="0.0001" class="form-control" @bind="_form.OutputPricePerMillionTokens" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small">کش‌شده</label>
+                            <input type="number" step="0.0001" class="form-control" @bind="_form.CachedInputPricePerMillionTokens" />
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="active" @bind="_form.IsActive">
+                                <label class="form-check-label" for="active">فعال</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button class="btn btn-primary" @onclick="SaveModel" disabled="@_isSaving">
+                            @if (_isSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm me-1"></span>
+                            }
+                            ذخیره
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </TabStripTab>
+
+    <TabStripTab Title="تخصیص مدل به مشتریان">
+        <div class="card-ai mt-3">
+            <div class="card-ai-header">
+                <span><i class="bi bi-people me-2"></i>تخصیص مدل بر اساس مشتری و کارکرد</span>
+            </div>
+            <div class="p-4">
+                <div class="row g-3 align-items-end mb-4">
+                    <div class="col-md-5">
+                        <label class="form-label fw-semibold">مشتری</label>
+                        <select class="form-select" @bind="_assignmentCustomerId" @bind:after="LoadAssignments">
+                            <option value="">پیش‌فرض سراسری (همه مشتریان)</option>
+                            @if (_customers is not null)
+                            {
+                                @foreach (var c in _customers)
+                                {
+                                    <option value="@c.Id">@c.Name</option>
+                                }
+                            }
+                        </select>
+                        <div class="form-text">
+                            انتخاب یک مشتری خاص، فقط مدل همان مشتری را برای هر کارکرد بازنویسی می‌کند؛
+                            سایر مشتریان همچنان از پیش‌فرض سراسری استفاده می‌کنند.
+                        </div>
+                    </div>
+                </div>
+
+                @if (_isAssignmentsLoading && _assignments is null)
+                {
+                    <div class="p-4 text-center text-muted">
+                        <div class="spinner-border spinner-border-sm me-2"></div>در حال بارگذاری...
+                    </div>
+                }
+                else if (_assignments is not null)
+                {
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>کارکرد</th>
+                                <th>مدل فعلی</th>
+                                <th style="width: 260px;">تغییر مدل</th>
+                                <th style="width: 140px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var a in _assignments)
+                            {
+                                <tr>
+                                    <td>@a.Feature.ToDisplay()</td>
+                                    <td>
+                                        @(a.AiModelName ?? "—")
+                                        @if (a.IsOverride)
+                                        {
+                                            <span class="badge bg-warning text-dark ms-1">اختصاصی مشتری</span>
+                                        }
+                                        else if (a.AiModelId is not null)
+                                        {
+                                            <span class="badge bg-secondary ms-1">پیش‌فرض</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <select class="form-select form-select-sm" @onchange="e => AssignModelChanged(a.Feature, e.Value)">
+                                            <option value="">— انتخاب کنید —</option>
+                                            @if (_normalModels is not null)
+                                            {
+                                                @foreach (var m in _normalModels)
+                                                {
+                                                    <option value="@m.Id" selected="@(m.Id == a.AiModelId)">@m.Name</option>
+                                                }
+                                            }
+                                        </select>
+                                    </td>
+                                    <td>
+                                        @if (_assignmentCustomerId.HasValue && a.IsOverride)
+                                        {
+                                            <button class="btn btn-sm btn-outline-secondary" @onclick="() => ClearOverride(a.Feature)">
+                                                بازگشت به پیش‌فرض
+                                            </button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+    </TabStripTab>
+</TelerikTabStrip>

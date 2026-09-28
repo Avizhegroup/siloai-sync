@@ -13,6 +13,8 @@ public static class ApplicationAiApiServices
 
         services.AddScoped<ICreditLedgerService, CreditLedgerService>();
 
+        services.AddScoped<IAiModelResolver, AiModelResolver>();
+
         return services;
     }
 }

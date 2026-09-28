@@ -1,18 +1,23 @@
 using SiloAI.Agent.Chat;
+using SiloAI.Application.Shared.Contracts.AiModels;
 using NewChatSessionCommand = SiloAI.Application.Shared.Features.NewChatSessionCommand;
 
 namespace SiloAI.Application.Api.Features;
 
 public class NewChatSessionCommandHandler(
     ChatAgentService agentService,
-    AiApiContext dbContext) : IRequestHandler<NewChatSessionCommand, NewSessionResponse>
+    AiApiContext dbContext,
+    ICreditLedgerService ledgerService,
+    IAiModelResolver modelResolver) : IRequestHandler<NewChatSessionCommand, NewSessionResponse>
 {
     public async Task<NewSessionResponse> Handle(NewChatSessionCommand request, CancellationToken cancellationToken)
     {
         if (!await HasCreditAsync(request.CustomerId, cancellationToken))
             throw new InsufficientCreditException();
 
-        await agentService.InitChatAgent(new() { request.DocType });
+        var resolvedModel = await modelResolver.ResolveAsync(request.CustomerId, UsageFeature.SupportChat, cancellationToken);
+
+        await agentService.InitChatAgent(new() { request.DocType }, modelName: resolvedModel.Identifier);
 
         var session = await agentService.CreateNewSessionAsync();
         var sessionJson = await agentService.SerializeSessionAsync(session);
@@ -38,10 +43,10 @@ public class NewChatSessionCommandHandler(
     {
         if (customerId is null) return true;
 
-        var customer = await dbContext.Customers
-            .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == customerId.Value, cancellationToken);
+        // The ledger is the single source of truth for balances; the legacy
+        // Customer.RemainingCredit column is only a display cache and must not gate this.
+        var balance = await ledgerService.GetBalanceAsync(customerId.Value, cancellationToken);
 
-        return customer is null || customer.RemainingCredit > 0;
+        return balance > 0;
     }
 }

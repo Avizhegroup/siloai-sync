@@ -35,12 +35,7 @@ public static class RagServiceCollectionExtensions
         services.Configure<OpenAIOptions>(o =>
         {
             o.ApiKey = openAiSection[nameof(OpenAIOptions.ApiKey)] ?? o.ApiKey;
-            o.EmbeddingModel = openAiSection[nameof(OpenAIOptions.EmbeddingModel)] ?? o.EmbeddingModel;
-            o.EmbeddingDimensions = ParseInt(openAiSection[nameof(OpenAIOptions.EmbeddingDimensions)], o.EmbeddingDimensions);
             o.Endpoint = openAiSection[nameof(OpenAIOptions.Endpoint)];
-            o.MainModel = openAiSection[nameof(OpenAIOptions.MainModel)];
-            o.VoiceModel = openAiSection[nameof(OpenAIOptions.VoiceModel)];
-            o.RagModel = openAiSection[nameof(OpenAIOptions.RagModel)];
         });
 
         services.AddScoped<ITextExtractionService, TxtTextExtractionService>();

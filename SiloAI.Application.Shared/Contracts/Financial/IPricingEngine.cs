@@ -7,5 +7,5 @@ namespace SiloAI.Application.Shared.Contracts.Financial;
 /// </summary>
 public interface IPricingEngine
 {
-    Task<ChargeResult> CalculateAsync(TokenUsageInput usage, UsageFeature feature, CancellationToken cancellationToken);
+    Task<ChargeResult> CalculateAsync(TokenUsageInput usage, UsageFeature feature, Guid aiModelId, CancellationToken cancellationToken);
 }

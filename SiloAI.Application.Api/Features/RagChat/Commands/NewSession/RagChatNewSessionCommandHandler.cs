@@ -1,11 +1,13 @@
 using SiloAI.Agent.Chat;
+using SiloAI.Application.Shared.Contracts.AiModels;
 
 namespace SiloAI.Application.Api.Features;
 
 public class RagChatNewSessionCommandHandler(
     ChatAgentService agentService,
     AiApiContext dbContext,
-    ChatAgentCache agentCache) : IRequestHandler<RagChatNewSessionCommand, RagChatResponse>
+    ChatAgentCache agentCache,
+    IAiModelResolver modelResolver) : IRequestHandler<RagChatNewSessionCommand, RagChatResponse>
 {
     public async Task<RagChatResponse> Handle(RagChatNewSessionCommand request, CancellationToken cancellationToken)
     {
@@ -18,8 +20,10 @@ public class RagChatNewSessionCommandHandler(
 
         var agentInstructions = RagChatSendHandler.BuildAgentInstructions(instructions);
 
+        var resolvedModel = await modelResolver.ResolveAsync(request.CustomerId, UsageFeature.SupportChat, cancellationToken);
+
         agentService.InitChatAgentWithInstructions(
-            agentInstructions, request.RagModel, includeAutoRagContext: false);
+            agentInstructions, resolvedModel.Identifier, includeAutoRagContext: false);
 
         var session = await agentService.CreateNewSessionAsync();
 

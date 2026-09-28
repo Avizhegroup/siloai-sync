@@ -1,4 +1,5 @@
 using SiloAI.Agent.Chat;
+using SiloAI.Application.Shared.Contracts.AiModels;
 using System.Text;
 
 namespace SiloAI.Application.Api.Features;
@@ -10,7 +11,8 @@ public class RagChatSendHandler(
     AiApiContext dbContext,
     ChatAgentCache agentCache,
     IPricingEngine pricingEngine,
-    ICreditLedgerService ledgerService) : IRequestHandler<RagChatSendCommand, RagChatResponse>
+    ICreditLedgerService ledgerService,
+    IAiModelResolver modelResolver) : IRequestHandler<RagChatSendCommand, RagChatResponse>
 {
     public async Task<RagChatResponse> Handle(RagChatSendCommand request, CancellationToken cancellationToken)
     {
@@ -45,12 +47,17 @@ public class RagChatSendHandler(
 
         var agentInstructions = BuildAgentInstructions(instructions);
 
+        // Resolved once up front: needed both to run the chat call itself and (below) to price
+        // it correctly — a customer's own model assignment for SupportChat if one exists,
+        // otherwise the global default for that feature.
+        var resolvedModel = await modelResolver.ResolveAsync(request.CustomerId, UsageFeature.SupportChat, cancellationToken);
+
         // This handler already performs its own, DocType/Key-filtered retrieval below and
         // augments the message itself, so the agent's built-in auto-RAG context provider is
         // disabled here to avoid a second, unfiltered retrieval pass (extra embedding call,
         // extra DB round-trips, and duplicate chunk content being sent to the model).
         agentService.InitChatAgentWithInstructions(
-            agentInstructions, request.RagModel, includeAutoRagContext: false);
+            agentInstructions, resolvedModel.Identifier, includeAutoRagContext: false);
 
         var topK = request.TopK <= 0 ? 5 : Math.Clamp(request.TopK, 1, 20);
      
@@ -110,6 +117,7 @@ public class RagChatSendHandler(
                     result.TokenUsage.CachedInputTokenCount,
                     result.TokenUsage.OutputTokenCount),
                 UsageFeature.SupportChat,
+                resolvedModel.AiModelId,
                 cancellationToken);
 
             var usageRecord = new UsageRecord
@@ -117,7 +125,7 @@ public class RagChatSendHandler(
                 Id = Guid.NewGuid(),
                 CustomerId = customerId,
                 Feature = UsageFeature.SupportChat,
-                Model = request.RagModel ?? string.Empty,
+                Model = resolvedModel.Identifier,
                 InputTokens = (int)Math.Min(int.MaxValue, result.TokenUsage.InputTokenCount),
                 CachedTokens = (int)Math.Min(int.MaxValue, result.TokenUsage.CachedInputTokenCount),
                 OutputTokens = (int)Math.Min(int.MaxValue, result.TokenUsage.OutputTokenCount),

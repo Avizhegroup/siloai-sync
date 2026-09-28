@@ -1,18 +1,17 @@
-using Microsoft.Extensions.Configuration;
 using SiloAI.Application.Shared.Contracts.Financial;
 
 namespace SiloAI.Application.Api.Services;
 
 /// <summary>
 /// Implements the pricing formula:
-/// costUsd from the model price list, costToman = costUsd × fxRate,
+/// costUsd from the resolved AiModel's price list, costToman = costUsd × fxRate,
 /// chargeToman = max(costToman × M, floorToman, fxRate × floorUsd).
 /// Rates and multipliers come from the latest row with EffectiveFrom &lt;= now.
 /// Missing configuration fails fast instead of silently falling back to a default.
 /// </summary>
-public class PricingEngine(AiApiContext dbContext, IConfiguration configuration) : IPricingEngine
+public class PricingEngine(AiApiContext dbContext) : IPricingEngine
 {
-    public async Task<ChargeResult> CalculateAsync(TokenUsageInput usage, UsageFeature feature, CancellationToken cancellationToken)
+    public async Task<ChargeResult> CalculateAsync(TokenUsageInput usage, UsageFeature feature, Guid aiModelId, CancellationToken cancellationToken)
     {
         var now = DateTime.UtcNow;
 
@@ -37,18 +36,25 @@ public class PricingEngine(AiApiContext dbContext, IConfiguration configuration)
             throw new InvalidOperationException(
                 $"No active pricing setting found for feature '{feature}'. Seed tbl_PricingSettings with a row whose EffectiveFrom <= now.");
 
-        var modelName = configuration["OpenAI:MainModel"];
+        // Per-token prices now come from the resolved AiModel record (admin-entered on the AI
+        // Models page), not from appsettings — a model's price list travels with the model
+        // itself, so different customers/features using different models are priced correctly.
+        var modelPricing = await dbContext.AiModels
+            .AsNoTracking()
+            .Where(x => x.Id == aiModelId)
+            .Select(x => new { x.InputPricePerMillionTokens, x.OutputPricePerMillionTokens, x.CachedInputPricePerMillionTokens })
+            .FirstOrDefaultAsync(cancellationToken);
 
-        var inputPrice = configuration.GetValue<decimal>($"AiPricing:Models:{modelName}:InputPerMillionTokens");
-        var outputPrice = configuration.GetValue<decimal>($"AiPricing:Models:{modelName}:OutputPerMillionTokens");
-        var cachedInputPrice = configuration.GetValue<decimal>($"AiPricing:Models:{modelName}:CachedInputPerMillionTokens");
+        if (modelPricing is null)
+            throw new InvalidOperationException(
+                $"AiModel '{aiModelId}' was not found. It may have been deleted after being resolved for this call.");
 
         var normalInputTokens = Math.Max(0, usage.InputTokens - usage.CachedTokens);
 
         var costUsd =
-            (normalInputTokens / 1_000_000m * inputPrice)
-            + (usage.CachedTokens / 1_000_000m * cachedInputPrice)
-            + (usage.OutputTokens / 1_000_000m * outputPrice);
+            (normalInputTokens / 1_000_000m * modelPricing.InputPricePerMillionTokens)
+            + (usage.CachedTokens / 1_000_000m * modelPricing.CachedInputPricePerMillionTokens)
+            + (usage.OutputTokens / 1_000_000m * modelPricing.OutputPricePerMillionTokens);
 
         var costToman = costUsd * fxRate;
 

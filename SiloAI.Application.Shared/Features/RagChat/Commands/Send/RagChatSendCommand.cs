@@ -9,7 +9,6 @@ public class RagChatSendCommand : IRequest<RagChatResponse>
     public RagDocType DocType { get; set; } = RagDocType.GeneralChat;
     public string? Key { get; set; }
     public string AugmentedMessageTemplate { get; set; }
-    public string? RagModel { get; set; }
     public string Username { get; set; }
     public string OwnerId { get; set; }
     public int? CustomerId { get; set; }

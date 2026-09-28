@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SiloAI.Agent.Chat;
+using SiloAI.Application.Shared.Contracts.AiModels;
 
 namespace SiloAI.Application.Api.Features;
 public class SendChatCommandHandler(
@@ -9,7 +10,8 @@ public class SendChatCommandHandler(
     IServiceScopeFactory scopeFactory,
     ILogger<SendChatCommandHandler> logger,
     IPricingEngine pricingEngine,
-    ICreditLedgerService ledgerService)
+    ICreditLedgerService ledgerService,
+    IAiModelResolver modelResolver)
     : IRequestHandler<SendChatCommand, SendChatResponse>
 {
     public async Task<SendChatResponse> Handle(SendChatCommand request, CancellationToken cancellationToken)
@@ -38,7 +40,9 @@ public class SendChatCommandHandler(
             existingSessionJson = chatSession.SessionState;
         }
 
-        await agentService.InitChatAgent(new() { request.DocType });
+        var resolvedModel = await modelResolver.ResolveAsync(request.CustomerId, UsageFeature.SupportChat, cancellationToken);
+
+        await agentService.InitChatAgent(new() { request.DocType }, modelName: resolvedModel.Identifier);
 
         var query = new CopilotMessageRequest
         {
@@ -81,6 +85,7 @@ public class SendChatCommandHandler(
                     result.TokenUsage.CachedInputTokenCount,
                     result.TokenUsage.OutputTokenCount),
                 UsageFeature.SupportChat,
+                resolvedModel.AiModelId,
                 cancellationToken);
 
             var usageRecord = new UsageRecord
@@ -88,7 +93,7 @@ public class SendChatCommandHandler(
                 Id = Guid.NewGuid(),
                 CustomerId = customerId,
                 Feature = UsageFeature.SupportChat,
-                Model = string.Empty,
+                Model = resolvedModel.Identifier,
                 InputTokens = (int)Math.Min(int.MaxValue, result.TokenUsage.InputTokenCount),
                 CachedTokens = (int)Math.Min(int.MaxValue, result.TokenUsage.CachedInputTokenCount),
                 OutputTokens = (int)Math.Min(int.MaxValue, result.TokenUsage.OutputTokenCount),

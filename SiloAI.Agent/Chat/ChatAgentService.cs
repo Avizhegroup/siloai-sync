@@ -21,6 +21,14 @@ public class ChatAgentService(
 {
     private AIAgent writer;
 
+    /// <summary>
+    /// Identifier of the model actually in use for the current <see cref="writer"/> agent, set by
+    /// <see cref="InitChatAgentWithInstructions"/>. Used by <see cref="AiCostCalculator"/> so the
+    /// legacy informational PriceUsage figure prices the model that was really called, instead of
+    /// a fixed config value.
+    /// </summary>
+    private string? activeModelIdentifier;
+
     public async Task InitChatAgent(List<RagDocType>? promptKeys = null, string? modelName = null)
     {
         var instructions = await LoadInstructionsAsync(promptKeys);
@@ -31,6 +39,12 @@ public class ChatAgentService(
     /// <summary>
     /// Builds (or reuses a cached) underlying agent.
     /// </summary>
+    /// <param name="modelName">
+    /// The exact model identifier to call (e.g. "openai/gpt-4.1-mini"), resolved by the caller
+    /// via <c>IAiModelResolver</c> for the relevant customer + feature. Required — there is no
+    /// config-based default any more, since which model to use is now a per-customer/per-feature
+    /// database decision, not a single global setting.
+    /// </param>
     /// <param name="includeAutoRagContext">
     /// When true (default), the agent automatically retrieves and injects RAG context before
     /// every model call via <see cref="RagContextProviderFactory"/>. Set this to false when the
@@ -47,7 +61,12 @@ public class ChatAgentService(
         RagDocType? ragDocType = null,
         string? ragKey = null)
     {
-        var model = modelName ?? options.Value.MainModel;
+        var model = modelName
+            ?? throw new InvalidOperationException(
+                "InitChatAgentWithInstructions requires an explicit modelName resolved via " +
+                "IAiModelResolver — there is no config-based default model any more.");
+
+        activeModelIdentifier = model;
 
         var cacheKey = ChatAgentCache.BuildKey(
             model, instructions, includeAutoRagContext, ragDocType, ragKey);
@@ -84,7 +103,8 @@ public class ChatAgentService(
         };
     }
 
-    public async Task<ChatAgentResponse> SendWithAgentSessionAsync(string? sessionJson,CopilotMessageRequest query)
+    public async Task<ChatAgentResponse> SendWithAgentSessionAsync(
+        string? sessionJson, CopilotMessageRequest query, CancellationToken cancellationToken = default)
     {
         AgentSession session;
 
@@ -111,7 +131,7 @@ public class ChatAgentService(
             TotalTokenCount = result?.Usage?.TotalTokenCount ?? 0
         };
 
-        var priceUsage = costCalculator.Calculate(tokenUsage);
+        var priceUsage = await costCalculator.CalculateAsync(tokenUsage, activeModelIdentifier, cancellationToken);
 
         var serializedElement = await writer.SerializeSessionAsync(session);
 

@@ -15,6 +15,8 @@ public class AiApiContext(DbContextOptions<AiApiContext> options) : DbContext(op
     public DbSet<UsageRecord> UsageRecords { get; set; }
     public DbSet<PricingSetting> PricingSettings { get; set; }
     public DbSet<FxRateSetting> FxRateSettings { get; set; }
+    public DbSet<AiModel> AiModels { get; set; }
+    public DbSet<CustomerModelAssignment> CustomerModelAssignments { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -116,6 +118,56 @@ public class AiApiContext(DbContextOptions<AiApiContext> options) : DbContext(op
             b.HasKey(x => x.Id);
             b.HasIndex(x => x.EffectiveFrom)
                 .HasDatabaseName("IX_tbl_FxRateSettings_fld_EffectiveFrom");
+        });
+
+        modelBuilder.Entity<AiModel>(b =>
+        {
+            b.HasKey(x => x.Id);
+
+            b.Property(x => x.InputPricePerMillionTokens).HasColumnType("decimal(18,8)");
+            b.Property(x => x.OutputPricePerMillionTokens).HasColumnType("decimal(18,8)");
+            b.Property(x => x.CachedInputPricePerMillionTokens).HasColumnType("decimal(18,8)");
+
+            b.HasIndex(x => x.Identifier)
+                .IsUnique()
+                .HasDatabaseName("UX_tbl_AiModels_fld_Identifier");
+
+            // Only one Rag-kind model may be the active embedding model at a time — it is
+            // shared infrastructure (every chunk in the knowledge base is embedded with it),
+            // not a per-customer or per-call choice.
+            b.HasIndex(x => x.IsDefaultRagModel)
+                .IsUnique()
+                .HasDatabaseName("UX_tbl_AiModels_fld_IsDefaultRagModel")
+                .HasFilter("[fld_IsDefaultRagModel] = 1");
+        });
+
+        modelBuilder.Entity<CustomerModelAssignment>(b =>
+        {
+            b.HasKey(x => x.Id);
+
+            b.HasOne(x => x.Customer)
+                .WithMany()
+                .HasForeignKey(x => x.CustomerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            b.HasOne(x => x.AiModel)
+                .WithMany(m => m.Assignments)
+                .HasForeignKey(x => x.AiModelId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // One override per (customer, feature)...
+            b.HasIndex(x => new { x.CustomerId, x.Feature })
+                .IsUnique()
+                .HasDatabaseName("UX_tbl_CustomerModelAssignments_fld_CustomerId_fld_Feature")
+                .HasFilter("[fld_CustomerId] IS NOT NULL");
+
+            // ...and at most one global default (CustomerId IS NULL) per feature. SQL Server
+            // treats every NULL as distinct in a normal unique index, so this needs its own
+            // filtered index rather than being covered by the one above.
+            b.HasIndex(x => x.Feature)
+                .IsUnique()
+                .HasDatabaseName("UX_tbl_CustomerModelAssignments_fld_Feature_Default")
+                .HasFilter("[fld_CustomerId] IS NULL");
         });
     }
 }

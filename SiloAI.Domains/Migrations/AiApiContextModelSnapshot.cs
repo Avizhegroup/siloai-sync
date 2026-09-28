@@ -195,6 +195,107 @@ namespace SiloAI.Domains.Migrations
                     b.ToTable("tbl_AiConversations");
                 });
 
+            modelBuilder.Entity("SiloAI.Domains.AiModel", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("fld_Id");
+
+                    b.Property<decimal>("CachedInputPricePerMillionTokens")
+                        .HasColumnType("decimal(18,8)")
+                        .HasColumnName("fld_CachedInputPricePerMillionTokens");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fld_CreatedAt");
+
+                    b.Property<int?>("EmbeddingDimensions")
+                        .HasColumnType("int")
+                        .HasColumnName("fld_EmbeddingDimensions");
+
+                    b.Property<string>("Identifier")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)")
+                        .HasColumnName("fld_Identifier");
+
+                    b.Property<decimal>("InputPricePerMillionTokens")
+                        .HasColumnType("decimal(18,8)")
+                        .HasColumnName("fld_InputPricePerMillionTokens");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit")
+                        .HasColumnName("fld_IsActive");
+
+                    b.Property<bool>("IsDefaultRagModel")
+                        .HasColumnType("bit")
+                        .HasColumnName("fld_IsDefaultRagModel");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int")
+                        .HasColumnName("fld_Kind");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("fld_Name");
+
+                    b.Property<decimal>("OutputPricePerMillionTokens")
+                        .HasColumnType("decimal(18,8)")
+                        .HasColumnName("fld_OutputPricePerMillionTokens");
+
+                    b.Property<bool>("SupportsFileInput")
+                        .HasColumnType("bit")
+                        .HasColumnName("fld_SupportsFileInput");
+
+                    b.Property<bool>("SupportsFileOutput")
+                        .HasColumnType("bit")
+                        .HasColumnName("fld_SupportsFileOutput");
+
+                    b.Property<bool>("SupportsImageInput")
+                        .HasColumnType("bit")
+                        .HasColumnName("fld_SupportsImageInput");
+
+                    b.Property<bool>("SupportsImageOutput")
+                        .HasColumnType("bit")
+                        .HasColumnName("fld_SupportsImageOutput");
+
+                    b.Property<bool>("SupportsTextInput")
+                        .HasColumnType("bit")
+                        .HasColumnName("fld_SupportsTextInput");
+
+                    b.Property<bool>("SupportsTextOutput")
+                        .HasColumnType("bit")
+                        .HasColumnName("fld_SupportsTextOutput");
+
+                    b.Property<bool>("SupportsVoiceInput")
+                        .HasColumnType("bit")
+                        .HasColumnName("fld_SupportsVoiceInput");
+
+                    b.Property<bool>("SupportsVoiceOutput")
+                        .HasColumnType("bit")
+                        .HasColumnName("fld_SupportsVoiceOutput");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fld_UpdatedAt");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Identifier")
+                        .IsUnique()
+                        .HasDatabaseName("UX_tbl_AiModels_fld_Identifier");
+
+                    b.HasIndex("IsDefaultRagModel")
+                        .IsUnique()
+                        .HasDatabaseName("UX_tbl_AiModels_fld_IsDefaultRagModel")
+                        .HasFilter("[fld_IsDefaultRagModel] = 1");
+
+                    b.ToTable("tbl_AiModels");
+                });
+
             modelBuilder.Entity("SiloAI.Domains.Customer", b =>
                 {
                     b.Property<int>("Id")
@@ -221,6 +322,51 @@ namespace SiloAI.Domains.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("tbl_AiCustomers");
+                });
+
+            modelBuilder.Entity("SiloAI.Domains.CustomerModelAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("fld_Id");
+
+                    b.Property<Guid>("AiModelId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("fld_AiModelId");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fld_CreatedAt");
+
+                    b.Property<int?>("CustomerId")
+                        .HasColumnType("int")
+                        .HasColumnName("fld_CustomerId");
+
+                    b.Property<int>("Feature")
+                        .HasColumnType("int")
+                        .HasColumnName("fld_Feature");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("fld_UpdatedAt");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AiModelId")
+                        .HasDatabaseName("IX_tbl_CustomerModelAssignments_fld_AiModelId");
+
+                    b.HasIndex("CustomerId", "Feature")
+                        .IsUnique()
+                        .HasDatabaseName("UX_tbl_CustomerModelAssignments_fld_CustomerId_fld_Feature")
+                        .HasFilter("[fld_CustomerId] IS NOT NULL");
+
+                    b.HasIndex("Feature")
+                        .IsUnique()
+                        .HasDatabaseName("UX_tbl_CustomerModelAssignments_fld_Feature_Default")
+                        .HasFilter("[fld_CustomerId] IS NULL");
+
+                    b.ToTable("tbl_CustomerModelAssignments");
                 });
 
             modelBuilder.Entity("SiloAI.Domains.FxRateSetting", b =>
@@ -722,6 +868,24 @@ namespace SiloAI.Domains.Migrations
                     b.Navigation("Customer");
                 });
 
+            modelBuilder.Entity("SiloAI.Domains.CustomerModelAssignment", b =>
+                {
+                    b.HasOne("SiloAI.Domains.Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("SiloAI.Domains.AiModel", "AiModel")
+                        .WithMany("Assignments")
+                        .HasForeignKey("AiModelId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("AiModel");
+                });
+
             modelBuilder.Entity("SiloAI.Domains.Customer", b =>
                 {
                     b.Navigation("AiApiKeys");
@@ -729,6 +893,11 @@ namespace SiloAI.Domains.Migrations
                     b.Navigation("LedgerAccount");
 
                     b.Navigation("UsageRecords");
+                });
+
+            modelBuilder.Entity("SiloAI.Domains.AiModel", b =>
+                {
+                    b.Navigation("Assignments");
                 });
 
             modelBuilder.Entity("SiloAI.Domains.LedgerAccount", b =>
