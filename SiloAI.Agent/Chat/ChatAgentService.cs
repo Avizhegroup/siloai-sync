@@ -122,7 +122,12 @@ public class ChatAgentService(
             session = await writer.CreateSessionAsync();
         }
 
-        var result = await writer.RunAsync(query.Text, session);
+        var messages = new List<ChatMessage>
+        {
+            new(ChatRole.User, query.Text)
+        };
+
+        var result = await writer.RunAsync(messages, session);
 
         string responseText = result?.ToString();
 
