@@ -23,7 +23,7 @@ public class RagChatNewSessionCommandHandler(
         var resolvedModel = await modelResolver.ResolveAsync(request.CustomerId, UsageFeature.SupportChat, cancellationToken);
 
         agentService.InitChatAgentWithInstructions(
-            agentInstructions, resolvedModel.Identifier, includeAutoRagContext: false);
+            agentInstructions, resolvedModel, includeAutoRagContext: false);
 
         var session = await agentService.CreateNewSessionAsync();
 

@@ -1,5 +1,6 @@
 ﻿using SiloAI.Agent.Chat;
 using SiloAI.Agent.Rag;
+using SiloAI.Agent.Tasks;
 using SiloAI.Api.Auth;
 using SiloAI.Application.Api;
 using SiloAI.Identity.Server;
@@ -24,6 +25,8 @@ public static partial class Program
                 _ => { });
 
         services.AddScoped<ChatAgentService>();
+
+        services.AddScoped<AgentFileTaskService>();
 
         services.AddSingleton<ChatAgentCache>();
 

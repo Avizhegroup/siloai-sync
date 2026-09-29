@@ -1,10 +1,10 @@
-using SiloAI.Agent.Chat;
+using SiloAI.Agent.Tasks;
 using SiloAI.Application.Shared.Contracts.AiModels;
 
 namespace SiloAI.Application.Api.Features;
 
 public class OcrCommandHandler(
-    ChatAgentService agentService,
+    AgentFileTaskService agentFileTaskService,
     AiApiContext dbContext,
     IPricingEngine pricingEngine,
     ICreditLedgerService ledgerService,
@@ -17,17 +17,18 @@ public class OcrCommandHandler(
 
         var resolvedModel = await modelResolver.ResolveAsync(request.CustomerId, UsageFeature.Ocr, cancellationToken);
 
-        await agentService.InitChatAgent(modelName: resolvedModel.Identifier);
-
-        // NOTE (still open, not part of this change): SendImageAndGetTextAsync only returns the
+        // NOTE (still open, not part of this change): ExtractTextFromFileAsync only returns the
         // extracted text, not token usage, so the charge below is always priced as (0, 0, 0)
         // input/output/cached — i.e. always the feature's floor charge, never the real usage
         // cost. And the idempotency key is a fresh GUID generated on every call, so a client
         // retry after a timeout is NOT protected against double-charging the way ragchat/chat
         // turns are. Both were flagged previously and are unrelated to AI model management.
-        var extractedText = await agentService.SendImageAndGetTextAsync(request.ImageData
+        var extractedText = await agentFileTaskService.ExtractTextFromFileAsync(
+            request.ImageData
             , request.MediaType
-            , request.DocType);
+            , resolvedModel
+            , request.DocType
+            , cancellationToken);
 
         if (request.CustomerId.HasValue)
         {
