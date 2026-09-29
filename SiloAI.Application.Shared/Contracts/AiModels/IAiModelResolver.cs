@@ -17,12 +17,21 @@ public interface IAiModelResolver
     Task<ResolvedAiModel> GetDefaultRagModelAsync(CancellationToken cancellationToken);
 }
 
-/// <summary>Just what a caller needs to make the API call and price it — not the full entity.</summary>
+/// <summary>Just what a caller needs to make the API call, price it, and validate it supports the
+/// input/output modality it's about to be used for — not the full entity.</summary>
 public record ResolvedAiModel(
     Guid AiModelId,
     string Identifier,
     AiModelKind Kind,
     int? EmbeddingDimensions,
+    bool SupportsTextInput,
+    bool SupportsTextOutput,
+    bool SupportsImageInput,
+    bool SupportsImageOutput,
+    bool SupportsFileInput,
+    bool SupportsFileOutput,
+    bool SupportsVoiceInput,
+    bool SupportsVoiceOutput,
     decimal InputPricePerMillionTokens,
     decimal OutputPricePerMillionTokens,
     decimal CachedInputPricePerMillionTokens);

@@ -1,14 +1,16 @@
-﻿using Microsoft.Agents.AI;
+﻿using System.ClientModel;
+using System.Text.Json;
+using DocumentFormat.OpenXml.Wordprocessing;
+using Microsoft.Agents.AI;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
 using OpenAI;
 using OpenAI.Chat;
 using SiloAI.Agent.Rag;
+using SiloAI.Application.Shared.Contracts.AiModels;
 using SiloAI.Application.Shared.Features;
 using SiloAI.Domains;
-using System.ClientModel;
-using System.Text.Json;
 using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 namespace SiloAI.Agent.Chat;
@@ -29,21 +31,21 @@ public class ChatAgentService(
     /// </summary>
     private string? activeModelIdentifier;
 
-    public async Task InitChatAgent(List<RagDocType>? promptKeys = null, string? modelName = null)
+    public async Task InitChatAgent(ResolvedAiModel model, List<RagDocType>? promptKeys = null)
     {
         var instructions = await LoadInstructionsAsync(promptKeys);
 
-        InitChatAgentWithInstructions(instructions, modelName);
+        InitChatAgentWithInstructions(instructions, model);
     }
 
     /// <summary>
     /// Builds (or reuses a cached) underlying agent.
     /// </summary>
-    /// <param name="modelName">
-    /// The exact model identifier to call (e.g. "openai/gpt-4.1-mini"), resolved by the caller
-    /// via <c>IAiModelResolver</c> for the relevant customer + feature. Required — there is no
-    /// config-based default any more, since which model to use is now a per-customer/per-feature
-    /// database decision, not a single global setting.
+    /// <param name="model">
+    /// The model to call, resolved by the caller via <c>IAiModelResolver</c> for the relevant
+    /// customer + feature. ChatAgentService is chat-only: the model must support plain text
+    /// input and text output. Use <c>SiloAI.Agent.Tasks.AgentFileTaskService</c> instead for
+    /// file-input tasks (OCR, document extraction, etc.).
     /// </param>
     /// <param name="includeAutoRagContext">
     /// When true (default), the agent automatically retrieves and injects RAG context before
@@ -56,24 +58,25 @@ public class ChatAgentService(
     /// <param name="ragKey">Key filter passed through to the auto context provider, if enabled.</param>
     public void InitChatAgentWithInstructions(
         string instructions,
-        string? modelName = null,
+        ResolvedAiModel model,
         bool includeAutoRagContext = true,
         RagDocType? ragDocType = null,
         string? ragKey = null)
     {
-        var model = modelName
-            ?? throw new InvalidOperationException(
-                "InitChatAgentWithInstructions requires an explicit modelName resolved via " +
-                "IAiModelResolver — there is no config-based default model any more.");
+        if (!model.SupportsTextInput || !model.SupportsTextOutput)
+            throw new InvalidOperationException(
+                $"Model '{model.Identifier}' does not support text input/output and cannot be " +
+                "used with ChatAgentService. Use SiloAI.Agent.Tasks.AgentFileTaskService for " +
+                "file-input tasks instead.");
 
-        activeModelIdentifier = model;
+        activeModelIdentifier = model.Identifier;
 
         var cacheKey = ChatAgentCache.BuildKey(
-            model, instructions, includeAutoRagContext, ragDocType, ragKey);
+            model.Identifier, instructions, includeAutoRagContext, ragDocType, ragKey);
 
         writer = agentCache.GetOrCreate(cacheKey, () =>
         {
-            var chatClient = new ChatClient(model,
+            var chatClient = new ChatClient(model.Identifier,
                 new ApiKeyCredential(options.Value.ApiKey),
                 new OpenAIClientOptions { Endpoint = new Uri(options.Value.Endpoint) })
                 .AsIChatClient();
@@ -158,54 +161,6 @@ public class ChatAgentService(
     {
         var serializedElement = await writer.SerializeSessionAsync(session);
         return serializedElement.GetRawText();
-    }
-
-    public async Task<string> SendImageAndGetTextAsync(byte[] imageData
-        , string imageMediaType
-        , RagDocType promptKey)
-    {
-        if (imageData is null || imageData.Length == 0)
-        {
-            throw new ArgumentException("Image data cannot be null or empty.", nameof(imageData));
-        }
-
-        DataContent? imageContent = new(imageData, imageMediaType);
-
-        List<AIContent>? contents = new()
-        {
-            imageContent
-        };
-
-        string prompt = await LoadInstructionsAsync(new()
-        {
-            promptKey
-        });
-
-        contents.Insert(0, new TextContent(prompt));
-
-        var message = new ChatMessage(ChatRole.User, contents);
-
-        var response = await writer.RunAsync([message]);
-
-        return response?.ToString() ?? string.Empty;
-    }
-
-    public async Task<string> SendImageAndGetTextAsync(Stream imageStream
-        , string imageMediaType
-        , RagDocType promptKey)
-    {
-        if (imageStream is null)
-        {
-            throw new ArgumentNullException(nameof(imageStream));
-        }
-
-        using var memoryStream = new MemoryStream();
-
-        await imageStream.CopyToAsync(memoryStream);
-
-        var imageData = memoryStream.ToArray();
-
-        return await SendImageAndGetTextAsync(imageData, imageMediaType, promptKey);
     }
 
     private async Task<string> LoadInstructionsAsync(List<RagDocType>? promptKeys = null)
