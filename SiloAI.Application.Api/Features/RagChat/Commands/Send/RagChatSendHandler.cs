@@ -86,7 +86,7 @@ public class RagChatSendHandler(
 
         var result = await agentService.SendWithAgentSessionAsync(existingSessionJson, query);
 
-        var now = DateTime.UtcNow;
+        var now = DateTime.Now;
 
         if (chatSession is null)
         {

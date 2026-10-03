@@ -1,4 +1,4 @@
-namespace SiloAI.Application.Api.Features;
+﻿namespace SiloAI.Application.Api.Features;
 
 public class SetModelAssignmentCommandHandler(AiApiContext context) : IRequestHandler<SetModelAssignmentCommand, ModelAssignmentDto>
 {
@@ -22,7 +22,7 @@ public class SetModelAssignmentCommandHandler(AiApiContext context) : IRequestHa
         var existing = await context.CustomerModelAssignments
             .FirstOrDefaultAsync(a => a.CustomerId == input.CustomerId && a.Feature == input.Feature, cancellationToken);
 
-        var now = DateTime.UtcNow;
+        var now = DateTime.Now;
 
         if (existing is null)
         {

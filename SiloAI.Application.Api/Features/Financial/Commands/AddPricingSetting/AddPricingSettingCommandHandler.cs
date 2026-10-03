@@ -1,4 +1,4 @@
-namespace SiloAI.Application.Api.Features;
+﻿namespace SiloAI.Application.Api.Features;
 
 /// <summary>
 /// Pricing settings are historical: a change inserts a new row with its own
@@ -16,7 +16,7 @@ public class AddPricingSettingCommandHandler(AiApiContext context)
             Multiplier = request.Multiplier,
             FloorToman = request.FloorToman,
             FloorUsd = request.FloorUsd,
-            EffectiveFrom = request.EffectiveFrom ?? DateTime.UtcNow
+            EffectiveFrom = request.EffectiveFrom ?? DateTime.Now
         };
 
         context.PricingSettings.Add(setting);

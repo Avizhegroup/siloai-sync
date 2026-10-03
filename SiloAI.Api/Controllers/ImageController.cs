@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using SiloAI.Agent.Rag;
@@ -13,7 +13,10 @@ namespace SiloAI.Api.Controllers;
 public class ImageController(IMediator mediator) : ControllerBase
 {
     [HttpPost("ocr")]
-    public async Task<IActionResult> Ocr([FromForm] IFormFile imageData, [FromForm] string mediaType, [FromForm] RagDocType docType)
+    public async Task<IActionResult> Ocr([FromForm] IFormFile imageData
+        , [FromForm] string mediaType
+        , [FromForm] RagDocType docType
+        , [FromForm] string key)
     {
         if (imageData is null || imageData.Length == 0)
             return BadRequest("Image data is required.");
@@ -28,7 +31,8 @@ public class ImageController(IMediator mediator) : ControllerBase
                 ImageData = ms.ToArray(),
                 MediaType = mediaType,
                 DocType = docType,
-                CustomerId = GetCustomerId()
+                CustomerId = GetCustomerId(),
+                Key = key
             });
             return Ok(result);
         }
