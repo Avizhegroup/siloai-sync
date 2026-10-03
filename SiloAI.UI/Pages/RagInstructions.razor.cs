@@ -1,4 +1,8 @@
-using Microsoft.AspNetCore.Components.Forms;
+﻿using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.Components.Web;
+using SiloAI.UI.Components;
+using Telerik.Blazor;
+using static Telerik.Blazor.ThemeConstants;
 
 namespace SiloAI.UI.Pages;
 public partial class RagInstructions
@@ -9,9 +13,37 @@ public partial class RagInstructions
     public List<RagInstructionDto>? Instructions;
     public RagInstructionDto Request;
     public const long MaxUploadSize = 5 * 1024 * 1024;
+    private List<DocTypeItem> DocTypes { get; } =
+[
+    new()
+    {
+        Code = RagDocType.GeneralChat,
+        Title = "گفتگوی عمومی"
+    },
+    new()
+    {
+        Code = RagDocType.Report,
+        Title = "گزارش"
+    },
+    new()
+    {
+        Code = RagDocType.Image,
+        Title = "تصویر"
+    },
+    new()
+    {
+        Code = RagDocType.PageAgent,
+        Title = "عامل صفحه محور"
+    }
+];
 
     [Inject] public AiApiClient ApiClient { get; set; }
+
     [CascadingParameter] public TelerikNotification Notification { get; set; }
+    [CascadingParameter] public DialogFactory Dialog { get; set; }
+
+
+    private Modal? ModalInstructions;
 
     protected override async Task OnInitializedAsync()
     {
@@ -51,7 +83,7 @@ public partial class RagInstructions
         }
     }
 
-    private void StartEdit(RagInstructionDto instruction)
+    private async Task StartEdit(RagInstructionDto instruction)
     {
         EditingId = instruction.Id;
 
@@ -68,6 +100,11 @@ public partial class RagInstructions
             CreateDateTime = instruction.CreateDateTime,
             LastUpdateDateTime = instruction.LastUpdateDateTime
         };
+
+        if (ModalInstructions is not null)
+        {
+            await ModalInstructions.Close(new MouseEventArgs());
+        }
     }
 
     private void ResetForm()
@@ -132,25 +169,30 @@ public partial class RagInstructions
 
     private async Task DeleteAsync(Guid id)
     {
-        IsSaving = true;
-        try
+        var dialogResult = await Dialog.ConfirmAsync(
+       "آیا از حذف این فایل اطمینان دارید؟",
+       "توجه",
+        "حذف",
+       "انصراف");
+
+        if (!dialogResult)
         {
-            var response = await ApiClient.DeleteAsync($"api/rag/instructions/{id}");
+            return;
+        }
+
+        IsSaving = true;
+
+
+           var response = await ApiClient.DeleteAsync($"api/rag/instructions/{id}");
             response.EnsureSuccessStatusCode();
 
             if (EditingId == id)
                 ResetForm();
 
             await LoadInstructionsAsync();
-        }
-        catch (Exception ex)
-        {
-            Notification.Show($"خطا در حذف: {ex.Message}", "error");
-        }
-        finally
-        {
+      
             IsSaving = false;
-        }
+        
     }
 
     private RagInstructionDto NewModel()
@@ -164,4 +206,14 @@ public partial class RagInstructions
         IsSystematic = false,
         IsActive = true
     };
+
+    private async Task OpenInstructionsModal()
+    {
+        await LoadInstructionsAsync();
+
+        if (ModalInstructions is not null)
+        {
+            await ModalInstructions.Open(new MouseEventArgs());
+        }
+    }
 }

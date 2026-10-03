@@ -2845,3 +2845,12 @@ code {
   background-color: var(--silo-accent-hover);
   border-color: var(--silo-accent-hover);
 }
+
+.grid-center td,
+.grid-center th {
+  text-align: center;
+}
+
+.grid-center th .k-cell-inner > .k-link {
+  justify-content: center;
+}
