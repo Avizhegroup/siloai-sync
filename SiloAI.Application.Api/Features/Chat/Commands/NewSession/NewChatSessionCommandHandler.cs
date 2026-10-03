@@ -17,7 +17,7 @@ public class NewChatSessionCommandHandler(
 
         var resolvedModel = await modelResolver.ResolveAsync(request.CustomerId, UsageFeature.SupportChat, cancellationToken);
 
-        await agentService.InitChatAgent(new() { request.DocType }, modelName: resolvedModel.Identifier);
+        await agentService.InitChatAgent(resolvedModel, new() { request.DocType });
 
         var session = await agentService.CreateNewSessionAsync();
         var sessionJson = await agentService.SerializeSessionAsync(session);

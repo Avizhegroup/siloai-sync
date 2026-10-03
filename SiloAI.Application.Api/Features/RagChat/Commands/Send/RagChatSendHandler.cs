@@ -57,7 +57,7 @@ public class RagChatSendHandler(
         // disabled here to avoid a second, unfiltered retrieval pass (extra embedding call,
         // extra DB round-trips, and duplicate chunk content being sent to the model).
         agentService.InitChatAgentWithInstructions(
-            agentInstructions, resolvedModel.Identifier, includeAutoRagContext: false);
+            agentInstructions, resolvedModel, includeAutoRagContext: false);
 
         var topK = request.TopK <= 0 ? 5 : Math.Clamp(request.TopK, 1, 20);
      
