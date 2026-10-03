@@ -42,6 +42,12 @@ public class InvalidContentCheckMiddleware
 
         var path = context.Request.Path.Value;
 
+        if (path?.StartsWith("/api/rag/documents", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            await next(context);
+            return;
+        }
+
         if (ContainsSqlInjection(requestContent))
         {
             logger.LogWarning("Possible SQL injection attempt detected: {RequestContent}", requestContent);

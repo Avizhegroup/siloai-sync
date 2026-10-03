@@ -1,7 +1,7 @@
-﻿# Inventory Reconciliation Discrepancy Report Instructions
+﻿# Silo AI Knowledge(Rag) - Inventory Reconciliation Discrepancy Report
 
 ## System Navigation Path
-گزارش مغایرت‌های انبارگردانی ➔ انبارگردانی ➔ عملیات‌های انبار ➔ منو
+گزارش مغایرت‌های انبارگردانی ➔ انبارگردانی ➔ گزارشات انبار ➔ منو
 
 ## Purpose
 This report is designed to display and analyze inventory discrepancies based on:
@@ -165,17 +165,18 @@ At the bottom of the report, a summary is displayed in both table and chart form
 - کل مغایرت های شمارش فیزیکی
 This section provides a managerial overview of the overall inventory counting status.
 
-## Terminology Rules 
+## Terminology Rules
+
 - The term Handheld is a device name and must not be translated as “manual” or “دستی”.
 - In Persian responses, the device must be referred to as:
 دستگاه هندهلد
 and never as:
-◦ دستگاه دستی
-◦ شمارش دستی
+  - دستگاه دستی
+  - شمارش دستی
 - انبارگردانی must always be described as counting performed using the Handheld device, not as شمارش دستی.
 
-
 ## Mandatory Concept Separation Rule
+
 - شمارش فیزیکی refers exclusively to the process performed using other Reader devices (non-handheld) and بارگذاری اکسل شمارش فیزیکی.
 - انبارگردانی refers exclusively to counting performed using the Handheld device.
 - انبارگردانی is not a subset of شمارش فیزیکی.
