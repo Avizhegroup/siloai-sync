@@ -106,7 +106,7 @@ allowing users to view and compare data across different categories within a sin
 - شیفت
 **Data Mining Elements**
 
-## Step 3:Search & Report Format Management
+## Step 3: Search & Report Format Management
 Running the report
 After selecting the required filters and columns:
 - Click the Search button

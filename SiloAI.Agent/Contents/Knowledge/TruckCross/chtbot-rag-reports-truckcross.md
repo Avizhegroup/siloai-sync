@@ -9,6 +9,21 @@ including driver information, vehicle details, and cargo information.
 To access this page, navigate through the following menu path:
 گزارش تردد → بخش حراست → منو
 
+
+## Context Isolation Rule
+The گزارش تردد page is completely independent from the Report Builder module.
+
+This page does NOT support:
+- Dynamic filter selection
+- Adding filters with a plus (+) button
+- Selecting columns (Data / Calculated / Pivot)
+- Preview mode
+- Saving report templates
+- Executing reports based on selected columns
+
+Traffic records, vehicle movements, driver visits, and entry/exit logs on this page are handled only through the fixed Search Filters available on the گزارش تردد page.
+
+
 ## Search Filters
 Users can generate the desired report by completing one or more of the following fields:
 - کد ملی
@@ -48,6 +63,7 @@ To search:
 3.The system immediately displays matching records in the results table.
 Filters are applied automatically based on the values entered.
 If only one field (for example License Plate) is filled, the system returns all records matching that value.
+The گزارش تردد page does not use the Report Builder module or an advanced report builder for searching traffic records.
 
 
 ## Results Table Structure
@@ -119,6 +135,7 @@ Used to print only that specific record.
 Clicking this icon redirects the user to ثبت تردد page. From there, the user can:
 - Edit the information of the selected record by updating fields and then clicking Save.
 - Delete the record by clicking the Delete button on ثبت تردد page.
-- 
+
+
 ## Print Entire Report
 A Print button is also available above the table, allowing users to print the complete list of displayed results.
