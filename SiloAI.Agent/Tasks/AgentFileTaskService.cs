@@ -29,12 +29,13 @@ public class AgentFileTaskService(
     /// The model to call, resolved by the caller via <c>IAiModelResolver</c>. Must support file
     /// input and text output.
     /// </param>
-    /// <param name="promptKey">DocType whose active RagInstructions become the task's system instructions.</param>
+    /// <param name="docType">DocType whose active RagInstructions become the task's system instructions.</param>
     public async Task<string> ExtractTextFromFileAsync(
         byte[] fileData,
         string fileMediaType,
         ResolvedAiModel model,
-        RagDocType promptKey,
+        RagDocType docType,
+        string key,
         CancellationToken cancellationToken = default)
     {
         if (fileData is null || fileData.Length == 0)
@@ -42,12 +43,12 @@ public class AgentFileTaskService(
             throw new ArgumentException("File data cannot be null or empty.", nameof(fileData));
         }
 
-        if (!model.SupportsFileInput || !model.SupportsTextOutput)
-            throw new InvalidOperationException(
-                $"Model '{model.Identifier}' does not support file input with text output and " +
-                "cannot be used with AgentFileTaskService.");
+        //if (!model.SupportsFileInput || !model.SupportsTextOutput)
+        //    throw new InvalidOperationException(
+        //        $"Model '{model.Identifier}' does not support file input with text output and " +
+        //        "cannot be used with AgentFileTaskService.");
 
-        var instructions = await LoadInstructionsAsync(promptKey, cancellationToken);
+        var instructions = await LoadInstructionsAsync(docType, key, cancellationToken);
 
         var agent = GetOrCreateAgent(model.Identifier, instructions);
 
@@ -60,27 +61,6 @@ public class AgentFileTaskService(
         var response = await agent.RunAsync(messages);
 
         return response?.ToString() ?? string.Empty;
-    }
-
-    public async Task<string> ExtractTextFromFileAsync(
-        Stream fileStream,
-        string fileMediaType,
-        ResolvedAiModel model,
-        RagDocType promptKey,
-        CancellationToken cancellationToken = default)
-    {
-        if (fileStream is null)
-        {
-            throw new ArgumentNullException(nameof(fileStream));
-        }
-
-        using var memoryStream = new MemoryStream();
-
-        await fileStream.CopyToAsync(memoryStream, cancellationToken);
-
-        var fileData = memoryStream.ToArray();
-
-        return await ExtractTextFromFileAsync(fileData, fileMediaType, model, promptKey, cancellationToken);
     }
 
     private AIAgent GetOrCreateAgent(string modelIdentifier, string instructions)
@@ -105,13 +85,15 @@ public class AgentFileTaskService(
         });
     }
 
-    private async Task<string> LoadInstructionsAsync(RagDocType promptKey, CancellationToken cancellationToken)
+    private async Task<string> LoadInstructionsAsync(RagDocType docType, string key, CancellationToken cancellationToken)
     {
-        var docTypeValue = (int)promptKey;
+        var docTypeValue = (int)docType;
 
         var cachedInstructions = await agentCache.GetOrCreateInstructionsAsync(docTypeValue, async () =>
             (IReadOnlyList<CachedRagInstruction>)await context.RagInstructions
-                .Where(p => p.DocType == docTypeValue && p.IsActive)
+                .Where(p => p.DocType == docTypeValue 
+                         && p.Key == key
+                         && p.IsActive)
                 .AsNoTracking()
                 .Select(p => new CachedRagInstruction(p.Content, p.IsSystematic, p.CreateDateTime))
                 .ToListAsync(cancellationToken));

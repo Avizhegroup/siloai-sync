@@ -30,6 +30,14 @@ internal sealed class RagDocumentChunkCollectionOptionsFactory(IEmbeddingService
                     {
                         StorageName = "fld_Content"
                     },
+                    new VectorStoreDataProperty(nameof(RagDocumentChunk.TokenCount), typeof(int))
+                    {
+                        StorageName = "fld_TokenCount"
+                    },
+                    new VectorStoreDataProperty(nameof(RagDocumentChunk.CreateDateTime), typeof(DateTime))
+                    {
+                        StorageName = "fld_CreateDateTime"
+                    },
                     new VectorStoreVectorProperty(nameof(RagDocumentChunk.Embedding), typeof(float[]), embeddings.Dimensions)
                     {
                         StorageName = "fld_Embedding",

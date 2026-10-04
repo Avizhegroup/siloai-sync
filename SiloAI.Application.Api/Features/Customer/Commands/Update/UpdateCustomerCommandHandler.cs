@@ -1,4 +1,4 @@
-namespace SiloAI.Application.Api.Features;
+﻿namespace SiloAI.Application.Api.Features;
 
 public class UpdateCustomerCommandHandler(AiApiContext context) : IRequestHandler<UpdateCustomerCommand, CustomerDto?>
 {
@@ -19,7 +19,7 @@ public class UpdateCustomerCommandHandler(AiApiContext context) : IRequestHandle
         // account balance never diverges silently from the legacy credit column.
         if (newCreditUsd != oldCreditUsd)
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
 
             var fxRate = await context.FxRateSettings
                 .AsNoTracking()

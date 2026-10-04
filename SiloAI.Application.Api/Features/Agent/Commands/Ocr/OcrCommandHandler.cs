@@ -1,4 +1,4 @@
-using SiloAI.Agent.Tasks;
+﻿using SiloAI.Agent.Tasks;
 using SiloAI.Application.Shared.Contracts.AiModels;
 
 namespace SiloAI.Application.Api.Features;
@@ -12,8 +12,8 @@ public class OcrCommandHandler(
 {
     public async Task<OcrResponse> Handle(OcrCommand request, CancellationToken cancellationToken)
     {
-        if (!await HasCreditAsync(request.CustomerId, cancellationToken))
-            throw new InsufficientCreditException();
+        //if (!await HasCreditAsync(request.CustomerId, cancellationToken))
+        //    throw new InsufficientCreditException();
 
         var resolvedModel = await modelResolver.ResolveAsync(request.CustomerId, UsageFeature.Ocr, cancellationToken);
 
@@ -28,6 +28,7 @@ public class OcrCommandHandler(
             , request.MediaType
             , resolvedModel
             , request.DocType
+            , request.Key
             , cancellationToken);
 
         if (request.CustomerId.HasValue)
@@ -55,16 +56,16 @@ public class OcrCommandHandler(
                 FloorTomanUsed = charge.FloorTomanUsed,
                 ChargeToman = charge.ChargeToman,
                 ConversationId = null,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now
             };
 
-            var chargeOutcome = await ledgerService.ChargeAsync(
-                customerId, charge, usageRecord,
-                idempotencyKey: $"ocr:{Guid.NewGuid():N}",
-                cancellationToken);
+            //var chargeOutcome = await ledgerService.ChargeAsync(
+            //    customerId, charge, usageRecord,
+            //    idempotencyKey: $"ocr:{Guid.NewGuid():N}",
+            //    cancellationToken);
 
-            if (chargeOutcome == ChargeOutcome.InsufficientBalance)
-                throw new InsufficientCreditException();
+            //if (chargeOutcome == ChargeOutcome.InsufficientBalance)
+            //    throw new InsufficientCreditException();
         }
 
         return new OcrResponse { ExtractedText = extractedText };

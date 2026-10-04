@@ -25,15 +25,18 @@ public class RagDocumentChunk
     public string Content { get; set; }
 
     [Column("fld_TokenCount")]
+    [VectorStoreData(StorageName = "fld_TokenCount")]
     public int TokenCount { get; set; }
 
     [Column("fld_CreateDateTime")]
+    [VectorStoreData(StorageName = "fld_CreateDateTime")]
     public DateTime CreateDateTime { get; set; }
 
     /// <summary>
-    /// Stored in SQL Server 2025 as a native VECTOR(N) column. Excluded from EF model and
-    /// written via raw SQL by the indexing service;# read via Microsoft.Extensions.VectorData
-    /// by the search service.
+    /// Stored in SQL Server 2025 as a native VECTOR(N) column. Excluded from the EF model;
+    /// read and written exclusively through Microsoft.Extensions.VectorData
+    /// (VectorStoreCollection&lt;Guid, RagDocumentChunk&gt;) by both the indexing service and
+    /// the search service.
     /// </summary>
     [NotMapped]
     [VectorStoreVector(1536, StorageName = "fld_Embedding", DistanceFunction = DistanceFunction.CosineDistance)]

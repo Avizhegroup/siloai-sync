@@ -1,4 +1,4 @@
-namespace SiloAI.Application.Api.Features;
+﻿namespace SiloAI.Application.Api.Features;
 
 public class SetAiModelActiveCommandHandler(AiApiContext context) : IRequestHandler<SetAiModelActiveCommand, AiModelDto>
 {
@@ -25,7 +25,7 @@ public class SetAiModelActiveCommandHandler(AiApiContext context) : IRequestHand
         }
 
         model.IsActive = request.IsActive;
-        model.UpdatedAt = DateTime.UtcNow;
+        model.UpdatedAt = DateTime.Now;
 
         await context.SaveChangesAsync(cancellationToken);
 

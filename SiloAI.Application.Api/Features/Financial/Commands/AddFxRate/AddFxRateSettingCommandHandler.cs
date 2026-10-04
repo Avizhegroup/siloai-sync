@@ -1,4 +1,4 @@
-namespace SiloAI.Application.Api.Features;
+﻿namespace SiloAI.Application.Api.Features;
 
 /// <summary>
 /// Exchange rates are historical: a change inserts a new row with its own
@@ -13,7 +13,7 @@ public class AddFxRateSettingCommandHandler(AiApiContext context)
         {
             Id = Guid.NewGuid(),
             TomanPerUsd = request.TomanPerUsd,
-            EffectiveFrom = request.EffectiveFrom ?? DateTime.UtcNow
+            EffectiveFrom = request.EffectiveFrom ?? DateTime.Now
         };
 
         context.FxRateSettings.Add(setting);

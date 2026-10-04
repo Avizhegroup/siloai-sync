@@ -94,6 +94,16 @@ public class RagIndexingService(
             // Persist embeddings into the SQL Server 2025 VECTOR column via raw SQL. EF Core 9
             // does not model VECTOR yet, so we update one row at a time, casting a JSON-array
             // literal to VECTOR(N).
+            //
+            // Reverted from a VectorStoreCollection.UpsertAsync write (commit
+            // "Route chunk embedding persistence via vector store"): that path never threw, so
+            // indexing reported Completed with no ProcessingError, but RagSearchService's vector
+            // search started returning zero hits for everything indexed through it — the
+            // community SQL Server connector's write-side serialization of the VECTOR column
+            // could not be verified against a real SQL Server 2025 instance before shipping it,
+            // and in practice it did not round-trip correctly for reads. This raw-SQL cast is
+            // the form that is confirmed to work end-to-end (indexing -> search), so it stays
+            // until the write side of that package can be verified directly against the DB.
             var dimensions = embeddings.Dimensions;
             for (var i = 0; i < entities.Count; i++)
             {
