@@ -148,7 +148,15 @@ public class RagSearchService(
 
         if (docType.HasValue)
         {
-            query = query.Where(d => d.DocType == ((int)docType.Value).ToString());
+            // RagDocument.DocType is a string column storing the enum's *name*
+            // (see UploadRagDocumentCommandHandler: DocType = request.DocType.ToString()),
+            // not its ordinal value — comparing against ((int)docType.Value).ToString() here
+            // never matched anything, silently filtering every document out of every
+            // DocType-scoped search (which is what RagChatSendHandler always performs, since
+            // RagChatSendCommand.DocType is a non-nullable RagDocType with a default, so
+            // docType.HasValue is always true for chat).
+            var docTypeName = docType.Value.ToString();
+            query = query.Where(d => d.DocType == docTypeName);
         }
 
         if (!string.IsNullOrWhiteSpace(key))

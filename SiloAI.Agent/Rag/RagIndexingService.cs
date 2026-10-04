@@ -1,8 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.VectorData;
 using SiloAI.Application.Shared.Contracts.Rag;
 using SiloAI.Domains;
+using System.Globalization;
+using System.Text;
 
 namespace SiloAI.Agent.Rag;
 
@@ -11,7 +12,6 @@ public class RagIndexingService(
     ITextExtractionDispatcher extractor,
     ITextChunkingService chunker,
     IEmbeddingService embeddings,
-    VectorStoreCollection<Guid, RagDocumentChunk> chunkCollection,
     ILogger<RagIndexingService> logger) : IRagIndexingService
 {
     public async Task<RagIndexingResult> IndexAsync(Guid documentId, Stream content, string fileName, string contentType, CancellationToken cancellationToken)
@@ -78,26 +78,41 @@ public class RagIndexingService(
             }
 
             var now = DateTime.Now;
-            var entities = chunks.Select((c, i) => new RagDocumentChunk
+            var entities = chunks.Select(c => new RagDocumentChunk
             {
                 Id = Guid.NewGuid(),
                 DocumentId = document.Id,
                 ChunkIndex = c.Index,
                 Content = c.Content,
                 TokenCount = c.TokenCount,
-                CreateDateTime = now,
-                Embedding = vectors[i]
+                CreateDateTime = now
             }).ToList();
 
             context.RagDocumentChunks.AddRange(entities);
             await context.SaveChangesAsync(cancellationToken);
 
-            // Write the embeddings (and the rest of each row) through the same
-            // VectorStoreCollection abstraction RagSearchService already uses for reads,
-            // instead of raw SQL casting a JSON-array literal to VECTOR(N). EF Core still owns
-            // the non-vector columns above; this call is responsible only for getting
-            // fld_Embedding populated on the SQL Server 2025 native VECTOR column.
-            await chunkCollection.UpsertAsync(entities, cancellationToken);
+            // Persist embeddings into the SQL Server 2025 VECTOR column via raw SQL. EF Core 9
+            // does not model VECTOR yet, so we update one row at a time, casting a JSON-array
+            // literal to VECTOR(N).
+            //
+            // Reverted from a VectorStoreCollection.UpsertAsync write (commit
+            // "Route chunk embedding persistence via vector store"): that path never threw, so
+            // indexing reported Completed with no ProcessingError, but RagSearchService's vector
+            // search started returning zero hits for everything indexed through it — the
+            // community SQL Server connector's write-side serialization of the VECTOR column
+            // could not be verified against a real SQL Server 2025 instance before shipping it,
+            // and in practice it did not round-trip correctly for reads. This raw-SQL cast is
+            // the form that is confirmed to work end-to-end (indexing -> search), so it stays
+            // until the write side of that package can be verified directly against the DB.
+            var dimensions = embeddings.Dimensions;
+            for (var i = 0; i < entities.Count; i++)
+            {
+                var vectorLiteral = FormatVectorLiteral(vectors[i]);
+                await context.Database.ExecuteSqlRawAsync(
+                    "UPDATE [tbl_RagDocumentChunks] SET [fld_Embedding] = CAST({0} AS VECTOR(" + dimensions + ")) WHERE [fld_Id] = {1};",
+                    [vectorLiteral, entities[i].Id],
+                    cancellationToken);
+            }
 
             document.ProcessingStatus = RagProcessingStatus.Completed;
             document.ChunkCount = entities.Count;
@@ -121,6 +136,24 @@ public class RagIndexingService(
 
             return new RagIndexingResult(document.Id, document.ChunkCount, document.ProcessingStatus, ex.Message);
         }
+    }
+
+    /// <summary>
+    /// Formats a float vector as the JSON-array string SQL Server's <c>VECTOR</c> type
+    /// understands, e.g. <c>[0.123,-0.456,...]</c>. Uses invariant culture to guarantee
+    /// a dot decimal separator.
+    /// </summary>
+    public static string FormatVectorLiteral(float[] vector)
+    {
+        var sb = new StringBuilder(vector.Length * 12 + 2);
+        sb.Append('[');
+        for (var i = 0; i < vector.Length; i++)
+        {
+            if (i > 0) sb.Append(',');
+            sb.Append(vector[i].ToString("R", CultureInfo.InvariantCulture));
+        }
+        sb.Append(']');
+        return sb.ToString();
     }
 
     private static string Truncate(string value, int max) =>
