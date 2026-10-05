@@ -1,59 +1,70 @@
 @using Telerik.Blazor.Components
 @using SiloAI.UI.Components
 @inherits LayoutComponentBase
+@implements IDisposable
 @inject NavigationManager NavigationManager
 @inject IAiAuthenticationService AuthService
 
 <TelerikRootComponent EnableRtl="true">
     <CascadingValue Value="Notification">
         <div class="page">
-            <nav class="sidebar">
-                <div class="sidebar-brand">
-                    <h5><i class="bi bi-robot me-2"></i>سیلو</h5>
-                    <small>پنل مدیریت هوش مصنوعی</small>
-                </div>
+            <header class="top-bar">
                 <AuthorizeView>
                     <Authorized>
-                        <div class="sidebar-nav">
-                            <NavLink class="nav-item-ai" href="/" Match="NavLinkMatch.All">
-                                <i class="bi bi-house-door"></i> خانه
-                            </NavLink>
-                            <NavLink class="nav-item-ai" href="/customers">
-                                <i class="bi bi-people"></i> مشتریان
-                            </NavLink>
-                            <NavLink class="nav-item-ai" href="/financial">
-                                <i class="bi bi-wallet2"></i> امور مالی
-                            </NavLink>
-                            <NavLink class="nav-item-ai" href="/ai-models">
-                                <i class="bi bi-cpu"></i> مدل‌های هوش مصنوعی
-                            </NavLink>
-                            <NavLink class="nav-item-ai" href="/knowledge">
-                                <i class="bi bi-collection"></i> پایگاه دانش
-                            </NavLink>
-                            <NavLink class="nav-item-ai" href="/rag-instructions">
-                                <i class="bi bi-card-checklist"></i> دستورالعمل‌ها
-                            </NavLink>
-                            <NavLink class="nav-item-ai" href="/chat">
-                                <i class="bi bi-chat-dots"></i> گفتگو با اسناد
-                            </NavLink>
-                        </div>
-                        <div class="sidebar-footer">
+                        <button class="menu-toggle" @onclick="ToggleMenu" aria-label="منو">
+                            <i class="bi @(_menuOpen ? "bi-x-lg" : "bi-list")"></i>
+                        </button>
+                    </Authorized>
+                </AuthorizeView>
 
-                            <div class="d-flex align-items-center justify-content-between">
-                                <span><i class="bi bi-person-circle me-1"></i> @context.User.Identity?.Name</span>
-                                <button class="btn btn-sm btn-link text-danger p-0" @onclick="Logout">
-                                    <i class="bi bi-box-arrow-right"></i>
-                                </button>
-                            </div>
+                <div class="top-bar-brand">
+                    <i class="bi bi-robot me-2"></i>سیلو
+                    <small>پنل مدیریت هوش مصنوعی</small>
+                </div>
 
+                <AuthorizeView>
+                    <Authorized>
+                        <div class="top-bar-user">
+                            <span><i class="bi bi-person-circle me-1"></i> @context.User.Identity?.Name</span>
+                            <button class="btn btn-sm btn-link text-danger p-0" @onclick="Logout">
+                                <i class="bi bi-box-arrow-right"></i>
+                            </button>
                         </div>
                     </Authorized>
                 </AuthorizeView>
-            </nav>
+            </header>
+
+            <div class="menu-backdrop @(_menuOpen ? "show" : "")" @onclick="CloseMenu"></div>
+
+            <AuthorizeView>
+                <Authorized>
+                    <nav class="drawer @(_menuOpen ? "open" : "")">
+                        <NavLink class="nav-item-ai" href="/" Match="NavLinkMatch.All">
+                            <i class="bi bi-house-door"></i> خانه
+                        </NavLink>
+                        <NavLink class="nav-item-ai" href="/customers">
+                            <i class="bi bi-people"></i> مشتریان
+                        </NavLink>
+                        <NavLink class="nav-item-ai" href="/financial">
+                            <i class="bi bi-wallet2"></i> امور مالی
+                        </NavLink>
+                        <NavLink class="nav-item-ai" href="/ai-models">
+                            <i class="bi bi-cpu"></i> مدل‌های هوش مصنوعی
+                        </NavLink>
+                        <NavLink class="nav-item-ai" href="/knowledge">
+                            <i class="bi bi-collection"></i> پایگاه دانش
+                        </NavLink>
+                        <NavLink class="nav-item-ai" href="/rag-instructions">
+                            <i class="bi bi-card-checklist"></i> دستورالعمل‌ها
+                        </NavLink>
+                        <NavLink class="nav-item-ai" href="/chat">
+                            <i class="bi bi-chat-dots"></i> گفتگو با اسناد
+                        </NavLink>
+                    </nav>
+                </Authorized>
+            </AuthorizeView>
+
             <div class="main-content">
-                <div class="topbar">
-                    <span class="topbar-title">پنل مدیریت هوش مصنوعی سیلو</span>
-                </div>
                 <div class="page-body">
                     <main>
                         <article class="content">
@@ -72,13 +83,3 @@
         </TelerikNotification>
     </CascadingValue>
 </TelerikRootComponent>
-
-@code {
-    public TelerikNotification Notification { get; set; }
-
-    private async Task Logout()
-    {
-        await AuthService.Logout();
-        NavigationManager.NavigateTo("/account/login", forceLoad: true);
-    }
-}

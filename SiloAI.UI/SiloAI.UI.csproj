@@ -10,6 +10,7 @@
     <ItemGroup>
         <ProjectReference Include="..\SiloAI.Application.Shared\SiloAI.Application.Shared.csproj" />
         <ProjectReference Include="..\SiloAI.Identity.Client\SiloAI.Identity.Client.csproj" />
+        <ProjectReference Include="..\SiloAI.Shared\SiloAI.Shared.csproj" />
     </ItemGroup>
 
     <ItemGroup>

@@ -12,121 +12,161 @@ html, body {
     color: var(--silo-text);
 }
 
-// ---------------------------------------------------------------
-// Sidebar
-// ---------------------------------------------------------------
-.sidebar {
-    width: var(--sidebar-width);
+.page {
     min-height: 100vh;
-    background: var(--silo-surface);
-    color: var(--silo-text);
-    display: flex;
-    flex-direction: column;
-    position: fixed;
-    top: 0;
-    right: 0;
-    z-index: 100;
-    border-inline-start: 1px solid var(--silo-border);
-}
-
-.sidebar-brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 22px 20px 18px;
-}
-
-    // 3-bar "silo cross-section" brand mark — replaces the generic icon-font glyph.
-    .sidebar-brand::before {
-        content: '';
-        display: block;
-        flex: none;
-        width: 28px;
-        height: 28px;
-        background-image:
-            linear-gradient(var(--silo-ink), var(--silo-ink)),
-            linear-gradient(var(--silo-ink), var(--silo-ink)),
-            linear-gradient(var(--silo-ink), var(--silo-ink));
-        background-repeat: no-repeat;
-        background-position: top right, 6px 11px, 10px 22px;
-        background-size: 28px 5px, 20px 5px, 12px 5px;
-    }
-
-    .sidebar-brand h5 {
-        color: var(--silo-ink);
-        font-weight: 700;
-        margin: 0;
-        font-size: var(--fs-md);
-    }
-
-    .sidebar-brand small {
-        color: var(--silo-text-faint);
-        font-size: var(--fs-xs);
-    }
-
-.sidebar-nav {
-    padding: 8px 12px;
-    flex: 1;
-}
-
-.nav-item-ai {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 9px 12px;
-    margin-bottom: 2px;
-    color: var(--silo-text-muted);
-    text-decoration: none;
-    font-size: var(--fs-sm);
-    font-weight: 500;
-    border-radius: var(--radius-sm);
-    border-inline-start: 3px solid transparent;
-    transition: background .15s, color .15s;
-}
-
-    .nav-item-ai:hover {
-        background: var(--silo-bg);
-        color: var(--silo-text);
-        text-decoration: none;
-    }
-
-    .nav-item-ai.active {
-        background: var(--silo-accent-tint);
-        color: var(--silo-accent);
-        border-inline-start-color: var(--silo-accent);
-        font-weight: 700;
-    }
-
-.sidebar-footer {
-    padding: 14px 18px 18px;
-    border-top: 1px solid var(--silo-border);
-    font-size: var(--fs-sm);
-    color: var(--silo-text-muted);
 }
 
 // ---------------------------------------------------------------
-// Main content / topbar
+// Top bar (هدر بالا)
+// ---------------------------------------------------------------
+.top-bar {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 0 20px;
+    background: linear-gradient(135deg, #14142b 0%, #202040 100%);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(0,0,0,.25);
+    border-bottom: 1px solid rgba(79,209,255,.15);
+}
+
+.top-bar-brand {
+    font-weight: 800;
+    font-size: 1.1rem;
+    letter-spacing: .3px;
+
+    i {
+        color: #4fd1ff;
+    }
+
+    small {
+        margin-inline-start: 10px;
+        padding-inline-start: 10px;
+        border-inline-start: 2px solid rgba(255,255,255,.2);
+        font-weight: 800;
+        font-size: .9rem;
+        color: #79c1ff;
+    }
+}
+
+
+.top-bar-user {
+    margin-inline-start: auto; 
+    display: flex;
+    align-items: center;
+    gap: 14px;
+
+    i {
+        font-size: 1.3rem !important;
+    }
+}
+
+.menu-toggle {
+    width: 42px;
+    height: 42px;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 12px;
+    background: rgba(255,255,255,.06);
+    color: #fff;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: background .2s, transform .2s;
+
+    &:hover {
+        background: rgba(79,209,255,.2);
+        transform: scale(1.05);
+    }
+}
+
+// ---------------------------------------------------------------
+// Backdrop 
+// ---------------------------------------------------------------
+.menu-backdrop {
+    position: fixed;
+    inset: 56px 0 0 0;
+    background: rgba(0,0,0,.35);
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .25s ease, visibility .25s;
+    z-index: 1040;
+
+    &.show {
+        opacity: 1;
+        visibility: visible;
+    }
+}
+
+// ---------------------------------------------------------------
+// Drawer 
+// ---------------------------------------------------------------
+.drawer {
+    position: fixed;
+    top: 60px;
+    right: 0;
+    bottom: 0;
+    width: 280px;
+    max-width: 85vw;
+    padding: 14px 12px;
+    background: linear-gradient(180deg, #1b1b3a 0%, #14142b 100%);
+    border-left: 1px solid rgba(79,209,255,.12);
+    box-shadow: -8px 0 30px rgba(0,0,0,.3);
+    overflow-y: auto;
+    z-index: 1050;
+    transform: translateX(100%);
+    transition: transform .3s ease;
+    visibility: hidden;
+
+    &.open {
+        transform: translateX(0);
+        visibility: visible;
+    }
+}
+
+    .drawer .nav-item-ai {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 11px 14px;
+        margin-bottom: 4px;
+        color: #fff;
+        text-decoration: none;
+        font-size: var(--fs-sm);
+        font-weight: 500;
+        border-radius: 10px;
+        border-inline-start: 3px solid transparent;
+        transition: background .2s, transform .2s;
+
+        i {
+            color: #4fd1ff;
+            font-size: 1.05rem;
+        }
+
+        &:hover {
+            background: rgba(255,255,255,.08);
+            color: #fff;
+            text-decoration: none;
+            transform: translateX(-3px);
+        }
+
+        &.active {
+            background: linear-gradient(270deg, rgba(79,209,255,.25), rgba(79,209,255,.05));
+            border-inline-start-color: #4fd1ff;
+            color: #fff;
+            font-weight: 700;
+        }
+    }
+
+// ---------------------------------------------------------------
+// Main content
 // ---------------------------------------------------------------
 .main-content {
-    margin-right: var(--sidebar-width);
-    min-height: 100vh;
+    min-height: calc(100vh - 56px);
     background: var(--silo-bg);
-}
-
-.topbar {
-    background: transparent;
-    border-bottom: none;
-    padding: 22px 28px 4px;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 16px;
-}
-
-.topbar-title {
-    font-weight: 700;
-    color: var(--silo-text);
-    font-size: var(--fs-xl);
 }
 
 .page-body {
@@ -191,11 +231,21 @@ html, body {
         color: var(--silo-text-faint);
     }
 
-    // Semantic color modifiers — use these, don't invent new ones.
-    &.accent .stat-value { color: var(--silo-accent); }
-    &.amber .stat-value { color: var(--silo-amber); }
-    &.red .stat-value { color: var(--silo-red); }
-    &.green .stat-value { color: var(--silo-green); }
+    &.accent .stat-value {
+        color: var(--silo-accent);
+    }
+
+    &.amber .stat-value {
+        color: var(--silo-amber);
+    }
+
+    &.red .stat-value {
+        color: var(--silo-red);
+    }
+
+    &.green .stat-value {
+        color: var(--silo-green);
+    }
 }
 
 // ---------------------------------------------------------------

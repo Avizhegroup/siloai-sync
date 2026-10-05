@@ -1,0 +1,55 @@
+﻿@namespace SiloAI.UI.Components
+
+
+<div class="modal @ModalClass" tabindex="-1" role="dialog" style="display:@ModalDisplay;@(DirectionRTL ? "direction: rtl;" : "")">
+    <div class="modal-dialog @(Size == ModalSize.Normal ? "" : Size == ModalSize.Large ? "modal-lg" : "modal-xl")" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@ModalTitle</h5>
+                <button @onclick="Close" type="button" style="@(DirectionRTL ? "margin: -1rem auto -1rem -1rem;" : "")" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                @ModalBodyContentHtml
+            </div>
+            <div class="modal-footer">
+                @if (Buttons != ModalButtons.No)
+                {
+                    @if (Buttons == ModalButtons.OKClose)
+                    {
+                        <button type="button" class="btn @CloseBtnClass" data-dismiss="modal" @onclick="Close">@CloseBtnText</button>
+                        <button type="button" class="btn @OkBtnClass" data-dismiss="modal" @onclick="Ok">@OkBtnText</button>
+                    }
+                    else
+                        @if (Buttons == ModalButtons.YesCancel)
+                        {
+                            <button type="button" class="btn @CancelBtnClass" data-dismiss="modal" @onclick="Cancel">@CancelBtnText</button>
+                            <button type="button" class="btn @YesBtnClass" data-dismiss="modal" @onclick="Yes">@YesBtnText</button>
+                        }
+                        else
+                            @if (Buttons == ModalButtons.Close)
+                            {
+                                <button type="button" class="btn @CloseBtnClass" data-dismiss="modal" @onclick="Close">@CloseBtnText</button>
+                            }
+                }
+                else
+                {
+                    @ModalFooterHtmlWhitoutCloseBtn
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@if (ShowBackdrop)
+{
+    <div class="modal-backdrop fade show"></div>
+}
+
+<style type="text/css">
+    .modal-xl {
+        max-width: 90%;
+    }
+</style>

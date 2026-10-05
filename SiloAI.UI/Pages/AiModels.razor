@@ -195,91 +195,177 @@
         }
     </TabStripTab>
 
-    <TabStripTab Title="تخصیص مدل به مشتریان">
-        <div class="card-ai mt-3">
-            <div class="card-ai-header">
-                <span><i class="bi bi-people me-2"></i>تخصیص مدل بر اساس مشتری و کارکرد</span>
-            </div>
-            <div class="p-4">
-                <div class="row g-3 align-items-end mb-4">
-                    <div class="col-md-5">
-                        <label class="form-label fw-semibold">مشتری</label>
-                        <select class="form-select" @bind="_assignmentCustomerId" @bind:after="LoadAssignments">
-                            <option value="">پیش‌فرض سراسری (همه مشتریان)</option>
-                            @if (_customers is not null)
+<TabStripTab Title="تخصیص مدل به مشتریان">
+
+    <div class="card-ai mt-3">
+
+        <div class="card-ai-header">
+            <span>
+                <i class="bi bi-people me-2"></i>
+                تخصیص مدل بر اساس مشتری و کارکرد
+            </span>
+        </div>
+
+        <div class="p-4">
+
+            <div class="row g-3 align-items-end mb-4">
+
+                <div class="col-md-5">
+
+                    <label class="form-label fw-semibold">
+                        مشتری
+                    </label>
+
+                    <select class="form-select"
+                            @bind="_assignmentCustomerId"
+                            @bind:after="LoadAssignments">
+
+                        <option value="">
+                            پیش‌فرض سراسری (همه مشتریان)
+                        </option>
+
+                        @if (_customers is not null)
+                        {
+                            @foreach (var customer in _customers)
                             {
-                                @foreach (var c in _customers)
-                                {
-                                    <option value="@c.Id">@c.Name</option>
-                                }
+                                <option value="@customer.Id">
+                                    @customer.Name
+                                </option>
                             }
-                        </select>
-                        <div class="form-text">
-                            انتخاب یک مشتری خاص، فقط مدل همان مشتری را برای هر کارکرد بازنویسی می‌کند؛
-                            سایر مشتریان همچنان از پیش‌فرض سراسری استفاده می‌کنند.
-                        </div>
+                        }
+
+                    </select>
+
+                    <div class="form-text">
+                        انتخاب یک مشتری خاص، فقط مدل همان مشتری را برای هر
+                        کارکرد بازنویسی می‌کند؛ سایر مشتریان همچنان از
+                        پیش‌فرض سراسری استفاده می‌کنند.
                     </div>
+
                 </div>
 
-                @if (_isAssignmentsLoading && _assignments is null)
-                {
-                    <div class="p-4 text-center text-muted">
-                        <div class="spinner-border spinner-border-sm me-2"></div>در حال بارگذاری...
-                    </div>
-                }
-                else if (_assignments is not null)
-                {
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>کارکرد</th>
-                                <th>مدل فعلی</th>
-                                <th style="width: 260px;">تغییر مدل</th>
-                                <th style="width: 140px;"></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var a in _assignments)
-                            {
-                                <tr>
-                                    <td>@a.Feature.ToDisplay()</td>
-                                    <td>
-                                        @(a.AiModelName ?? "—")
-                                        @if (a.IsOverride)
-                                        {
-                                            <span class="badge bg-warning text-dark ms-1">اختصاصی مشتری</span>
-                                        }
-                                        else if (a.AiModelId is not null)
-                                        {
-                                            <span class="badge bg-secondary ms-1">پیش‌فرض</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        <select class="form-select form-select-sm" @onchange="e => AssignModelChanged(a.Feature, e.Value)">
-                                            <option value="">— انتخاب کنید —</option>
-                                            @if (_normalModels is not null)
-                                            {
-                                                @foreach (var m in _normalModels)
-                                                {
-                                                    <option value="@m.Id" selected="@(m.Id == a.AiModelId)">@m.Name</option>
-                                                }
-                                            }
-                                        </select>
-                                    </td>
-                                    <td>
-                                        @if (_assignmentCustomerId.HasValue && a.IsOverride)
-                                        {
-                                            <button class="btn btn-sm btn-outline-secondary" @onclick="() => ClearOverride(a.Feature)">
-                                                بازگشت به پیش‌فرض
-                                            </button>
-                                        }
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                }
             </div>
+
+
+            @if (_isAssignmentsLoading && _assignments is null)
+            {
+                <div class="p-4 text-center text-muted">
+
+                    <div class="spinner-border spinner-border-sm me-2"></div>
+
+                    در حال بارگذاری...
+
+                </div>
+            }
+            else
+            {
+                <TelerikGrid Data="@(_assignments ?? [])"
+             Class="silo-telerik-grid"
+             Pageable="true"
+             PageSize="10"
+             Sortable="true"
+             Resizable="true">
+
+    <GridColumns>
+
+        <GridColumn Field="@nameof(ModelAssignmentDto.Feature)"
+                    Title="کارکرد"
+                    Width="220px">
+
+            <Template Context="context">
+                @{
+                    var assignment = (ModelAssignmentDto)context;
+                }
+
+                <span class="fw-semibold">
+                    @assignment.Feature.ToDisplay()
+                </span>
+            </Template>
+
+        </GridColumn>
+
+
+        <GridColumn Field="@nameof(ModelAssignmentDto.AiModelName)"
+                    Title="مدل فعلی"
+                    Width="300px">
+
+            <Template Context="context">
+                @{
+                    var assignment = (ModelAssignmentDto)context;
+                }
+
+                <span>
+                    @(assignment.AiModelName ?? "—")
+                </span>
+
+                @if (assignment.IsOverride)
+                {
+                    <span class="badge bg-warning text-dark ms-1">
+                        اختصاصی مشتری
+                    </span>
+                }
+                else if (assignment.AiModelId is not null)
+                {
+                    <span class="badge bg-secondary ms-1">
+                        پیش‌فرض
+                    </span>
+                }
+            </Template>
+
+        </GridColumn>
+
+
+        <GridColumn Title="تغییر مدل"
+            Width="300px"
+            Filterable="false"
+            Sortable="false">
+
+    <Template Context="context">
+        @{
+            var assignment = (ModelAssignmentDto)context;
+        }
+
+        <select class="form-select form-select-sm"
+                value="@(assignment.AiModelId?.ToString() ?? "")"
+                @onchange="@(e => AssignModelChanged(assignment.Feature, e.Value))">
+
+            <option value="">
+                — انتخاب کنید —
+            </option>
+
+            @if (_normalModels is not null)
+            {
+                @foreach (var model in _normalModels)
+                {
+                    <option value="@model.Id">
+                        @model.Name
+                    </option>
+                }
+            }
+
+        </select>
+    </Template>
+
+</GridColumn>
+
+    </GridColumns>
+
+
+    <NoDataTemplate>
+
+        <div class="text-center text-muted py-4">
+            <i class="bi bi-diagram-3 me-2"></i>
+            تخصیصی برای این مشتری وجود ندارد.
         </div>
-    </TabStripTab>
+
+    </NoDataTemplate>
+
+</TelerikGrid>
+            }
+
+        </div>
+
+    </div>
+
+</TabStripTab>
 </TelerikTabStrip>
