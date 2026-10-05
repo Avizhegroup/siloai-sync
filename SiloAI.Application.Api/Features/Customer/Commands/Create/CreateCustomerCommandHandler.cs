@@ -1,4 +1,4 @@
-namespace SiloAI.Application.Api.Features;
+﻿namespace SiloAI.Application.Api.Features;
 
 public class CreateCustomerCommandHandler(AiApiContext context, ICreditLedgerService ledgerService)
     : IRequestHandler<CreateCustomerCommand, CustomerDto>
@@ -12,7 +12,7 @@ public class CreateCustomerCommandHandler(AiApiContext context, ICreditLedgerSer
 
         if (request.RemainingCredit > 0)
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
 
             var fxRate = await context.FxRateSettings
                 .AsNoTracking()
@@ -39,7 +39,7 @@ public class CreateCustomerCommandHandler(AiApiContext context, ICreditLedgerSer
         await context.SaveChangesAsync(cancellationToken);
 
         // Every customer owns exactly one ledger account from the moment of creation.
-        var createdAt = DateTime.UtcNow;
+        var createdAt = DateTime.Now;
 
         context.LedgerAccounts.Add(new LedgerAccount
         {

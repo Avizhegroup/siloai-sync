@@ -19,6 +19,20 @@ public class RagOptions
 
     /// <summary>File extensions that the indexer is allowed to ingest (lower-case, includes dot).</summary>
     public string[] SupportedExtensions { get; set; } = [".txt", ".md"];
+
+    /// <summary>
+    /// Weight given to keyword overlap (0–1) when blending with semantic similarity to rank
+    /// search results. The remainder (1 - this) is the weight given to semantic similarity.
+    /// Keyword matching helps recall exact terms (codes, names) that embeddings alone can miss.
+    /// </summary>
+    public double HybridKeywordWeight { get; set; } = 0.25;
+
+    /// <summary>
+    /// How many candidates to retrieve from the vector store per requested result, before
+    /// blending and re-ranking down to the requested topK. A wider candidate pool gives the
+    /// keyword signal more to work with; this is the standard retrieve-then-rerank pattern.
+    /// </summary>
+    public int HybridCandidateMultiplier { get; set; } = 4;
 }
 
 /// <summary>

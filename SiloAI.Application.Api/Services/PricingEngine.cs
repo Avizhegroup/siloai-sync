@@ -1,4 +1,4 @@
-using SiloAI.Application.Shared.Contracts.Financial;
+﻿using SiloAI.Application.Shared.Contracts.Financial;
 
 namespace SiloAI.Application.Api.Services;
 
@@ -13,7 +13,7 @@ public class PricingEngine(AiApiContext dbContext) : IPricingEngine
 {
     public async Task<ChargeResult> CalculateAsync(TokenUsageInput usage, UsageFeature feature, Guid aiModelId, CancellationToken cancellationToken)
     {
-        var now = DateTime.UtcNow;
+        var now = DateTime.Now;
 
         var fxRate = await dbContext.FxRateSettings
             .AsNoTracking()

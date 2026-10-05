@@ -16,10 +16,10 @@ public class RagChatSendHandler(
 {
     public async Task<RagChatResponse> Handle(RagChatSendCommand request, CancellationToken cancellationToken)
     {
-        if (!await HasCreditAsync(request.CustomerId, cancellationToken))
-        {
-            throw new InsufficientCreditException();
-        }
+        //if (!await HasCreditAsync(request.CustomerId, cancellationToken))
+        //{
+        //    throw new InsufficientCreditException();
+        //}
 
         var ownerKey = ChatSessionOwnerKey.ForOwnerId(request.OwnerId);
 
@@ -57,7 +57,7 @@ public class RagChatSendHandler(
         // disabled here to avoid a second, unfiltered retrieval pass (extra embedding call,
         // extra DB round-trips, and duplicate chunk content being sent to the model).
         agentService.InitChatAgentWithInstructions(
-            agentInstructions, resolvedModel.Identifier, includeAutoRagContext: false);
+            agentInstructions, resolvedModel, includeAutoRagContext: false);
 
         var topK = request.TopK <= 0 ? 5 : Math.Clamp(request.TopK, 1, 20);
      
@@ -86,7 +86,7 @@ public class RagChatSendHandler(
 
         var result = await agentService.SendWithAgentSessionAsync(existingSessionJson, query);
 
-        var now = DateTime.UtcNow;
+        var now = DateTime.Now;
 
         if (chatSession is null)
         {
@@ -143,11 +143,11 @@ public class RagChatSendHandler(
                 idempotencyKey: $"ragchat:{chatSession.Id}:{turnIndex}",
                 cancellationToken);
 
-            if (chargeOutcome == ChargeOutcome.InsufficientBalance)
-                throw new InsufficientCreditException();
+            //if (chargeOutcome == ChargeOutcome.InsufficientBalance)
+            //    throw new InsufficientCreditException();
 
-            if (chargeOutcome == ChargeOutcome.Success)
-                chatSession.TurnIndex = turnIndex;
+            //if (chargeOutcome == ChargeOutcome.Success)
+            //    chatSession.TurnIndex = turnIndex;
 
             // Legacy credit cache (USD) — decrement by the same Toman amount that was
             // actually charged, converted back with the same snapshot rate, so the two
@@ -156,12 +156,12 @@ public class RagChatSendHandler(
                 ? Math.Round(charge.ChargeToman / charge.FxRateUsed, 8)
                 : 0m;
 
-            await dbContext.Customers
-      .Where(c => c.Id == customerId)
-      .ExecuteUpdateAsync(s => s
-                    .SetProperty(c => c.RemainingCredit,
-                        c => Math.Max(0, c.RemainingCredit - chargeUsd)),
-          cancellationToken);
+            //await dbContext.Customers
+            //    .Where(c => c.Id == customerId)
+            //    .ExecuteUpdateAsync(s => s
+            //        .SetProperty(c => c.RemainingCredit,
+            //            c => Math.Max(0, c.RemainingCredit - chargeUsd)),
+            //        cancellationToken);
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);

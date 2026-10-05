@@ -1,4 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SiloAI.Agent.Chat;
 using SiloAI.Application.Shared.Contracts.AiModels;
@@ -42,7 +42,7 @@ public class SendChatCommandHandler(
 
         var resolvedModel = await modelResolver.ResolveAsync(request.CustomerId, UsageFeature.SupportChat, cancellationToken);
 
-        await agentService.InitChatAgent(new() { request.DocType }, modelName: resolvedModel.Identifier);
+        await agentService.InitChatAgent(resolvedModel, new() { request.DocType });
 
         var query = new CopilotMessageRequest
         {
@@ -103,7 +103,7 @@ public class SendChatCommandHandler(
                 FloorTomanUsed = charge.FloorTomanUsed,
                 ChargeToman = charge.ChargeToman,
                 ConversationId = chatSession.Id,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now
             };
 
             var chargeOutcome = await ledgerService.ChargeAsync(

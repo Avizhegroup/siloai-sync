@@ -1,4 +1,4 @@
-namespace SiloAI.Application.Api.Features;
+﻿namespace SiloAI.Application.Api.Features;
 
 public class SetDefaultRagModelCommandHandler(AiApiContext context) : IRequestHandler<SetDefaultRagModelCommand, AiModelDto>
 {
@@ -39,7 +39,7 @@ public class SetDefaultRagModelCommandHandler(AiApiContext context) : IRequestHa
             previous.IsDefaultRagModel = false;
 
         model.IsDefaultRagModel = true;
-        model.UpdatedAt = DateTime.UtcNow;
+        model.UpdatedAt = DateTime.Now;
 
         await context.SaveChangesAsync(cancellationToken);
 

@@ -1,4 +1,4 @@
-using Microsoft.Data.SqlClient;
+﻿using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.DependencyInjection;
 using SiloAI.Application.Shared.Contracts.Financial;
 
@@ -34,7 +34,7 @@ public class CreditLedgerService(IServiceScopeFactory scopeFactory) : ICreditLed
 
         await using var dbTransaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-        var now = DateTime.UtcNow;
+        var now = DateTime.Now;
 
         // Atomic conditional debit — no read-then-write.
         var updatedRows = await dbContext.LedgerAccounts
@@ -102,7 +102,7 @@ public class CreditLedgerService(IServiceScopeFactory scopeFactory) : ICreditLed
 
         await using var dbTransaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
-        var now = DateTime.UtcNow;
+        var now = DateTime.Now;
 
         var updatedRows = await dbContext.LedgerAccounts
             .Where(a => a.CustomerId == customerId)

@@ -1,4 +1,4 @@
-namespace SiloAI.Application.Api.Features;
+﻿namespace SiloAI.Application.Api.Features;
 
 public class UpsertAiModelCommandHandler(AiApiContext context) : IRequestHandler<UpsertAiModelCommand, AiModelDto>
 {
@@ -16,7 +16,7 @@ public class UpsertAiModelCommandHandler(AiApiContext context) : IRequestHandler
         if (duplicateIdentifier)
             throw new InvalidOperationException($"A model with identifier '{input.Identifier}' already exists.");
 
-        var now = DateTime.UtcNow;
+        var now = DateTime.Now;
         AiModel model;
 
         if (input.Id == Guid.Empty)
