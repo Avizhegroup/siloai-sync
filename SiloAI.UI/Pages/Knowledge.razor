@@ -11,7 +11,7 @@
 <div class="card-ai mb-4 shadow-sm border-0">
     <div class="card-ai-header d-flex align-items-center justify-content-between">
         <div class="d-flex align-items-center gap-2">
-            <div class="bg-primary bg-opacity-10 text-primary rounded-3 p-2">
+            <div class="header-icon">
                 <i class="bi bi-cloud-upload fs-5"></i>
             </div>
             <div>
@@ -61,10 +61,11 @@
             <div class="col-12">
                 <label class="form-label fw-semibold text-secondary small mb-2">فایل</label>
                 
-                <div class="border border-2 border-dashed rounded-3 p-4 text-center position-relative 
-                            @( _selectedFile is not null ? "border-primary bg-primary bg-opacity-10" : "border-secondary-subtle bg-light" )"
+                <div class="@(_selectedFile is null
+                                    ? "border border-2 border-dashed rounded-3 p-4 text-center position-relative border-secondary-subtle bg-light"
+                                    : "file-drop has-file")"
                      style="transition: all 0.2s ease;">
-                    
+
                     @if (_selectedFile is null)
                     {
                         <div class="py-3">
@@ -81,18 +82,26 @@
                     }
                     else
                     {
-                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="bg-white rounded-3 p-3 shadow-sm">
-                                    <i class="bi bi-file-earmark-text text-primary fs-3"></i>
+                        <div class="file-chip">
+                            <div class="file-chip-icon">
+                                <i class="bi bi-file-earmark-text"></i>
+                            </div>
+
+                            <div class="file-chip-info">
+                                <div class="file-chip-name" title="@_selectedFile.Name">
+                                    @_selectedFile.Name
                                 </div>
-                                <div class="text-start">
-                                    <div class="fw-semibold">@_selectedFile.Name</div>
-                                    <div class="text-muted small">@FormatBytes(_selectedFile.Size)</div>
+
+                                <div class="file-chip-meta">
+                                    <span class="file-chip-ext">
+                                        @(System.IO.Path.GetExtension(_selectedFile.Name).TrimStart('.').ToUpperInvariant())
+                                    </span>
+                                    <span dir="ltr">@FormatBytes(_selectedFile.Size)</span>
                                 </div>
                             </div>
-                            <button type="button" 
-                                    class="btn btn-sm btn-light border"
+
+                            <button type="button"
+                                    class="file-chip-remove"
                                     @onclick="() => _selectedFile = null"
                                     title="حذف فایل">
                                 <i class="bi bi-x-lg"></i>

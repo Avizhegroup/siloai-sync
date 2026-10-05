@@ -115,7 +115,7 @@
 <div class="card-ai mb-4 shadow-sm border-0">
     <div class="card-ai-header d-flex align-items-center justify-content-between py-3">
         <div class="d-flex align-items-center gap-2">
-            <div class="bg-primary bg-opacity-10 text-primary rounded-3 p-2">
+            <div class="header-icon">
                 <i class="bi bi-card-checklist fs-5"></i>
             </div>
             <div>
@@ -194,8 +194,11 @@
             <div class="col-12">
                 <label class="form-label fw-semibold text-secondary small mb-1">محتوای دستورالعمل</label>
                 <div class="border rounded-3 overflow-hidden">
-                    <TelerikEditor @bind-Value="Request.Content"
-                                   Height="300px" />
+                    <textarea class="form-control rag-content-editor"
+                              rows="25"
+                              style="height: 300px;"
+                              @bind="Request.Content"
+                              spellcheck="false"></textarea>
                 </div>
             </div>
 

@@ -3764,3 +3764,105 @@ code {
     margin-top: 3px;
   }
 }
+/* ---------- ناحیه‌ی انتخاب فایل ---------- */
+.file-drop {
+  border: 2px dashed #d5d9e6;
+  border-radius: 14px;
+  background: #fafbff;
+  padding: 26px;
+  text-align: center;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.file-drop:hover {
+  border-color: #2563eb;
+  background: #f3f6ff;
+}
+
+/* ---------- حالت فایل انتخاب‌شده ---------- */
+.file-drop.has-file {
+  border-style: solid;
+  border-color: #c7d4ff;
+  background: linear-gradient(135deg, #f5f8ff 0%, #eaf0ff 100%);
+  padding: 14px 18px;
+  text-align: start;
+}
+
+.file-chip {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.file-chip-icon {
+  width: 50px;
+  height: 50px;
+  min-width: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: #fff;
+  color: #2563eb;
+  font-size: 1.5rem;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.15);
+}
+
+.file-chip-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.file-chip-name {
+  font-weight: 600;
+  direction: ltr;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-chip-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 3px;
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.file-chip-ext {
+  padding: 1px 9px;
+  border-radius: 20px;
+  background: #dbe4ff;
+  color: #2447b5;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.file-chip-remove {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #e2e6f3;
+  border-radius: 50%;
+  background: #fff;
+  color: #6c757d;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.file-chip-remove:hover {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.header-icon {
+  background: #a1d7fd;
+  color: #2563eb;
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
