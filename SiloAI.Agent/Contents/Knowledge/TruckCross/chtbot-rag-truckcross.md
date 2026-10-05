@@ -25,6 +25,13 @@ The exit stage is used to complete truck traffic records and includes:
 
 The page also displays a list of trucks that have not yet exited the facility, allowing easy tracking of open truck traffic records.
 
+### Registration Stage Activation Rules
+
+* The **ورود** stage becomes active only after the **پذیرش** stage is completed and all required fields are filled.
+* The **خروج** stage becomes active only after both **پذیرش** and **ورود** stages are completed.
+* If the required conditions of a previous stage are not completed, the next stage cannot be accessed.
+
+
 ## Supporting Forms for the Truck Traffic Registration Page
 To manage and extend the Truck Traffic Registration page, there are two separate forms available.
 - تعریف فیلدهای اطلاعاتی
