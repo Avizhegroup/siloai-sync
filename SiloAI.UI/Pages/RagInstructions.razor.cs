@@ -27,7 +27,7 @@ public partial class RagInstructions
     },
     new()
     {
-        Code = RagDocType.Image,
+        Code = RagDocType.ImageOCR,
         Title = "تصویر"
     },
     new()

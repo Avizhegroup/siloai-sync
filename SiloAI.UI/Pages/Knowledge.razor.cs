@@ -41,7 +41,7 @@ public partial class Knowledge
     },
     new()
     {
-        Code = RagDocType.Image,
+        Code = RagDocType.ImageOCR,
         Title = "تصویر"
     },
     new()
