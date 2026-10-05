@@ -1,4 +1,4 @@
-using SiloAI.Agent.Chat;
+﻿using SiloAI.Agent.Chat;
 using SiloAI.Application.Shared.Contracts.AiModels;
 using System.Text;
 
@@ -157,11 +157,11 @@ public class RagChatSendHandler(
                 : 0m;
 
             await dbContext.Customers
-                .Where(c => c.Id == customerId)
-                .ExecuteUpdateAsync(s => s
+      .Where(c => c.Id == customerId)
+      .ExecuteUpdateAsync(s => s
                     .SetProperty(c => c.RemainingCredit,
                         c => Math.Max(0, c.RemainingCredit - chargeUsd)),
-                    cancellationToken);
+          cancellationToken);
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);

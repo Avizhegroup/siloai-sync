@@ -8,18 +8,22 @@
 
 <PageTitle>پایگاه دانش — پنل مدیریت هوش مصنوعی سیلو</PageTitle>
 
-<div class="card-ai mb-4">
-    <div class="card-ai-header">
-        <span>
-            <i class="bi bi-cloud-upload me-2"></i>
-            بارگذاری فایل دانش
-        </span>
+<div class="card-ai mb-4 shadow-sm border-0">
+    <div class="card-ai-header d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-2">
+            <div class="bg-primary bg-opacity-10 text-primary rounded-3 p-2">
+                <i class="bi bi-cloud-upload fs-5"></i>
+            </div>
+            <div>
+                <span class="fw-semibold d-block">بارگذاری فایل دانش</span>
+            </div>
+        </div>
     </div>
 
     <div class="p-4">
-        <div class="row g-3 align-items-end">
+        <div class="row g-3">
             <div class="col-md-3">
-                <label class="form-label fw-semibold">نوع سند</label>
+                <label class="form-label fw-semibold text-secondary small mb-1">نوع سند</label>
                 <TelerikDropDownList Data="@DocTypes"
                                      TItem="DocTypeItem"
                                      TValue="RagDocType"
@@ -30,8 +34,8 @@
             </div>
 
             <div class="col-md-3">
-                <label class="form-label fw-semibold">
-                    کلید (اختیاری)
+                <label class="form-label fw-semibold text-secondary small mb-1">
+                    کلید <span class="text-muted fw-normal">(اختیاری)</span>
                 </label>
                 <TelerikTextBox @bind-Value="_key"
                                 Placeholder="مثلاً: hr-policy-2025"
@@ -39,75 +43,108 @@
             </div>
 
             <div class="col-md-3">
-                <label class="form-label fw-semibold">
-                    دسته‌بندی
-                </label>
+                <label class="form-label fw-semibold text-secondary small mb-1">دسته‌بندی</label>
                 <TelerikTextBox @bind-Value="_category"
                                 Placeholder="مثلاً: قوانین احراز هویت"
                                 Class="w-100" />
             </div>
 
             <div class="col-md-3">
-                <label class="form-label fw-semibold">
-                    برچسب‌ها (اختیاری)
+                <label class="form-label fw-semibold text-secondary small mb-1">
+                    برچسب‌ها <span class="text-muted fw-normal">(اختیاری)</span>
                 </label>
                 <TelerikTextBox @bind-Value="_tags"
                                 Placeholder="مثلاً: auth,security"
                                 Class="w-100" />
             </div>
 
-            <div class="col-md-12">
-                <label class="form-label fw-semibold">
-                    فایل
-                </label>
-                <InputFile OnChange="OnFileSelected"
-                           class="form-control"
-                           accept=".txt,.md,.markdown" />
+            <div class="col-12">
+                <label class="form-label fw-semibold text-secondary small mb-2">فایل</label>
+                
+                <div class="border border-2 border-dashed rounded-3 p-4 text-center position-relative 
+                            @( _selectedFile is not null ? "border-primary bg-primary bg-opacity-10" : "border-secondary-subtle bg-light" )"
+                     style="transition: all 0.2s ease;">
+                    
+                    @if (_selectedFile is null)
+                    {
+                        <div class="py-3">
+                            <i class="bi bi-cloud-arrow-up text-primary fs-1 mb-2 d-block opacity-75"></i>
+                            <p class="mb-1 fw-medium">فایل متنی را انتخاب کنید</p>
+                            <label class="btn btn-outline-primary btn-sm px-4">
+                                <i class="bi bi-folder2-open me-1"></i>
+                                انتخاب فایل
+                                <InputFile OnChange="OnFileSelected"
+                                           class="d-none"
+                                           accept=".txt,.md,.markdown" />
+                            </label>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="bg-white rounded-3 p-3 shadow-sm">
+                                    <i class="bi bi-file-earmark-text text-primary fs-3"></i>
+                                </div>
+                                <div class="text-start">
+                                    <div class="fw-semibold">@_selectedFile.Name</div>
+                                    <div class="text-muted small">@FormatBytes(_selectedFile.Size)</div>
+                                </div>
+                            </div>
+                            <button type="button" 
+                                    class="btn btn-sm btn-light border"
+                                    @onclick="() => _selectedFile = null"
+                                    title="حذف فایل">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                    }
+                </div>
             </div>
         </div>
 
-        <div class="mt-3 d-flex gap-2 align-items-center">
-            <button type="button"
-                    class="btn btn-primary"
-                    @onclick="UploadAsync"
-                    disabled="@(_isUploading || _selectedFile is null)">
-                @if (_isUploading)
-                {
-                    <span class="spinner-border spinner-border-sm me-1"></span>
-                }
-                else
-                {
-                    <i class="bi bi-cloud-arrow-up me-1"></i>
-                }
-                بارگذاری و پردازش
-            </button>
+        <div class="mt-4 d-flex flex-wrap gap-2 align-items-center justify-content-between">
+            <div class="d-flex gap-2">
+                <button type="button"
+                        class="btn btn-primary px-4"
+                        @onclick="UploadAsync"
+                        disabled="@(_isUploading || _selectedFile is null)">
+                    @if (_isUploading)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                        <span>در حال پردازش...</span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-cloud-arrow-up me-2"></i>
+                        <span>بارگذاری و پردازش</span>
+                    }
+                </button>
 
-            <button type="button"
-                    class="btn btn-light"
-                    @onclick="OnOpenKnowledgeFilesModal">
-                <MaterialIcon IconName="@MaterialIconsHelper.Checklist_rtl"></MaterialIcon>
-                فایل‌های دانش
-            </button>
+                <button type="button"
+                        class="btn btn-outline-secondary"
+                        @onclick="OnOpenKnowledgeFilesModal">
+                    <i class="bi bi-collection me-1"></i>
+                    فایل‌های دانش
+                </button>
+            </div>
 
-            @if (_selectedFile is not null)
+            @if (_selectedFile is not null && !_isUploading)
             {
-                <span class="text-muted small">
-                    <i class="bi bi-file-earmark me-1"></i>
-                    @_selectedFile.Name
-                    (@FormatBytes(_selectedFile.Size))
+                <span class="text-success small">
+                    <i class="bi bi-check-circle-fill me-1"></i>
+                    فایل آماده بارگذاری است
                 </span>
             }
         </div>
     </div>
 </div>
 
-<!-- فایل‌های دانش -->
 <Modal Buttons="ModalButtons.Close"
        ModalTitle="فایل‌های دانش"
        CloseBtnText="بستن"
        @ref="ModalKnowledgeFiles"
        Size="ModalSize.ExtraLarge">
-
     <ModalBodyContentHtml>
         @if (_isLoading && _documents is null)
         {
@@ -184,40 +221,38 @@
                     <td class="text-end">
                         @if (_rebuildTarget?.Id == doc.Id)
                         {
-                            <InputFile OnChange="OnRebuildFileSelected"
+                                <InputFile OnChange="OnRebuildFileSelected"
                                        class="form-control"
-                                       accept=".txt,.md,.markdown"
+                                           accept=".txt,.md,.markdown"
                                        disabled="@_isUploading" />
 
-                            @if (_isUploading)
-                            {
+                                @if (_isUploading)
+                                {
                                 <div class="mt-2">
-                                    <span class="spinner-border spinner-border-sm me-1"></span>
-                                    در حال بازسازی...
-                                </div>
-                            }
+                                        <span class="spinner-border spinner-border-sm me-1"></span>
+                                        در حال بازسازی...
+                                    </div>
+                                }
                         }
                         else
                         {
-                            <button type="button"
+                                <button type="button"
                                     class="btn btn-sm btn-outline-secondary me-1"
-                                    @onclick="() => StartRebuild(doc)"
+                                        @onclick="() => StartRebuild(doc)"
                                     disabled="@_isUploading">
                                 <i class="bi bi-arrow-clockwise me-1"></i>
                                 بازسازی
-                            </button>
-
-                            <button type="button"
+                                </button>
+                                <button type="button"
                                     class="btn btn-sm btn-outline-danger"
-                                    @onclick="() => DeleteAsync(doc.Id)"
+                                        @onclick="() => DeleteAsync(doc.Id)"
                                     disabled="@_isUploading">
                                 <i class="bi bi-trash me-1"></i>
                                 حذف
-                            </button>
+                                </button>
                         }
                     </td>
                 </RowTemplate>
-
                 <GridColumns>
                     <GridColumn Field="@nameof(RagDocumentDto.OriginalFileName)" Title="نام فایل" Width="270px" />
                     <GridColumn Field="@nameof(RagDocumentDto.DocType)" Title="نوع" Width="130px" />
