@@ -872,7 +872,7 @@
       {
         "table": "tbl_ActionTypes",
         "type": "Many-to-One",
-        "via": "tbl_TagsMovement.fld_StationActionType → tbl_ActionTypes.fld_ActionTypeId"
+        "via": "tbl_Station.fld_StationActionType → tbl_ActionTypes.fld_ActionTypeId"
        }
   ],
     "children": [
