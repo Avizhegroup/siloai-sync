@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using SiloAI.Agent.Chat;
 
 namespace SiloAI.Application.Api.Features;
@@ -9,8 +9,7 @@ public class CreateRagInstructionCommandHandler(AiApiContext context, ChatAgentC
     {
         if (request.IsSystematic)
         {
-            var existingSystematic = await context.RagInstructions
-                .AnyAsync(x => x.DocType == (int)request.DocType && x.IsSystematic, cancellationToken);
+            var existingSystematic = await context.RagInstructions.AnyAsync(x => x.DocType == (int)request.DocType && x.IsSystematic && x.CustomerId == request.CustomerId, cancellationToken);
 
             if (existingSystematic)
             {
@@ -33,6 +32,7 @@ public class CreateRagInstructionCommandHandler(AiApiContext context, ChatAgentC
             Key = string.IsNullOrWhiteSpace(request.Key) ? null : request.Key.Trim(),
             Category = request.Category,
             Tags = request.Tags,
+            CustomerId = request.CustomerId,
             Content = rawContent,
             IsSystematic = request.IsSystematic,
             IsActive = true,
@@ -55,6 +55,7 @@ public class CreateRagInstructionCommandHandler(AiApiContext context, ChatAgentC
             Key = instruction.Key,
             Category = instruction.Category,
             Tags = instruction.Tags,
+            CustomerId = instruction.CustomerId,
             Content = instruction.Content,
             IsSystematic = instruction.IsSystematic,
             IsActive = instruction.IsActive,

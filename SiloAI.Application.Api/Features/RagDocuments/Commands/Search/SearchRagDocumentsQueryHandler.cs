@@ -1,11 +1,11 @@
-namespace SiloAI.Application.Api.Features;
+﻿namespace SiloAI.Application.Api.Features;
 
 public class SearchRagDocumentsQueryHandler(IRagSearchService search) : IRequestHandler<SearchRagDocumentsQuery, List<RagSearchHitDto>>
 {
     public async Task<List<RagSearchHitDto>> Handle(SearchRagDocumentsQuery request, CancellationToken cancellationToken)
     {
         var hits = await search.SearchAsync(
-            request.Query, request.TopK, request.DocType, request.Key, cancellationToken);
+            request.Query, request.TopK, request.DocType, request.Key, request.CustomerId, cancellationToken);
 
         return hits.Select(h => new RagSearchHitDto
         {

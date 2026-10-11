@@ -1,4 +1,4 @@
-namespace SiloAI.Domains;
+﻿namespace SiloAI.Domains;
 
 [Table("tbl_AiCustomers")]
 public class Customer
@@ -23,4 +23,7 @@ public class Customer
     public ICollection<AiApiKey> AiApiKeys { get; set; } = new List<AiApiKey>();
 
     public ICollection<UsageRecord> UsageRecords { get; set; } = new List<UsageRecord>();
+    public ICollection<RagDocument> RagDocument { get; set; } = new List<RagDocument>();
+    public ICollection<RagInstruction> RagInstructions { get; set; } = new List<RagInstruction>();
+
 }

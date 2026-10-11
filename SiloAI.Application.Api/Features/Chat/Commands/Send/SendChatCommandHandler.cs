@@ -42,7 +42,10 @@ public class SendChatCommandHandler(
 
         var resolvedModel = await modelResolver.ResolveAsync(request.CustomerId, UsageFeature.SupportChat, cancellationToken);
 
-        await agentService.InitChatAgent(resolvedModel, new() { request.DocType });
+        await agentService.InitChatAgent(
+            resolvedModel,
+            new() { request.DocType },
+            request.CustomerId);
 
         var query = new CopilotMessageRequest
         {

@@ -1,4 +1,4 @@
-using SiloAI.Agent.Chat;
+﻿using SiloAI.Agent.Chat;
 using SiloAI.Application.Shared.Contracts.AiModels;
 
 namespace SiloAI.Application.Api.Features;
@@ -11,12 +11,21 @@ public class RagChatNewSessionCommandHandler(
 {
     public async Task<RagChatResponse> Handle(RagChatNewSessionCommand request, CancellationToken cancellationToken)
     {
-        var instructions = await agentCache.GetOrCreateInstructionsAsync((int)request.DocType, async () =>
-            (IReadOnlyList<CachedRagInstruction>)await dbContext.RagInstructions
-                .Where(p => p.DocType == (int)request.DocType && p.IsActive)
-                .AsNoTracking()
-                .Select(p => new CachedRagInstruction(p.Content, p.IsSystematic, p.CreateDateTime))
-                .ToListAsync(cancellationToken));
+        var instructions = await agentCache.GetOrCreateInstructionsAsync((int)request.DocType, request.CustomerId,
+      async () =>
+          (IReadOnlyList<CachedRagInstruction>)await dbContext.RagInstructions
+              .Where(p =>
+                  p.DocType == (int)request.DocType &&
+                  p.IsActive &&
+                  (p.CustomerId == null ||
+                   (request.CustomerId.HasValue &&
+                    p.CustomerId == request.CustomerId.Value)))
+              .AsNoTracking()
+              .Select(p => new CachedRagInstruction(
+                  p.Content,
+                  p.IsSystematic,
+                  p.CreateDateTime))
+              .ToListAsync(cancellationToken));
 
         var agentInstructions = RagChatSendHandler.BuildAgentInstructions(instructions);
 

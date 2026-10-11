@@ -1,4 +1,4 @@
-namespace SiloAI.Application.Shared.Features;
+﻿namespace SiloAI.Application.Shared.Features;
 
 public class RagInstructionDto
 {
@@ -12,4 +12,6 @@ public class RagInstructionDto
     public bool IsActive { get; set; }
     public DateTime CreateDateTime { get; set; }
     public DateTime? LastUpdateDateTime { get; set; }
+    public int? CustomerId { get; set; }
+    public string? CustomerName { get; set; }
 }

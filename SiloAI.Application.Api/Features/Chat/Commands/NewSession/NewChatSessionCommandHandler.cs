@@ -1,4 +1,4 @@
-using SiloAI.Agent.Chat;
+﻿using SiloAI.Agent.Chat;
 using SiloAI.Application.Shared.Contracts.AiModels;
 using NewChatSessionCommand = SiloAI.Application.Shared.Features.NewChatSessionCommand;
 
@@ -17,7 +17,10 @@ public class NewChatSessionCommandHandler(
 
         var resolvedModel = await modelResolver.ResolveAsync(request.CustomerId, UsageFeature.SupportChat, cancellationToken);
 
-        await agentService.InitChatAgent(resolvedModel, new() { request.DocType });
+        await agentService.InitChatAgent(
+            resolvedModel,
+            new() { request.DocType },
+            request.CustomerId);
 
         var session = await agentService.CreateNewSessionAsync();
         var sessionJson = await agentService.SerializeSessionAsync(session);

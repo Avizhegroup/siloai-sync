@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -35,6 +35,7 @@ public class RagDocumentsController(
         [FromForm] string? key,
         [FromForm] string? category,
         [FromForm] string? tags,
+        [FromForm] int? customerId,
         CancellationToken cancellationToken)
     {
         if (file is null || file.Length == 0)
@@ -60,6 +61,7 @@ public class RagDocumentsController(
             Key = key,
             Category = category,
             Tags = tags,
+            CustomerId = customerId,
             CreatorUserId = User?.Identity?.Name
         }, cancellationToken);
 

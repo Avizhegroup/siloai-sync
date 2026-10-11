@@ -18,4 +18,6 @@ public class RagDocumentDto
     public DateTime CreateDateTime { get; set; }
     public string? CreatorUserId { get; set; }
     public DateTime? LastUpdateDateTime { get; set; }
+    public int? CustomerId { get; set; }
+    public string? CustomerName { get; set; }
 }

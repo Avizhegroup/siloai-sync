@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.VectorData;
 using SiloAI.Application.Shared.Contracts.Rag;
@@ -22,6 +22,7 @@ public class RagSearchService(
         int topK,
         RagDocType? docType,
         string? key,
+        int? customerId,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(query)) return [];
@@ -40,7 +41,7 @@ public class RagSearchService(
 
         if (docType.HasValue || !string.IsNullOrWhiteSpace(key))
         {
-            var documentIdsFiltered = await BuildDocumentFilterAsync(docType, key, cancellationToken);
+            var documentIdsFiltered = await BuildDocumentFilterAsync(docType, key, customerId, cancellationToken);
 
             if (documentIdsFiltered.Count == 0)
             {
@@ -142,6 +143,7 @@ public class RagSearchService(
     private async Task<List<Guid>> BuildDocumentFilterAsync(
         RagDocType? docType,
         string? key,
+        int? customerId,
         CancellationToken cancellationToken)
     {
         var query = context.RagDocuments.AsNoTracking().AsQueryable();
@@ -162,6 +164,12 @@ public class RagSearchService(
         if (!string.IsNullOrWhiteSpace(key))
         {
             query = query.Where(d => d.Key == key);
+        }
+
+
+        if (customerId.HasValue)
+        {
+            query = query.Where(d => d.CustomerId == null || d.CustomerId == customerId.Value);
         }
 
         return await query.Select(d => d.Id).Distinct().ToListAsync(cancellationToken);

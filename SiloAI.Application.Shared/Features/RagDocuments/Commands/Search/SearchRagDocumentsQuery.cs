@@ -1,4 +1,4 @@
-namespace SiloAI.Application.Shared.Features;
+﻿namespace SiloAI.Application.Shared.Features;
 
 public class SearchRagDocumentsQuery : IRequest<List<RagSearchHitDto>>
 {
@@ -6,4 +6,5 @@ public class SearchRagDocumentsQuery : IRequest<List<RagSearchHitDto>>
     public int TopK { get; set; } = 10;
     public RagDocType? DocType { get; set; }
     public string? Key { get; set; }
+    public int? CustomerId { get; set; }
 }

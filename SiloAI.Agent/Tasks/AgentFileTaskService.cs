@@ -85,19 +85,28 @@ public class AgentFileTaskService(
         });
     }
 
-    private async Task<string> LoadInstructionsAsync(RagDocType docType, string key, CancellationToken cancellationToken)
+private async Task<string> LoadInstructionsAsync(RagDocType docType, string key, CancellationToken cancellationToken)
     {
         var docTypeValue = (int)docType;
 
-        var cachedInstructions = await agentCache.GetOrCreateInstructionsAsync(docTypeValue, async () =>
-            (IReadOnlyList<CachedRagInstruction>)await context.RagInstructions
-                .Where(p => p.DocType == docTypeValue 
-                         && p.Key == key
-                         && p.IsActive)
-                .AsNoTracking()
-                .Select(p => new CachedRagInstruction(p.Content, p.IsSystematic, p.CreateDateTime))
-                .ToListAsync(cancellationToken));
+        var cachedInstructions =
+            await agentCache.GetOrCreateInstructionsAsync(
+                docTypeValue,
+                customerId: null,
+                async () =>
+                    (IReadOnlyList<CachedRagInstruction>)
+                    await context.RagInstructions
+                        .Where(p => p.DocType == docTypeValue &&
+                            p.Key == key &&
+                            p.IsActive &&
+                            p.CustomerId == null)
+                        .AsNoTracking()
+                        .Select(p => new CachedRagInstruction(
+                            p.Content,
+                            p.IsSystematic,
+                            p.CreateDateTime))
+                        .ToListAsync(cancellationToken));
 
         return string.Join(Environment.NewLine, cachedInstructions.Select(i => i.Content));
-    }
+   }
 }

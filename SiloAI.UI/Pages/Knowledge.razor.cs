@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Components.Forms;
+﻿using Microsoft.AspNetCore.Components.Forms;
 
 namespace SiloAI.UI.Pages;
 
@@ -12,6 +12,8 @@ public partial class Knowledge
     private string _category = string.Empty;
     private string _tags = string.Empty;
     private IBrowserFile? _selectedFile;
+    private List<CustomerDto> _customers = [];
+    private int? _customerId;
 
     private RagDocumentDto? _rebuildTarget;
     private IBrowserFile? _rebuildFile;
@@ -24,6 +26,9 @@ public partial class Knowledge
     protected override async Task OnInitializedAsync()
     {
         await LoadDocumentsAsync();
+
+        await LoadCustomersAsync();
+
     }
 
     private async Task LoadDocumentsAsync()
@@ -40,6 +45,22 @@ public partial class Knowledge
         finally
         {
             _isLoading = false;
+        }
+    }
+
+    private async Task LoadCustomersAsync()
+    {
+        try
+        {
+            _customers =
+                await ApiClient.GetFromJsonAsync<List<CustomerDto>>(
+                    "admin/customers") ?? [];
+        }
+        catch (Exception ex)
+        {
+            Notification.Show(
+                $"خطا در بارگذاری مشتریان: {ex.Message}",
+                "error");
         }
     }
 
@@ -85,6 +106,11 @@ public partial class Knowledge
             if (!string.IsNullOrWhiteSpace(_tags))
                 content.Add(new StringContent(_tags), "tags");
 
+            if (_customerId.HasValue)
+            {
+                content.Add(new StringContent(_customerId.Value.ToString()),"customerId");
+            }
+
             var response = await ApiClient.PostMultipartAsync("api/rag/documents", content);
             response.EnsureSuccessStatusCode();
 
@@ -103,6 +129,7 @@ public partial class Knowledge
             _key = string.Empty;
             _category = string.Empty;
             _tags = string.Empty;
+            _customerId = null;
 
             await LoadDocumentsAsync();
         }

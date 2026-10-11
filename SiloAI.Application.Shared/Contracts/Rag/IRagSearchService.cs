@@ -1,4 +1,4 @@
-namespace SiloAI.Application.Shared.Contracts.Rag;
+﻿namespace SiloAI.Application.Shared.Contracts.Rag;
 
 public record RagSearchHit(
     Guid ChunkId,
@@ -29,5 +29,6 @@ public interface IRagSearchService
         int topK,
         RagDocType? docType,
         string? key,
+        int? customerId,
         CancellationToken cancellationToken);
 }

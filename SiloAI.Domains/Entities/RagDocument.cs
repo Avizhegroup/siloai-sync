@@ -1,4 +1,4 @@
-namespace SiloAI.Domains;
+﻿namespace SiloAI.Domains;
 
 [Table("tbl_RagDocuments")]
 public class RagDocument
@@ -71,6 +71,10 @@ public class RagDocument
     [Column("fld_LastUpdateUserId")]
     [StringLength(100)]
     public string? LastUpdateUserId { get; set; }
+
+    [Column("fld_CustomerId")]
+    public int? CustomerId { get; set; }
+    public Customer? Customer { get; set; }
 
     public ICollection<RagDocumentChunk> Chunks { get; set; } = new List<RagDocumentChunk>();
 }

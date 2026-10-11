@@ -1,4 +1,4 @@
-namespace SiloAI.Domains;
+﻿namespace SiloAI.Domains;
 
 public class AiApiContext(DbContextOptions<AiApiContext> options) : DbContext(options)
 {
@@ -169,5 +169,15 @@ public class AiApiContext(DbContextOptions<AiApiContext> options) : DbContext(op
                 .HasDatabaseName("UX_tbl_CustomerModelAssignments_fld_Feature_Default")
                 .HasFilter("[fld_CustomerId] IS NULL");
         });
+
+        modelBuilder.Entity<RagDocument>()
+               .HasOne(x => x.Customer)
+               .WithMany(c => c.RagDocument)
+               .HasForeignKey(x => x.CustomerId);
+
+        modelBuilder.Entity<RagInstruction>()
+              .HasOne(x => x.Customer)
+              .WithMany(x => x.RagInstructions)
+              .HasForeignKey(x => x.CustomerId);
     }
 }

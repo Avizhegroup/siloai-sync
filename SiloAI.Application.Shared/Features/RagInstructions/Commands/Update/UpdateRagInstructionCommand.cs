@@ -1,4 +1,4 @@
-namespace SiloAI.Application.Shared.Features;
+﻿namespace SiloAI.Application.Shared.Features;
 
 public class UpdateRagInstructionCommand : IRequest<RagInstructionDto?>
 {
@@ -11,4 +11,5 @@ public class UpdateRagInstructionCommand : IRequest<RagInstructionDto?>
     public bool IsSystematic { get; set; }
     public bool IsActive { get; set; }
     public string? UpdaterUserId { get; set; }
+    public int? CustomerId { get; set; }
 }
