@@ -42,6 +42,12 @@ public class InvalidContentCheckMiddleware
 
         var path = context.Request.Path.Value;
 
+        if (path?.StartsWith("/api/rag/documents", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            await next(context);
+            return;
+        }
+
         if (path?.StartsWith("/api/rag/instructions", StringComparison.OrdinalIgnoreCase) == true)
         {
             await next(context);
