@@ -59,8 +59,8 @@ public class RagChatSendHandler(
         agentService.InitChatAgentWithInstructions(
             agentInstructions, resolvedModel, includeAutoRagContext: false);
 
-        var topK = request.TopK <= 0 ? 5 : Math.Clamp(request.TopK, 1, 20);
-     
+        var topK = 20; 
+
         var hits = await search.SearchAsync(
             request.Message, topK, request.DocType, request.Key, cancellationToken);
 
