@@ -1,109 +1,387 @@
 @page "/chat"
 @attribute [Authorize]
 
-<PageTitle>گفتگو با اسناد — پنل مدیریت هوش مصنوعی سیلو</PageTitle>
+<div class="rag-chat-page">
+    <div class="rag-settings">
 
-<div class="card-ai mb-3">
-    <div class="card-ai-header">
-        <span><i class="bi bi-chat-dots me-2"></i>گفتگو با عامل بر اساس پایگاه دانش (RAG)</span>
-        <div class="d-flex gap-2 align-items-center">
-            <label class="text-muted small mb-0">نوع سند:</label>
-            <select class="form-select form-select-sm" style="width: 130px" @bind="_docType" disabled="@_isSending">
-                @foreach (var type in Enum.GetValues<RagDocType>())
-                {
-                    <option value="@type">@type.ToDisplay()</option>
-                }
-            </select>
-            <label class="text-muted small mb-0">کلید:</label>
-            <input type="text" class="form-control form-control-sm" style="width: 130px"
-                   placeholder="اختیاری" @bind="_key" disabled="@_isSending" />
-            <label class="text-muted small mb-0">تعداد قطعات:</label>
-            <input type="number" min="1" max="20" class="form-control form-control-sm" style="width: 70px"
-                   @bind="_topK" disabled="@_isSending" />
-            <button class="btn btn-sm btn-outline-secondary" @onclick="StartNewChat" disabled="@_isSending">
-                <i class="bi bi-plus-lg me-1"></i>گفتگوی جدید
-            </button>
-        </div>
-    </div>
-
-    <div class="chat-window">
-        @if (_messages.Count == 0)
-        {
-            <div class="chat-empty text-muted">
-                <i class="bi bi-chat-square-text" style="font-size: 2rem; opacity: .4;"></i>
-                <div class="mt-2">پرسش خود را بنویسید تا با عامل بر اساس اسناد ایندکس‌شده گفتگو کنید.</div>
+        <div class="rag-setting-title">
+            <div class="rag-setting-icon">
+                <i class="bi bi-sliders2"></i>
             </div>
-        }
-        else
-        {
-            @foreach (var msg in _messages)
-            {
-                <div class="chat-row @(msg.IsUser ? "chat-row-user" : "chat-row-bot")">
-                    <div class="chat-bubble @(msg.IsUser ? "chat-bubble-user" : "chat-bubble-bot")">
-                        <div class="chat-bubble-header">
-                            <i class="bi @(msg.IsUser ? "bi-person-circle" : "bi-robot") me-1"></i>
-                            <span>@(msg.IsUser ? "شما" : "دستیار")</span>
-                            <span class="chat-time">@msg.Time.ToLocalTime().ToString("HH:mm")</span>
-                        </div>
-                        <div class="chat-bubble-body">@msg.Text</div>
-                        @if (!msg.IsUser && msg.Citations is { Count: > 0 })
-                        {
-                            <div class="chat-citations">
-                                <div class="chat-citations-title">
-                                    <i class="bi bi-bookmark-star me-1"></i>منابع (@msg.Citations.Count)
-                                </div>
-                                @for (var i = 0; i < msg.Citations.Count; i++)
-                                {
-                                    var c = msg.Citations[i];
-                                    var idx = i + 1;
-                                    <div class="chat-citation">
-                                        <div class="chat-citation-meta">
-                                            <span class="chat-citation-badge">[@idx]</span>
-                                            <span class="fw-semibold">@c.FileName</span>
-                                            <span class="text-muted">— قطعه @c.ChunkIndex</span>
-                                            <span class="text-muted small">(شباهت: @c.Similarity.ToString("F3"))</span>
-                                        </div>
-                                        <div class="chat-citation-snippet">@c.Snippet</div>
-                                    </div>
-                                }
-                            </div>
-                        }
-                    </div>
+
+            <div>
+                <div class="rag-setting-heading">
+                    تنظیمات جستجو
                 </div>
-            }
-            @if (_isSending)
-            {
-                <div class="chat-row chat-row-bot">
-                    <div class="chat-bubble chat-bubble-bot">
-                        <div class="chat-bubble-body text-muted">
-                            <span class="spinner-border spinner-border-sm me-2"></span>در حال پاسخ‌گویی...
-                        </div>
-                    </div>
+
+                <div class="rag-setting-description">
+                    محدوده و تعداد اسناد مورد استفاده برای پاسخ را مشخص کنید.
                 </div>
-            }
-        }
+            </div>
+        </div>
+
+
+        <div class="rag-setting-fields">
+
+            <div class="rag-field">
+
+                <label>
+                    <i class="bi bi-file-earmark-text me-1"></i>
+                    نوع سند
+                </label>
+
+                <select class="form-select"
+                        @bind="_docType"
+                        disabled="@_isSending">
+
+                    @foreach (var type in Enum.GetValues<RagDocType>())
+                    {
+                        <option value="@type">
+                            @type.ToDisplay()
+                        </option>
+                    }
+
+                </select>
+
+            </div>
+
+
+            <div class="rag-field">
+
+                <label>
+                    <i class="bi bi-key me-1"></i>
+                    کلید
+                </label>
+
+                <input type="text"
+                       class="form-control"
+                       placeholder="اختیاری"
+                       @bind="_key"
+                       disabled="@_isSending" />
+
+            </div>
+
+
+            <div class="rag-field rag-top-k">
+
+                <label>
+                    <i class="bi bi-layers me-1"></i>
+                    تعداد قطعات
+                </label>
+
+                <input type="number"
+                       min="1"
+                       max="20"
+                       class="form-control"
+                       @bind="_topK"
+                       disabled="@_isSending" />
+
+            </div>
+
+
+            <div class="rag-setting-action">
+
+                <button class="btn btn-outline-primary rag-new-chat-btn"
+                        @onclick="StartNewChat"
+                        disabled="@_isSending">
+
+                    <i class="bi bi-plus-lg me-1"></i>
+                    گفتگوی جدید
+
+                </button>
+
+            </div>
+
+        </div>
+
     </div>
 
-    <div class="chat-input">
-        <textarea class="form-control"
-                  rows="2"
-                  placeholder="پیام خود را بنویسید... (Enter برای ارسال، Shift+Enter برای خط جدید)"
-                  @bind="_input"
-                  @bind:event="oninput"
-                  @onkeydown="OnInputKeyDown"
-                  disabled="@_isSending"></textarea>
-        <button class="btn btn-primary chat-send-btn"
-                @onclick="SendAsync"
-                disabled="@(_isSending || string.IsNullOrWhiteSpace(_input))">
-            @if (_isSending)
+
+    <!-- Chat -->
+    <div class="rag-chat-card">
+
+        <div class="rag-chat-header">
+
+            <div class="rag-chat-header-left">
+
+                <div class="rag-agent-avatar">
+                    <i class="bi bi-robot"></i>
+                </div>
+
+                <div>
+
+                    <div class="rag-agent-name">
+                        دستیار هوشمند سیلو
+                    </div>
+
+                    <div class="rag-agent-status">
+                        <span></span>
+                        آماده پاسخ‌گویی بر اساس پایگاه دانش
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            @if (_messages.Count > 0)
             {
-                <span class="spinner-border spinner-border-sm"></span>
+                <div class="rag-message-count">
+                    <i class="bi bi-chat-left-text me-1"></i>
+                    @_messages.Count پیام
+                </div>
+            }
+
+        </div>
+
+
+        <div class="chat-window rag-chat-window">
+
+            @if (_messages.Count == 0)
+            {
+                <div class="rag-empty">
+
+                    <div class="rag-empty-orbit">
+
+                        <div class="rag-empty-icon">
+                            <i class="bi bi-stars"></i>
+                        </div>
+
+                    </div>
+
+                    <div class="rag-empty-title">
+                        آماده گفتگو هستم
+                    </div>
+
+                    <div class="rag-empty-description">
+                        پرسش خود را درباره اطلاعات موجود در پایگاه دانش بنویسید.
+                        پاسخ‌ها بر اساس اسناد ایندکس‌شده تولید می‌شوند.
+                    </div>
+
+
+                    <div class="rag-suggestions">
+
+                        <div class="rag-suggestion">
+                            <i class="bi bi-search"></i>
+                            جستجو در اسناد
+                        </div>
+
+                        <div class="rag-suggestion">
+                            <i class="bi bi-file-text"></i>
+                            بررسی محتوای مستندات
+                        </div>
+
+                        <div class="rag-suggestion">
+                            <i class="bi bi-diagram-3"></i>
+                            تحلیل اطلاعات
+                        </div>
+
+                    </div>
+
+                </div>
             }
             else
             {
-                <i class="bi bi-send-fill"></i>
-            }
-        </button>
-    </div>
-</div>
+                @foreach (var msg in _messages)
+                {
+                    <div class="chat-row @(msg.IsUser ? "chat-row-user" : "chat-row-bot")">
 
+                        @if (!msg.IsUser)
+                        {
+                            <div class="rag-message-avatar">
+                                <i class="bi bi-robot"></i>
+                            </div>
+                        }
+
+                        <div class="chat-bubble @(msg.IsUser ? "chat-bubble-user" : "chat-bubble-bot")">
+
+                            <div class="chat-bubble-header">
+
+                                <div class="chat-sender">
+                                    <span>
+                                        @(msg.IsUser ? "شما" : "دستیار هوشمند")
+                                    </span>
+                                </div>
+
+                                <span class="chat-time">
+                                    @msg.Time.ToLocalTime().ToString("HH:mm")
+                                </span>
+
+                            </div>
+
+
+                            <div class="chat-bubble-body">
+                                @msg.Text
+                            </div>
+
+
+                            @if (!msg.IsUser && msg.Citations is { Count: > 0 })
+                            {
+                                <div class="chat-citations">
+
+                                    <div class="chat-citations-title">
+
+                                        <div class="citation-title-left">
+                                            <div class="citation-icon">
+                                                <i class="bi bi-bookmark-star-fill"></i>
+                                            </div>
+
+                                            <span>
+                                                منابع پاسخ
+                                            </span>
+                                        </div>
+
+                                        <span class="citation-count">
+                                            @msg.Citations.Count منبع
+                                        </span>
+
+                                    </div>
+
+
+                                    <div class="citation-list">
+
+                                        @for (var i = 0; i < msg.Citations.Count; i++)
+                                        {
+                                            var c = msg.Citations[i];
+                                            var idx = i + 1;
+
+                                            <div class="chat-citation">
+
+                                                <div class="chat-citation-number">
+                                                    @idx
+                                                </div>
+
+                                                <div class="chat-citation-content">
+
+                                                    <div class="chat-citation-meta">
+
+                                                        <span class="chat-citation-file">
+                                                            <i class="bi bi-file-earmark-text me-1"></i>
+                                                            @c.FileName
+                                                        </span>
+
+                                                        <span class="chat-citation-chunk">
+                                                            قطعه @c.ChunkIndex
+                                                        </span>
+
+                                                        <span class="chat-citation-score">
+                                                            <i class="bi bi-bullseye me-1"></i>
+                                                            @c.Similarity.ToString("F3")
+                                                        </span>
+
+                                                    </div>
+
+                                                    <div class="chat-citation-snippet">
+                                                        @c.Snippet
+                                                    </div>
+
+                                                </div>
+
+                                            </div>
+                                        }
+
+                                    </div>
+
+                                </div>
+                            }
+
+                        </div>
+
+                    </div>
+                }
+
+
+                @if (_isSending)
+                {
+                    <div class="chat-row chat-row-bot">
+
+                        <div class="rag-message-avatar">
+                            <i class="bi bi-robot"></i>
+                        </div>
+
+                        <div class="chat-bubble chat-bubble-bot rag-thinking-bubble">
+
+                            <div class="rag-thinking">
+
+                                <span class="rag-thinking-icon">
+                                    <i class="bi bi-stars"></i>
+                                </span>
+
+                                <span>
+                                    در حال بررسی پایگاه دانش و آماده‌سازی پاسخ...
+                                </span>
+
+                                <span class="rag-thinking-dots">
+                                    <i></i>
+                                    <i></i>
+                                    <i></i>
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                }
+
+            }
+
+        </div>
+
+
+        <!-- Input -->
+        <div class="rag-input-area">
+
+            <div class="rag-input-wrapper">
+
+                <div class="rag-input-icon">
+                    <i class="bi bi-chat-text"></i>
+                </div>
+
+                <textarea class="form-control rag-textarea"
+                          rows="2"
+                          placeholder="پرسش خود را درباره پایگاه دانش بنویسید..."
+                          @bind="_input"
+                          @bind:event="oninput"
+                          @onkeydown="OnInputKeyDown"
+                          disabled="@_isSending"></textarea>
+
+                <button class="rag-send-btn"
+                        @onclick="SendAsync"
+                        disabled="@(_isSending || string.IsNullOrWhiteSpace(_input))">
+
+                    @if (_isSending)
+                    {
+                        <span class="spinner-border spinner-border-sm"></span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-arrow-up"></i>
+                    }
+
+                </button>
+
+            </div>
+
+            <div class="rag-input-hint">
+                <span>
+                    <kbd>Enter</kbd>
+                    ارسال
+                </span>
+
+                <span>
+                    <kbd>Shift</kbd> + <kbd>Enter</kbd>
+                    خط جدید
+                </span>
+
+                <span class="rag-input-security">
+                    <i class="bi bi-shield-check me-1"></i>
+                    پاسخ مبتنی بر اسناد
+                </span>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

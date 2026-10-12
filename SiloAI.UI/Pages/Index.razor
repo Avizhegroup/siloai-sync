@@ -1,19 +1,10 @@
 @page "/"
 @attribute [Authorize]
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+@using SiloAI.Shared.Tools
 
 <PageTitle>خانه — پنل مدیریت هوش مصنوعی سیلو</PageTitle>
-
-<div class="card-ai mb-4">
-    <div class="p-4">
-        <div class="d-flex align-items-center gap-3">
-            <i class="bi bi-robot" style="font-size: 2.5rem; color: var(--accent);"></i>
-            <div>
-                <h4 class="mb-0 fw-bold">خوش آمدید به پنل مدیریت هوش مصنوعی سیلو</h4>
-                <p class="text-muted mb-0">مدیریت مشتریان، کلیدهای API و پایش سرویس هوش مصنوعی.</p>
-            </div>
-        </div>
-    </div>
-</div>
 
 @if (_isLoading)
 {
@@ -24,99 +15,283 @@
 }
 else
 {
-    <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="stat-card d-flex justify-content-between align-items-start">
-                <div>
-                    <div class="stat-value">@_totalCustomers</div>
-                    <div class="stat-label">کل مشتریان</div>
-                </div>
-                <i class="bi bi-people-fill stat-icon"></i>
+    <div class="welcome-banner mb-4">
+        <div class="welcome-content">
+            <div class="welcome-icon">
+                <i class="bi bi-robot"></i>
+            </div>
+
+            <div>
+                <h4 class="mb-1">
+                    خوش آمدید 👋
+                </h4>
+
+                <p class="mb-0">
+                    پنل مدیریت هوش مصنوعی سیلو
+                    <span class="welcome-date">
+                        <i class="bi bi-calendar3 me-1"></i>
+                        @DateTimeTools.GetPersianDate()
+                    </span>
+                </p>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="stat-card d-flex justify-content-between align-items-start">
-                <div>
-                    <div class="stat-value text-success">@_activeKeys</div>
-                    <div class="stat-label">کلیدهای API فعال</div>
-                </div>
-                <i class="bi bi-key-fill stat-icon text-success"></i>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-card d-flex justify-content-between align-items-start">
-                <div>
-                    <div class="stat-value">@_totalKeys</div>
-                    <div class="stat-label">کل کلیدهای API</div>
-                </div>
-                <i class="bi bi-key stat-icon"></i>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-card d-flex justify-content-between align-items-start">
-                <div>
-                    <div class="stat-value text-danger">@_revokedKeys</div>
-                    <div class="stat-label">کلیدهای لغو شده</div>
-                </div>
-                <i class="bi bi-shield-x stat-icon text-danger"></i>
-            </div>
+
+        <div class="welcome-actions">
+            <a href="/customers" class="btn btn-sm btn-light">
+                <i class="bi bi-people me-1"></i>
+                مشتریان
+            </a>
+            <a href="/financial" class="btn btn-sm btn-outline-light">
+                <i class="bi bi-wallet2 me-1"></i>
+                امور مالی
+            </a>
         </div>
     </div>
 
+    <div class="stat-strip">
+        <div class="stat-card accent">
+            <div>
+                <div class="stat-value">@_totalToman.ToString("N0")</div>
+                <div class="stat-label">مصرف @_rangeTitle (تومان)</div>
+            </div>
+            <i class="bi bi-lightning-charge stat-icon"></i>
+        </div>
+
+        <div class="stat-card">
+            <div>
+                <div class="stat-value">$@_totalUsd.ToString("N4")</div>
+                <div class="stat-label">مصرف @_rangeTitle (دلار)</div>
+            </div>
+            <i class="bi bi-currency-dollar stat-icon"></i>
+        </div>
+
+        <div class="stat-card amber">
+            <div>
+                <div class="stat-value">@_activeCustomers / @_customerCount</div>
+                <div class="stat-label">مشتریان فعال این ماه</div>
+            </div>
+            <i class="bi bi-people stat-icon"></i>
+        </div>
+
+        <div class="stat-card green">
+            <div>
+                <div class="stat-value">$@_totalCreditUsd.ToString("N2")</div>
+                <div class="stat-label">مجموع اعتبار باقیمانده</div>
+            </div>
+            <i class="bi bi-piggy-bank stat-icon"></i>
+        </div>
+    </div>
+
+    <div class="card-ai mb-4">
+        <div class="card-ai-header">
+            <span>
+                <i class="bi bi-graph-up me-2"></i>
+                روند مصرف تجمعی مشتریان از اول @_rangeTitle
+                <small class="text-muted fw-normal ms-2">هر خط یک مشتری</small>
+            </span>
+
+            <div class="btn-group btn-group-sm" role="group">
+                <button type="button"
+                        class="btn @(!_showUsd ? "btn-primary" : "btn-outline-primary")"
+                        @onclick="() => SetUnit(false)">
+                    تومان
+                </button>
+                <button type="button"
+                        class="btn @(_showUsd ? "btn-primary" : "btn-outline-primary")"
+                        @onclick="() => SetUnit(true)">
+                    دلار
+                </button>
+            </div>
+        </div>
+
+        <div class="p-3">
+            @if (_series.Count == 0)
+            {
+                <div class="text-center text-muted py-5">
+                    <i class="bi bi-graph-down me-2"></i>
+                    مشتری‌ای برای نمایش وجود ندارد.
+                </div>
+            }
+            else
+            {
+                <div>
+                    @if (_isTruncated)
+                    {
+                        <div class="alert alert-warning py-2 small">
+                            تعداد رکوردهای مصرف از سقف دریافت بیشتر است؛ ممکن است بخشی از روزهای ابتدای ماه کامل نمایش داده نشود.
+                        </div>
+                    }
+
+                    <TelerikChart @key="_chartVersion" Height="380px">
+
+                        <ChartSeriesItems>
+                            @foreach (var s in _series)
+                            {
+                                <ChartSeries Type="ChartSeriesType.Line"
+                                             Name="@s.Name"
+                                             Data="@s.Points"
+                                             Field="@nameof(DayPoint.Value)"
+                                             CategoryField="@nameof(DayPoint.Label)"
+                                             Color="@s.Color"
+                                             Style="@ChartSeriesStyle.Smooth">
+                                    <ChartSeriesMarkers Visible="false" />
+                                </ChartSeries>
+                            }
+                        </ChartSeriesItems>
+
+                        <ChartCategoryAxes>
+                            <ChartCategoryAxis>
+                                <ChartCategoryAxisMajorGridLines Visible="false" />
+                            </ChartCategoryAxis>
+                        </ChartCategoryAxes>
+
+                        <ChartValueAxes>
+                            <ChartValueAxis>
+                                <ChartValueAxisLabels Format="@ValueFormat" />
+                            </ChartValueAxis>
+                        </ChartValueAxes>
+
+                        <ChartLegend Position="ChartLegendPosition.Top" />
+
+                        <ChartTooltip Visible="true" Shared="true" />
+
+                    </TelerikChart>
+                </div>
+            }
+        </div>
+    </div>
 
     <div class="card-ai">
         <div class="card-ai-header">
-            <span><i class="bi bi-clock-history me-2"></i>آخرین کلیدهای ایجاد شده</span>
-            <a href="/customers" class="btn btn-sm btn-outline-primary">
-                <i class="bi bi-arrow-left me-1"></i>مدیریت همه
-            </a>
+            <span>
+                <i class="bi bi-people me-2"></i>
+                خلاصه‌ی مصرف این ماه
+            </span>
+
+            <span class="text-muted small">
+                @_rows.Count مشتری
+            </span>
         </div>
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>عنوان</th>
-                        <th>مشتری</th>
-                        <th>تاریخ ایجاد</th>
-                        <th>تاریخ انقضا</th>
-                        <th>وضعیت</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (_recentKeys is { Count: 0 })
-                    {
-                        <tr>
-                            <td colspan="5" class="text-center text-muted py-4">
-                                <i class="bi bi-key me-2"></i>هیچ کلید API‌ای وجود ندارد.
-                                <a href="/customers">ایجاد کنید</a>
-                            </td>
-                        </tr>
-                    }
-                    @foreach (var key in _recentKeys ?? [])
-                    {
-                        <tr>
-                            <td class="fw-semibold">@key.Label</td>
-                            <td class="text-muted">@(_customerMap.TryGetValue(key.CustomerId ?? 0, out var name) ? name : "—")</td>
-                            <td class="text-muted">@key.CreatedAt.ToLocalTime().ToString("yyyy/MM/dd")</td>
-                            <td class="text-muted">@key.ExpiresAt.ToLocalTime().ToString("yyyy/MM/dd")</td>
-                            <td>
-                                @if (key.IsRevoked)
-                                {
-                                    <span class="badge-revoked">لغو شده</span>
-                                }
-                                else if (key.ExpiresAt < DateTime.Now)
-                                {
-                                    <span class="badge-expired">منقضی</span>
-                                }
-                                else
-                                {
-                                    <span class="badge-active">فعال</span>
-                                }
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+
+        <TelerikGrid Data="@_rows"
+                     TItem="CustomerUsageRow"
+                     Class="customers-grid"
+                     Pageable="true"
+                     PageSize="10"
+                     Sortable="true"
+                     Resizable="true"
+                     Navigable="true">
+
+            <GridColumns>
+
+                <GridColumn Field="@nameof(CustomerUsageRow.Name)"
+                            Title="مشتری"
+                            Width="230px">
+
+                    <Template Context="usage">
+                        @{
+                            var item = (CustomerUsageRow)usage;
+                        }
+
+                        <span class="customer-dot" style="background:@item.Color"></span>
+                        <span class="fw-semibold">
+                            @item.Name
+                        </span>
+                    </Template>
+
+                </GridColumn>
+
+                <GridColumn Field="@nameof(CustomerUsageRow.Toman)"
+                            Title="مصرف (تومان)"
+                            Width="170px">
+
+                    <Template Context="usage">
+                        @{
+                            var item = (CustomerUsageRow)usage;
+                        }
+
+                        <span class="font-monospace" dir="ltr">
+                            @item.Toman.ToString("N0")
+                        </span>
+                    </Template>
+
+                </GridColumn>
+
+                <GridColumn Field="@nameof(CustomerUsageRow.Usd)"
+                            Title="مصرف (دلار)"
+                            Width="150px">
+
+                    <Template Context="usage">
+                        @{
+                            var item = (CustomerUsageRow)usage;
+                        }
+
+                        <span class="font-monospace" dir="ltr">
+                            $@item.Usd.ToString("N4")
+                        </span>
+                    </Template>
+
+                </GridColumn>
+
+                <GridColumn Field="@nameof(CustomerUsageRow.Share)"
+                            Title="سهم از کل مصرف"
+                            Width="200px">
+
+                    <Template Context="usage">
+                        @{
+                            var item = (CustomerUsageRow)usage;
+                            var share = item.Share.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture);
+                        }
+
+                        <div class="share-cell" dir="ltr">
+                            <div class="share-bar">
+                                <div class="share-fill"
+                                     style="width:@(share)%; background:@item.Color"></div>
+                            </div>
+                            <span class="share-text">@(share)%</span>
+                        </div>
+                    </Template>
+
+                </GridColumn>
+
+                <GridColumn Field="@nameof(CustomerUsageRow.CreditUsd)"
+                            Title="اعتبار باقیمانده (دلار)"
+                            Width="200px">
+
+                    <Template Context="usage">
+                        @{
+                            var item = (CustomerUsageRow)usage;
+                        }
+
+                        <span class="@(item.CreditUsd <= 0
+                                           ? "text-danger fw-bold"
+                                           : "text-success fw-bold")"
+                              dir="ltr">
+                            $@item.CreditUsd.ToString("N2")
+                        </span>
+                    </Template>
+
+                </GridColumn>
+
+                <GridColumn Field="@nameof(CustomerUsageRow.BalanceToman)"
+                            Title="موجودی حساب مالی (تومان)"
+                            Width="220px">
+
+                    <Template Context="usage">
+                        @{
+                            var item = (CustomerUsageRow)usage;
+                        }
+
+                        <span class="font-monospace" dir="ltr">
+                            @item.BalanceToman.ToString("N0")
+                        </span>
+                    </Template>
+
+                </GridColumn>
+
+            </GridColumns>
+
+        </TelerikGrid>
     </div>
 }
+

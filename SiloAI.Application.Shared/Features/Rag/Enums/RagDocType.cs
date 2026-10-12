@@ -19,3 +19,9 @@ public static class RagDocTypeExtensions
         _ => type.ToString()
     };
 }
+
+public  class DocTypeItem
+{
+    public RagDocType Code { get; set; }
+    public string Title { get; set; } = string.Empty;
+}
