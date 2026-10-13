@@ -22,8 +22,17 @@ public class RagChatNewSessionCommandHandler(
 
         var resolvedModel = await modelResolver.ResolveAsync(request.CustomerId, UsageFeature.SupportChat, cancellationToken);
 
+        // Mirrors RagChatSendHandler's call exactly (same includeAutoRagContext: false,
+        // includeSearchTool: true, and DocType scope — RagChatNewSessionCommand has no Key
+        // field, so ragKey is always null here, matching the scope RagChatSendHandler uses when
+        // its own request.Key is also unset). Keeping these two call sites identical matters:
+        // InitChatAgentWithInstructions resolves (and may cache) a specific AIAgent instance per
+        // call, and the same AgentSession created here is later reused by Send — an agent built
+        // with different tool/context configuration than the one that created a session is not a
+        // reliable combination (see the ChatAgentCache docs).
         agentService.InitChatAgentWithInstructions(
-            agentInstructions, resolvedModel, includeAutoRagContext: false);
+            agentInstructions, resolvedModel, includeAutoRagContext: false,
+            ragDocType: request.DocType, ragKey: null, includeSearchTool: true);
 
         var session = await agentService.CreateNewSessionAsync();
 

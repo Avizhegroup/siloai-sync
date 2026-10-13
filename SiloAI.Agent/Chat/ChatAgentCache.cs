@@ -78,6 +78,7 @@ public sealed class ChatAgentCache
         string instructions,
         bool includeAutoRagContext,
         RagDocType? ragDocType,
-        string? ragKey)
-        => $"{modelName}|{includeAutoRagContext}|{ragDocType}|{ragKey}|{instructions}";
+        string? ragKey,
+        bool includeSearchTool = false)
+        => $"{modelName}|{includeAutoRagContext}|{ragDocType}|{ragKey}|{includeSearchTool}|{instructions}";
 }

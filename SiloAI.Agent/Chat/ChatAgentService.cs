@@ -17,6 +17,7 @@ namespace SiloAI.Agent.Chat;
 public class ChatAgentService(
     IOptions<OpenAIOptions> options,
     RagContextProviderFactory ragContextProviderFactory,
+    RagSearchToolFactory ragSearchToolFactory,
     AiCostCalculator costCalculator,
     AiApiContext context,
     ChatAgentCache agentCache)
@@ -54,14 +55,32 @@ public class ChatAgentService(
     /// itself (e.g. <c>RagChatSendHandler</c>) — leaving this on in that case causes a second,
     /// unfiltered retrieval pass and duplicate chunk content in the prompt.
     /// </param>
-    /// <param name="ragDocType">DocType filter passed through to the auto context provider, if enabled.</param>
-    /// <param name="ragKey">Key filter passed through to the auto context provider, if enabled.</param>
+    /// <param name="ragDocType">
+    /// DocType filter passed through to the auto context provider (when
+    /// <paramref name="includeAutoRagContext"/> is true) and/or the on-demand search tool (when
+    /// <paramref name="includeSearchTool"/> is true).
+    /// </param>
+    /// <param name="ragKey">
+    /// Key filter passed through to the auto context provider and/or the on-demand search tool,
+    /// same conditions as <paramref name="ragDocType"/>.
+    /// </param>
+    /// <param name="includeSearchTool">
+    /// When true, gives the agent a callable "search_knowledge_base" tool (see
+    /// <see cref="RagSearchToolFactory"/>) scoped to <paramref name="ragDocType"/>/
+    /// <paramref name="ragKey"/>, so it can search again with a refined query on its own — e.g.
+    /// when the context it already has (whether from auto-RAG-context or from a caller's own
+    /// up-front retrieval) doesn't answer the question. Independent of
+    /// <paramref name="includeAutoRagContext"/>: a caller can do its own up-front retrieval
+    /// (passing includeAutoRagContext: false) and still opt into this tool for follow-up
+    /// searches, which is how RagChatSendHandler uses it.
+    /// </param>
     public void InitChatAgentWithInstructions(
         string instructions,
         ResolvedAiModel model,
         bool includeAutoRagContext = true,
         RagDocType? ragDocType = null,
-        string? ragKey = null)
+        string? ragKey = null,
+        bool includeSearchTool = false)
     {
         if (!model.SupportsTextInput || !model.SupportsTextOutput)
             throw new InvalidOperationException(
@@ -72,24 +91,36 @@ public class ChatAgentService(
         activeModelIdentifier = model.Identifier;
 
         var cacheKey = ChatAgentCache.BuildKey(
-            model.Identifier, instructions, includeAutoRagContext, ragDocType, ragKey);
+            model.Identifier, instructions, includeAutoRagContext, ragDocType, ragKey, includeSearchTool);
 
         writer = agentCache.GetOrCreate(cacheKey, () =>
         {
+            // UseFunctionInvocation wires up the automatic call-tool -> run it -> feed the
+            // result back to the model loop. It is a no-op when ChatOptions.Tools is empty, so
+            // this is safe to apply unconditionally rather than only when a search tool is
+            // requested.
             var chatClient = new ChatClient(model.Identifier,
                 new ApiKeyCredential(options.Value.ApiKey),
                 new OpenAIClientOptions { Endpoint = new Uri(options.Value.Endpoint) })
-                .AsIChatClient();
+                .AsIChatClient()
+                .AsBuilder()
+                .UseFunctionInvocation()
+                .Build();
 
             var contextProviders = includeAutoRagContext
                 ? new[] { ragContextProviderFactory.Create(docType: ragDocType, key: ragKey) }
                 : Array.Empty<AIContextProvider>();
+
+            var tools = includeSearchTool
+                ? new List<AITool> { ragSearchToolFactory.Create(docType: ragDocType, key: ragKey) }
+                : null;
 
             return new ChatClientAgent(chatClient, new ChatClientAgentOptions
             {
                 ChatOptions = new()
                 {
                     Instructions = instructions,
+                    Tools = tools
                 },
                 AIContextProviders = contextProviders
             });

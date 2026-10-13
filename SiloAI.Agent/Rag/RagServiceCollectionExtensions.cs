@@ -54,6 +54,8 @@ public static class RagServiceCollectionExtensions
 
         services.AddScoped<RagContextProviderFactory>();
 
+        services.AddScoped<RagSearchToolFactory>();
+
         services.AddRagDocumentChunkCollection();
 
         return services;
