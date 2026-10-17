@@ -8,4 +8,6 @@ public class RagChatRequest
     public bool IsMainChat { get; set; } = false;
     public RagDocType DocType { get; set; } = RagDocType.GeneralChat;
     public string? Key { get; set; }
+    public bool IsFinalAnswer { get; set; } = false;
+    public string? DatabaseResultsJson { get; set; }
 }

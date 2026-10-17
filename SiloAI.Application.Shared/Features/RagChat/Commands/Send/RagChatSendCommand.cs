@@ -1,4 +1,4 @@
-namespace SiloAI.Application.Shared.Features;
+﻿namespace SiloAI.Application.Shared.Features;
 
 public class RagChatSendCommand : IRequest<RagChatResponse>
 {
@@ -12,4 +12,6 @@ public class RagChatSendCommand : IRequest<RagChatResponse>
     public string Username { get; set; }
     public string OwnerId { get; set; }
     public int? CustomerId { get; set; }
+    public bool IsFinalAnswer { get; set; } = false;
+    public string? DatabaseResultsJson { get; set; }
 }

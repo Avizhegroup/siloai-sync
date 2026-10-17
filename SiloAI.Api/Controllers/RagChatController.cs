@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SiloAI.Api.Auth;
@@ -43,6 +43,8 @@ public class RagChatController(IMediator mediator) : ControllerBase
                 DocType = request.DocType,
                 Key = request.Key,
                 Username = User?.Identity?.Name ?? string.Empty,
+                IsFinalAnswer = request.IsFinalAnswer,
+                DatabaseResultsJson = request.DatabaseResultsJson,
                 OwnerId = User.GetOwnerId(),
                 CustomerId = int.Parse(User.GetCustomerId())
             }, cancellationToken);
