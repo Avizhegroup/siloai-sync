@@ -788,3 +788,29 @@ Its primary focus is:
 * How the overall product flow works within warehouses and the factory environment.
 
 Therefore, this knowledge base must be interpreted from a **user-facing and operational perspective**, not from the perspective of technical or internal system structure.
+
+# 31. Synonyms and Semantic Mapping
+
+## Rules
+- Map synonyms, alternative names, English terms, and common phrases to the correct canonical concept.
+- Use context to resolve ambiguity; ask for clarification when necessary.
+- Use canonical Persian names in responses.
+- Similar concepts must remain distinct. Synonyms do not imply undocumented features or relationships.
+
+## Concept Mapping
+- **گروه کالا:** گروه محصول، دسته کالا، دسته‌بندی کالا، Product Group, Product Category
+- **زیرگروه کالا:** زیرگروه محصول، دسته فرعی کالا، Product Subgroup, Product Subcategory
+- **نوع کالا:** نوع محصول، Product Type, Item Type
+- **طبقه کالا:** طبقه‌بندی کالا، طبقه محصول، Product Class, Product Classification
+- **برند:** مارک، نام تجاری، Brand, Product Brand,لوگو
+- **سایز:** اندازه، ابعاد (در صورت اشاره به اندازه فیزیکی)، Size, Product Size
+- **درجه کیفیت:** کیفیت کالا، وضعیت کیفی، رتبه کیفیت، Quality Grade
+- **نوع عملیات:** نوع جابه‌جایی، نوع انتقال کالا، Movement Type, Operation Type
+
+## Important Distinctions
+- گروه کالا ≠ زیرگروه کالا ≠ نوع کالا ≠ طبقه کالا
+- سایز ≠ واحد کالا ≠ واحد دوم
+- درجه کیفیت ≠ نوع کالا
+- نوع عملیات، دسته‌بندی کالا نیست.
+
+When a synonym is used, retrieve knowledge associated with its canonical concept and answer based on documented functionality only.

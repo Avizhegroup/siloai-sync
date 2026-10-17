@@ -259,6 +259,84 @@ Therefore, in that project, a `محموله` can represent one pallet.
 
 The concept of `محموله` is not necessarily a fixed industrial concept. It represents the unit that is registered as a Serial and tracked/tagged in the specific process.
 
+
+## Product Packaging and Shipment Fields
+
+### Purpose
+
+This section defines the business meaning and database column mapping of Product packaging and shipment fields in Silo.
+
+The Agent must use these mappings when interpreting user requests and generating SQL queries.
+
+### 1. Main Unit
+
+- **Database column:** `ProductUnit`
+- **Business meaning:** واحد اصلی کالا
+- **Usage:** Use this column when the user asks about the Product's main unit.
+
+### 2. Second Unit Value
+
+- **Database column:** `ProductValue`
+- **Business meaning:** مقدار واحد دوم
+- **Usage:** Use this column when the user asks about the value or quantity of the second unit assigned to a Product.
+
+### 3. Number of Second Units in a Shipment
+
+- **Database column:** `ProductCountInPack`
+- **Business meaning:** تعداد واحد دوم در محموله
+- **Usage:** Use this column when the user asks how many second units are included in a shipment or package.
+
+### 4. Shipment Value
+
+- **Database column:** `ProductPackValue`
+- **Business meaning:** مقدار محموله
+- **Usage:** Use this column when the user asks about the configured shipment value or مقدار محموله for a Product.
+
+### 5. Shipment Weight
+
+- **Database column:** `ProductPackWeight`
+- **Business meaning:** وزن محموله
+- **Usage:** Use this column when the user asks about the weight of a Product's shipment or package.
+
+### 6. Shipment Volume
+
+- **Database column:** `ProductPackVolume`
+- **Business meaning:** حجم محموله
+- **Usage:** Use this column when the user asks about the volume of a Product's shipment or package.
+
+### 7. Mandatory SQL Column Mapping Rules
+
+When generating SQL queries, the Agent must use the following exact mappings:
+
+| User-facing concept | Database column |
+|---|---|
+| واحد اصلی کالا | `ProductUnit` |
+| مقدار واحد دوم | `ProductValue` |
+| تعداد واحد دوم در محموله | `ProductCountInPack` |
+| مقدار محموله | `ProductPackValue` |
+| وزن محموله | `ProductPackWeight` |
+| حجم محموله | `ProductPackVolume` |
+
+These mappings define the relationship between business terminology and existing database columns. They do not authorize the creation or assumption of additional columns.
+
+The Agent must not substitute guessed column names such as `Unit`, `SecondUnit`, `SecondUnitQuantity`, or `ShipmentQuantity` for the documented columns.
+
+For example, when the user asks for the second-unit value, the Agent must use `ProductValue`, not an assumed `SecondUnit` column.
+
+When the user asks for the number of second units in a shipment, the Agent must use `ProductCountInPack`, not an assumed `SecondUnitQuantity` column.
+
+When the user asks for the shipment value, the Agent must use `ProductPackValue`, not an assumed `ShipmentQuantity` column.
+
+### 8.Authoritative Schema Validation
+
+Before generating SQL, the Agent must verify every referenced table and column against the actual `CREATE TABLE` definitions in the database schema section beginning with `# Application sql server table definitions:`.
+
+This section defines business meanings and column mappings only. The authoritative database schema remains the source of truth for determining whether a table or column exists.
+
+The Agent must never invent a database column, even if a business concept appears in another knowledge document.
+
+If a requested concept cannot be mapped to a column confirmed by the authoritative schema, the Agent must not generate SQL using a guessed column name.
+
 ---
 
 # 11. Quantity
