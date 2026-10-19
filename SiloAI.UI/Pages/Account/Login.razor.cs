@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace SiloAI.UI.Pages.Account;
 
@@ -6,6 +6,7 @@ public partial class Login
 {
     public bool IsLoading;
     public LoginModel Request = new();
+    private bool _showPassword;
 
     [Inject] public IAiAuthenticationService AuthenticationService { get; set; }
     [Inject] public NavigationManager NavigationManager { get; set; }
