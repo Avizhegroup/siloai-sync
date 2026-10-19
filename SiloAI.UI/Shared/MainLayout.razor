@@ -21,7 +21,6 @@
                     <i class="bi bi-robot me-2"></i>سیلو
                     <small>پنل مدیریت هوش مصنوعی</small>
                 </div>
-
                 <AuthorizeView>
                     <Authorized>
                         <div class="top-bar-user">
@@ -33,9 +32,7 @@
                     </Authorized>
                 </AuthorizeView>
             </header>
-
             <div class="menu-backdrop @(_menuOpen ? "show" : "")" @onclick="CloseMenu"></div>
-
             <AuthorizeView>
                 <Authorized>
                     <nav class="drawer @(_menuOpen ? "open" : "")">
@@ -63,7 +60,6 @@
                     </nav>
                 </Authorized>
             </AuthorizeView>
-
             <div class="main-content">
                 <div class="page-body">
                     <main>

@@ -20,8 +20,4 @@ public static class RagDocTypeExtensions
     };
 }
 
-public  class DocTypeItem
-{
-    public RagDocType Code { get; set; }
-    public string Title { get; set; } = string.Empty;
-}
+

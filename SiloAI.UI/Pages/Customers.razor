@@ -3,483 +3,364 @@
 
 @using Telerik.Blazor.Components
 @using SiloAI.Shared.Tools
+
 <PageTitle>مشتریان — پنل مدیریت هوش مصنوعی سیلو</PageTitle>
 
-@if (_showApiKeys && _selectedCustomer is not null)
-{
-    <div class="card-ai mb-4">
-
-        <div class="card-ai-header">
-
-            <span>
-                <i class="bi bi-arrow-right-circle me-2"></i>
-                کلیدهای API مشتری: @_selectedCustomer.Name
-            </span>
-
-            <button class="btn btn-sm btn-outline-secondary"
-                    @onclick="() =>
+    @if (_showApiKeys && _selectedCustomer is not null)
+    {
+        <div class="card-ai mb-4">
+            <div class="card-ai-header">
+                <span>
+                    <i class="bi bi-arrow-right-circle me-2"></i>
+                    کلیدهای API مشتری: @_selectedCustomer.Name
+                </span>
+                <button class="btn btn-sm btn-outline-secondary"
+                        @onclick="() =>
                                     {
                                         _showApiKeys = false;
                                         _selectedCustomer = null;
                                     }">
-
-                <i class="bi bi-x me-1"></i>
-                بستن
-
-            </button>
-
-        </div>
-
-        <div class="p-4">
-
-            @if (!string.IsNullOrEmpty(_newKeyValue))
-            {
-                <div class="alert alert-success d-flex gap-3 align-items-start">
-
-                    <i class="bi bi-check-circle-fill fs-5 mt-1"></i>
-
-                    <div>
-
-                        <strong>
-                            کلید ایجاد شد — همین الان کپی کنید، دیگر نمایش داده نمی‌شود.
-                        </strong>
-
-                        <div class="mt-2 p-2 bg-light rounded font-monospace small"
-                             style="word-break:break-all;">
-
-                            @_newKeyValue
-
+                    <i class="bi bi-x me-1"></i>
+                    بستن
+                </button>
+            </div>
+            <div class="p-4">
+                @if (!string.IsNullOrEmpty(_newKeyValue))
+                {
+                    <div class="alert alert-success d-flex gap-3 align-items-start">
+                        <i class="bi bi-check-circle-fill fs-5 mt-1"></i>
+                        <div>
+                            <strong>
+                                کلید ایجاد شد — همین الان کپی کنید، دیگر نمایش داده نمی‌شود.
+                            </strong>
+                            <div class="customer-api-key mono" dir="ltr">
+                                @_newKeyValue
+                            </div>
+                            <small class="text-muted">
+                                این مقدار را در هدر <code>X-Api-Key</code> مصرف‌کننده API قرار دهید.
+                            </small>
                         </div>
-
-                        <small class="text-muted">
-                            این مقدار را در هدر <code>X-Api-Key</code> مصرف‌کننده API قرار دهید.
-                        </small>
+                    </div>
+                }
+                <div class="row g-3 align-items-end mb-4">
+                    <div class="col-md-5">
+                        <label class="form-label fw-semibold">
+                            عنوان کلید
+                        </label>
+                        <input type="text"
+                               class="form-control"
+                               placeholder="مثلاً: اپلیکیشن موبایل"
+                               @bind="_newKeyLabel" />
 
                     </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold">
+                            تاریخ انقضا
+                        </label>
+                        <input type="date"
+                               class="form-control"
+                               @bind="_newKeyExpiresAt" />
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-primary w-100"
+                                @onclick="CreateApiKey"
+                                disabled="@_isKeyLoading">
 
-                </div>
-            }
-
-            <div class="row g-3 align-items-end mb-4">
-
-                <div class="col-md-5">
-
-                    <label class="form-label fw-semibold">
-                        عنوان کلید
-                    </label>
-
-                    <input type="text"
-                           class="form-control"
-                           placeholder="مثلاً: اپلیکیشن موبایل"
-                           @bind="_newKeyLabel" />
-
-                </div>
-
-                <div class="col-md-4">
-
-                    <label class="form-label fw-semibold">
-                        تاریخ انقضا
-                    </label>
-
-                    <input type="date"
-                           class="form-control"
-                           @bind="_newKeyExpiresAt" />
-
+                            @if (_isKeyLoading)
+                            {
+                                <TelerikLoader Type="@LoaderType.InfiniteSpinner" />
+                            }
+                            else
+                            {
+                                <i class="bi bi-plus-lg me-1"></i>
+                            }
+                            ایجاد کلید
+                        </button>
+                    </div>
                 </div>
 
-                <div class="col-md-3">
+                @if (_customerKeys is { Count: 0 })
+                {
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-key me-2"></i>
+                        هیچ کلید API‌ای وجود ندارد.
+                    </div>
+                }
+                else
+                {
+                    <TelerikGrid Data="@(_customerKeys ?? [])"
+                                 TItem="ApiKeyDto"
+                                 Class="customers-grid"
+                                 Pageable="true"
+                                 PageSize="10"
+                                 Sortable="true"
+                                 Resizable="true"
+                                 Navigable="true">
+                        <GridColumns>
+                            <GridColumn Field="@nameof(ApiKeyDto.Label)"
+                                        Title="عنوان"
+                                        Width="250px" />
+                            <GridColumn Field="@nameof(ApiKeyDto.CreatedAt)"
+                                        Title="تاریخ ایجاد"
+                                        Width="190px">
+                                <Template Context="context">
+                                    @{
+                                        var key = (ApiKeyDto)context;
+                                    }
+                                    <span class="text-muted mono">
+                                        @DateTimeTools.GetUnixPersianTime(key.CreatedAt).ToNormalPersianDateTime()
+                                    </span>
+                                </Template>
+                            </GridColumn>
+                            <GridColumn Field="@nameof(ApiKeyDto.ExpiresAt)"
+                                        Title="تاریخ انقضا"
+                                        Width="180px">
+                                <Template Context="context">
+                                    @{
+                                        var key = (ApiKeyDto)context;
+                                    }
+                                    <span class="text-muted mono">
+                                        @DateTimeTools.GetUnixPersianTime(key.ExpiresAt).ToNormalPersianDateTime()
+                                    </span>
+                                </Template>
+                            </GridColumn>
+                            <GridColumn Title="وضعیت"
+                                        Width="140px">
+                                <Template Context="context">
+                                    @{
+                                        var key = (ApiKeyDto)context;
+                                    }
+                                    @if (key.IsRevoked)
+                                    {
+                                        <span class="badge-revoked">
+                                            لغو شده
+                                        </span>
+                                    }
+                                    else if (key.ExpiresAt < DateTime.Now)
+                                    {
+                                        <span class="badge-expired">
+                                            منقضی
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-active">
+                                            فعال
+                                        </span>
+                                    }
+                                </Template>
+                            </GridColumn>
+                            <GridColumn Title="عملیات"
+                                        Width="140px">
+                                <Template Context="context">
+                                    @{
+                                        var key = (ApiKeyDto)context;
+                                    }
 
-                    <button class="btn btn-primary w-100"
-                            @onclick="CreateApiKey"
-                            disabled="@_isKeyLoading">
+                                    @if (!key.IsRevoked)
+                                    {
+                                        <button class="btn btn-sm btn-outline-danger"
+                                                @onclick="() => RevokeApiKey(key.Id)"
+                                                disabled="@_isKeyLoading">
+                                            <i class="bi bi-x-circle me-1"></i>
+                                            لغو
+                                        </button>
+                                    }
+                               </Template>
+                            </GridColumn>
+                        </GridColumns>
+                   </TelerikGrid>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card-ai mb-4">
+            <div class="card-ai-header">
+                <span>
+                    <i class="bi bi-plus-circle me-2"></i>
+                    افزودن مشتری جدید
+                </span>
+            </div>
+            <div class="p-4">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">
+                            نام مشتری
+                        </label>
+                        <input type="text"
+                               class="form-control"
+                               placeholder="نام مشتری را وارد کنید"
+                               @bind="_newName" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">
+                            اعتبار اولیه
+                        </label>
+                        <input type="number"
+                               class="form-control"
+                               placeholder="0"
+                               @bind="_newCredit" />
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-primary w-100"
+                                @onclick="CreateCustomer"
+                                disabled="@IsLoading">
 
-                        @if (_isKeyLoading)
-                        {
-                            <span class="spinner-border spinner-border-sm me-1"></span>
-                        }
-                        else
-                        {
-                            <i class="bi bi-plus-lg me-1"></i>
-                        }
-
-                        ایجاد کلید
-
-                    </button>
-
+                            @if (IsLoading)
+                            {
+                                <TelerikLoader Type="@LoaderType.InfiniteSpinner" />
+                            }
+                            else
+                            {
+                                <i class="bi bi-plus-lg me-1"></i>
+                            }
+                            ثبت مشتری
+                        </button>
+                    </div>
                 </div>
-
+            </div>
+        </div>
+        <div class="card-ai">
+            <div class="card-ai-header">
+                <span>
+                    <i class="bi bi-people me-2"></i>
+                    لیست مشتریان
+               </span>
+                <span class="text-muted small">
+                    @(_customers?.Count ?? 0) مشتری
+                </span>
             </div>
 
-            @if (_customerKeys is { Count: 0 })
+            @if (IsLoading && _customers is null)
             {
-                <div class="text-center text-muted py-4">
-
-                    <i class="bi bi-key me-2"></i>
-                    هیچ کلید API‌ای وجود ندارد.
-
+                <div class="p-4">
+                    <TelerikLoaderContainer LoaderPosition="@LoaderPosition.End"
+                                            LoaderType="@LoaderType.InfiniteSpinner"
+                                            Text="@TextResources.APP_StringKeys_Loading">
+                    </TelerikLoaderContainer>
                 </div>
             }
             else
             {
-                <TelerikGrid Data="@(_customerKeys ?? [])"
-                             TItem="ApiKeyDto"
+                <TelerikGrid Data="@(_customers ?? [])"
+                             TItem="CustomerDto"
                              Class="customers-grid"
                              Pageable="true"
                              PageSize="10"
                              Sortable="true"
                              Resizable="true"
                              Navigable="true">
-
                     <GridColumns>
-
-                        <GridColumn Field="@nameof(ApiKeyDto.Label)"
-                                    Title="عنوان"
-                                    Width="250px" />
-
-                        <GridColumn Field="@nameof(ApiKeyDto.CreatedAt)"
-                                    Title="تاریخ ایجاد"
-                                    Width="190px">
-
+                        <GridColumn Field="@nameof(CustomerDto.Name)"
+                                    Title="نام"
+                                    Width="250px">
                             <Template Context="context">
                                 @{
-                                    var key = (ApiKeyDto)context;
+                                    var customer = (CustomerDto)context;
                                 }
 
-                                <span class="text-muted">
-                                    @DateTimeTools.GetUnixPersianTime(key.CreatedAt).ToNormalPersianDateTime()
-                                </span>
-
-                            </Template>
-
-                        </GridColumn>
-
-                        <GridColumn Field="@nameof(ApiKeyDto.ExpiresAt)"
-                                    Title="تاریخ انقضا"
-                                    Width="180px">
-
-                            <Template Context="context">
-                                @{
-                                    var key = (ApiKeyDto)context;
-                                }
-
-                                <span class="text-muted">
-                                    @DateTimeTools.GetUnixPersianTime(key.ExpiresAt).ToNormalPersianDateTime()
-                                </span>
-
-                            </Template>
-
-                        </GridColumn>
-
-                        <GridColumn Title="وضعیت"
-                                    Width="140px">
-
-                            <Template Context="context">
-                                @{
-                                    var key = (ApiKeyDto)context;
-                                }
-
-                                @if (key.IsRevoked)
+                                @if (_editingId == customer.Id)
                                 {
-                                    <span class="badge-revoked">
-                                        لغو شده
-                                    </span>
-                                }
-                                else if (key.ExpiresAt < DateTime.Now)
-                                {
-                                    <span class="badge-expired">
-                                        منقضی
-                                    </span>
+                                    <input type="text"
+                                           class="form-control form-control-sm customer-edit-name"
+                                           @bind="_editName" />
                                 }
                                 else
                                 {
-                                    <span class="badge-active">
-                                        فعال
+                                    <span class="fw-semibold">
+                                        @customer.Name
                                     </span>
                                 }
-
                             </Template>
-
                         </GridColumn>
-
-                        <GridColumn Title="عملیات"
-                                    Width="140px">
-
+                        <GridColumn Field="@nameof(CustomerDto.RemainingCredit)"
+                                    Title="اعتبار باقیمانده (دلار)"
+                                    Width="220px">
                             <Template Context="context">
                                 @{
-                                    var key = (ApiKeyDto)context;
+                                    var customer = (CustomerDto)context;
                                 }
 
-                                @if (!key.IsRevoked)
+                                @if (_editingId == customer.Id)
                                 {
-                                    <button class="btn btn-sm btn-outline-danger"
-                                            @onclick="() => RevokeApiKey(key.Id)"
-                                            disabled="@_isKeyLoading">
+                                    <input type="number"
+                                           class="form-control form-control-sm customer-edit-credit"
+                                           @bind="_editCredit" />
+                                }
+                                else
+                                {
+                                    <span class="mono customer-credit @(customer.RemainingCredit <= 0
+                                                                          ? "customer-credit-negative"
+                                                                          : "")"
+                                          dir="ltr">
+                                        $ @customer.RemainingCredit.ToString("N2")
+                                    </span>
+                                }
+                            </Template>
+                        </GridColumn>
+                        <GridColumn Field="@nameof(CustomerDto.CreatedAt)"
+                                    Title="تاریخ ثبت"
+                                    Width="190px">
+                            <Template Context="context">
+                                @{
+                                    var customer = (CustomerDto)context;
+                                }
+                                <span class="text-muted mono">
+                                    @DateTimeTools.GetUnixPersianTime(customer.CreatedAt).ToNormalPersianDateTime()
+                                </span>
+                            </Template>
+                        </GridColumn>
+                        <GridColumn Title="عملیات"
+                                    Width="320px">
+                            <Template Context="context">
+                                @{
+                                    var customer = (CustomerDto)context;
+                                }
 
-                                        <i class="bi bi-x-circle me-1"></i>
-                                        لغو
+                                @if (_editingId == customer.Id)
+                                {
+                                    <button class="btn btn-sm btn-success me-1"
+                                            @onclick="() => SaveEdit(customer.Id)"
+                                            disabled="@IsLoading">
+
+                                        <i class="bi bi-check-lg me-1"></i>
+                                        ذخیره
 
                                     </button>
+                                    <button class="btn btn-sm btn-outline-secondary"
+                                            @onclick="CancelEdit">
+                                        <i class="bi bi-x me-1"></i>
+                                        لغو
+                                    </button>
                                 }
+                                else
+                                {
+                                    <button class="btn btn-sm btn-outline-primary me-1"
+                                            @onclick="() => StartEdit(customer)">
 
+                                        <i class="bi bi-pencil me-1"></i>
+                                        ویرایش
+                                    </button>
+                                   <button class="btn btn-sm btn-outline-info me-1"
+                                            @onclick="() => ShowApiKeys(customer)">
+
+                                        <i class="bi bi-key me-1"></i>
+                                        کلیدهای API
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger"
+                                            @onclick="() => DeleteCustomer(customer.Id)"
+                                            disabled="@IsLoading">
+                                        <i class="bi bi-trash me-1"></i>
+                                         حذف  
+                                    </button>
+                                }
                             </Template>
-
                         </GridColumn>
-
                     </GridColumns>
-
                 </TelerikGrid>
             }
-
         </div>
-
-    </div>
-}
-else
-{
-    <div class="card-ai mb-4">
-
-        <div class="card-ai-header">
-
-            <span>
-                <i class="bi bi-plus-circle me-2"></i>
-                افزودن مشتری جدید
-            </span>
-
-        </div>
-
-        <div class="p-4">
-
-            <div class="row g-3 align-items-end">
-
-                <div class="col-md-6">
-
-                    <label class="form-label fw-semibold">
-                        نام مشتری
-                    </label>
-
-                    <input type="text"
-                           class="form-control"
-                           placeholder="نام مشتری را وارد کنید"
-                           @bind="_newName" />
-
-                </div>
-
-                <div class="col-md-3">
-
-                    <label class="form-label fw-semibold">
-                        اعتبار اولیه
-                    </label>
-
-                    <input type="number"
-                           class="form-control"
-                           placeholder="0"
-                           @bind="_newCredit" />
-
-                </div>
-
-                <div class="col-md-3">
-
-                    <button class="btn btn-primary w-100"
-                            @onclick="CreateCustomer"
-                            disabled="@_isLoading">
-
-                        @if (_isLoading)
-                        {
-                            <span class="spinner-border spinner-border-sm me-1"></span>
-                        }
-                        else
-                        {
-                            <i class="bi bi-plus-lg me-1"></i>
-                        }
-
-                        ثبت مشتری
-
-                    </button>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-    <div class="card-ai">
-
-        <div class="card-ai-header">
-
-            <span>
-                <i class="bi bi-people me-2"></i>
-                لیست مشتریان
-            </span>
-
-            <span class="text-muted small">
-                @(_customers?.Count ?? 0) مشتری
-            </span>
-
-        </div>
-
-        @if (_isLoading && _customers is null)
-        {
-            <div class="p-4 text-center text-muted">
-
-                <div class="spinner-border spinner-border-sm me-2"></div>
-                در حال بارگذاری...
-
-            </div>
-        }
-        else
-        {
-            <TelerikGrid Data="@(_customers ?? [])"
-                         TItem="CustomerDto"
-                         Class="customers-grid"
-                         Pageable="true"
-                         PageSize="10"
-                         Sortable="true"
-                         Resizable="true"
-                         Navigable="true">
-
-                <GridColumns>
-
-                    <GridColumn Field="@nameof(CustomerDto.Name)"
-                                Title="نام"
-                                Width="250px">
-
-                        <Template Context="context">
-                            @{
-                                var customer = (CustomerDto)context;
-                            }
-
-                            @if (_editingId == customer.Id)
-                            {
-                                <input type="text"
-                                       class="form-control form-control-sm"
-                                       @bind="_editName"
-                                       style="width:160px;display:inline-block" />
-                            }
-                            else
-                            {
-                                <span class="fw-semibold">
-                                    @customer.Name
-                                </span>
-                            }
-
-                        </Template>
-
-                    </GridColumn>
-
-                    <GridColumn Field="@nameof(CustomerDto.RemainingCredit)"
-                                Title="اعتبار باقیمانده (دلار)"
-                                Width="220px">
-
-                        <Template Context="context">
-                            @{
-                                var customer = (CustomerDto)context;
-                            }
-
-                            @if (_editingId == customer.Id)
-                            {
-                                <input type="number"
-                                       class="form-control form-control-sm"
-                                       @bind="_editCredit"
-                                       style="width:120px;display:inline-block" />
-                            }
-                            else
-                            {
-                                <span class="@(customer.RemainingCredit <= 0
-                                                                                      ? "text-danger fw-bold"
-                                                                                      : "text-success fw-bold")">
-
-                                    $ @customer.RemainingCredit.ToString("N2")
-
-                                </span>
-                            }
-
-                        </Template>
-
-                    </GridColumn>
-
-                    <GridColumn Field="@nameof(CustomerDto.CreatedAt)"
-                                Title="تاریخ ثبت"
-                                Width="190px">
-
-                        <Template Context="context">
-                            @{
-                                var customer = (CustomerDto)context;
-                            }
-
-                            <span class="text-muted">
-                                @DateTimeTools.GetUnixPersianTime(customer.CreatedAt).ToNormalPersianDateTime()
-                            </span>
-
-                        </Template>
-
-                    </GridColumn>
-
-                    <GridColumn Title="عملیات"
-                                Width="320px">
-
-                        <Template Context="context">
-                            @{
-                                var customer = (CustomerDto)context;
-                            }
-
-                            @if (_editingId == customer.Id)
-                            {
-                                <button class="btn btn-sm btn-success me-1"
-                                        @onclick="() => SaveEdit(customer.Id)"
-                                        disabled="@_isLoading">
-
-                                    <i class="bi bi-check-lg me-1"></i>
-                                    ذخیره
-
-                                </button>
-
-                                <button class="btn btn-sm btn-outline-secondary"
-                                        @onclick="CancelEdit">
-
-                                    <i class="bi bi-x me-1"></i>
-                                    لغو
-
-                                </button>
-                            }
-                            else
-                            {
-                                <button class="btn btn-sm btn-outline-primary me-1"
-                                        @onclick="() => StartEdit(customer)">
-
-                                    <i class="bi bi-pencil me-1"></i>
-                                    ویرایش
-
-                                </button>
-
-                                <button class="btn btn-sm btn-outline-info me-1"
-                                        @onclick="() => ShowApiKeys(customer)">
-
-                                    <i class="bi bi-key me-1"></i>
-                                    کلیدهای API
-
-                                </button>
-
-                                <button class="btn btn-sm btn-outline-danger"
-                                        @onclick="() => DeleteCustomer(customer.Id)"
-                                        disabled="@_isLoading">
-
-                                    <i class="bi bi-trash me-1"></i>
-                                    حذف
-
-                                </button>
-                            }
-
-                        </Template>
-
-                    </GridColumn>
-
-                </GridColumns>
-
-            </TelerikGrid>
-        }
-
-    </div>
-}
+    }
 

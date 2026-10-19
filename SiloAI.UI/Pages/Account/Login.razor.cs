@@ -1,12 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace SiloAI.UI.Pages.Account;
+﻿namespace SiloAI.UI.Pages.Account;
 
 public partial class Login
 {
-    public bool IsLoading;
+    public bool IsLoading = false;
     public LoginModel Request = new();
-    private bool _showPassword;
+    public bool _showPassword;
 
     [Inject] public IAiAuthenticationService AuthenticationService { get; set; }
     [Inject] public NavigationManager NavigationManager { get; set; }
@@ -34,28 +32,29 @@ public partial class Login
 
     private async Task OnLoginSubmit()
     {
+        if (IsLoading)
+        {
+            return;
+        }
+
         IsLoading = true;
 
         bool success = await AuthenticationService.Login(Request.Username, Request.Password);
 
-        if (success)
-        {
-            NavigationManager.NavigateTo("/", forceLoad: true);
-        }
-        else
-        {
+            if (success)
+            {
+                NavigationManager.NavigateTo("/", forceLoad: true);
+
+                return;
+            }
+
+            else
+            {
+
             Notification.Show("نام کاربری یا رمز عبور نامعتبر است.", "error");
-        }
 
-        IsLoading = false;
-    }
-
-    public sealed class LoginModel
-    {
-        [Required(ErrorMessage = "نام کاربری الزامی است.")]
-        public string Username { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "رمز عبور الزامی است.")]
-        public string Password { get; set; } = string.Empty;
+            }
+        
+            IsLoading = false;       
     }
 }

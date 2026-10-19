@@ -4,9 +4,9 @@ namespace SiloAI.UI.Shared;
 
 public partial class MainLayout
 {
-    public TelerikNotification Notification { get; set; }
-
     private bool _menuOpen;
+
+    public TelerikNotification Notification { get; set; }
 
     protected override void OnInitialized()
     {
@@ -16,15 +16,18 @@ public partial class MainLayout
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         _menuOpen = false;
+
         InvokeAsync(StateHasChanged);
     }
 
     private void ToggleMenu() => _menuOpen = !_menuOpen;
+
     private void CloseMenu() => _menuOpen = false;
 
     private async Task Logout()
     {
         await AuthService.Logout();
+
         NavigationManager.NavigateTo("/account/login", forceLoad: true);
     }
 

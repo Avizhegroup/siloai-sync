@@ -13,21 +13,14 @@
        @ref="ModalInstructions"
        Size="ModalSize.ExtraLarge">
     <ModalBodyContentHtml>
-        @if (IsLoading && Instructions is null)
-        {
-            <div class="p-4 text-center text-muted">
-                <div class="spinner-border spinner-border-sm me-2"></div>
-                در حال بارگذاری...
-            </div>
-        }
-        else if (Instructions is { Count: 0 })
+        @if (Instructions is { Count: 0 })
         {
             <div class="p-5 text-center text-muted">
                 <i class="bi bi-card-checklist fs-2 d-block mb-2"></i>
                 هیچ دستورالعملی ثبت نشده است.
             </div>
         }
-        else
+        else if (Instructions is not null)
         {
             <TelerikGrid Data="@Instructions"
                          PageSize="10"
@@ -36,48 +29,28 @@
                          Resizable="true"
                          Navigable="true">
                 <RowTemplate Context="instruction">
-                    <td>
-                        <span class="badge bg-secondary">
-                            @instruction.DocType.ToDisplay()
-                        </span>
-                    </td>
-                    <td>
-                        <span class="text-muted">
-                            @(instruction.Key ?? "—")
-                        </span>
-                    </td>
-                    <td>
-                        @(instruction.Category ?? "—")
-                    </td>
-                    <td>
-                        <span class="text-muted">
-                            @(instruction.Tags ?? "—")
-                        </span>
-                    </td>
+                    <td> <span class="badge-neutral">@instruction.DocType.ToDisplay()</span> </td>
+                    <td> <span class="mono text-muted" dir="ltr">@(instruction.Key ?? "—")</span> </td>
+                    <td> @(instruction.Category ?? "—") </td>
+                    <td> <span class="mono text-muted" dir="ltr">@(instruction.Tags ?? "—")</span> </td>
                     <td>
                         @if (instruction.IsActive)
                         {
-                            <span class="badge bg-success">فعال</span>
+                            <span class="badge-active">فعال</span>
                         }
                         else
                         {
-                            <span class="badge bg-secondary">غیرفعال</span>
+                            <span class="badge-neutral">غیرفعال</span>
                         }
                     </td>
                     <td>
-                        <span class="text-muted">
-                            @DateTimeTools.GetUnixPersianTime(instruction.CreateDateTime).ToNormalPersianDateTime()
-                        </span>
+                        <span class="mono text-muted"> @DateTimeTools.GetUnixPersianTime(instruction.CreateDateTime).ToNormalPersianDateTime()</span>
                     </td>
                     <td>
-                        <span class="text-muted">
+                        <span class="mono text-muted">
                             @(
-                                instruction.LastUpdateDateTime.HasValue
-                                    ? DateTimeTools
-                                        .GetUnixPersianTime(instruction.LastUpdateDateTime.Value)
-                                        .ToNormalPersianDateTime()
-                                    : "—"
-                            )
+                                instruction.LastUpdateDateTime.HasValue ? DateTimeTools.GetUnixPersianTime(instruction.LastUpdateDateTime.Value).ToNormalPersianDateTime(): "—"
+                             )
                         </span>
                     </td>
                     <td class="text-end">
@@ -112,73 +85,61 @@
     </ModalBodyContentHtml>
 </Modal>
 
-<div class="card-ai mb-4 shadow-sm border-0">
-    <div class="card-ai-header d-flex align-items-center justify-content-between py-3">
-        <div class="d-flex align-items-center gap-2">
-            <div class="header-icon">
-                <i class="bi bi-card-checklist fs-5"></i>
-            </div>
-            <div>
-                <span class="fw-semibold d-block">
-                    @(EditingId is null ? "افزودن دستورالعمل جدید" : "ویرایش دستورالعمل")
-                </span>
-            </div>
-        </div>
+<div class="card-ai mb-4">
+    <div class="card-ai-header">
+        <span>
+            <i class="bi bi-card-checklist me-2"></i>
+            @(EditingId is null ? "افزودن دستورالعمل جدید" : "ویرایش دستورالعمل")
+        </span>
 
         @if (EditingId is not null)
         {
-            <button class="btn btn-sm btn-outline-secondary" @onclick="ResetForm">
+            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="ResetForm">
                 <i class="bi bi-x-lg me-1"></i>
                 انصراف
             </button>
         }
     </div>
-
     <div class="p-3">
         <div class="row g-2">
             <div class="col-md-3">
-                <label class="form-label fw-semibold text-secondary small mb-1">نوع سند</label>
+                <label class="form-label">نوع سند</label>
                 <TelerikDropDownList Data="@DocTypes"
                                      @bind-Value="Request.DocType"
                                      TextField="Title"
                                      ValueField="Code"
                                      Enabled="@(EditingId is null)"
-                                     Class="w-100" />
+                                     Width="100%" />
             </div>
-
             <div class="col-md-3">
-                <label class="form-label fw-semibold text-secondary small mb-1">
+                <label class="form-label">
                     کلید <span class="text-muted fw-normal">(اختیاری)</span>
                 </label>
                 <TelerikTextBox @bind-Value="Request.Key"
                                 Placeholder="مثلاً: hr-policy-2025"
-                                Class="w-100" />
+                                Width="100%" />
             </div>
-
             <div class="col-md-3">
-                <label class="form-label fw-semibold text-secondary small mb-1">دسته‌بندی</label>
+                <label class="form-label">دسته‌بندی</label>
                 <TelerikTextBox @bind-Value="Request.Category"
                                 Placeholder="مثلاً: قوانین احراز هویت"
-                                Class="w-100" />
+                                Width="100%" />
             </div>
-
             <div class="col-md-3">
-                <label class="form-label fw-semibold text-secondary small mb-1">
+                <label class="form-label">
                     برچسب‌ها <span class="text-muted fw-normal">(اختیاری)</span>
                 </label>
                 <TelerikTextBox @bind-Value="Request.Tags"
                                 Placeholder="مثلاً: auth,security"
-                                Class="w-100" />
+                                Width="100%" />
             </div>
-
             <div class="col-12">
-                <label class="form-label fw-semibold text-secondary small mb-1">
+                <label class="form-label">
                     بارگذاری فایل متنی <span class="text-muted fw-normal">(اختیاری)</span>
                 </label>
-
-                <div class="border border-2 border-dashed rounded-3 px-3 py-2 bg-light d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div class="file-drop d-flex align-items-center justify-content-between flex-wrap gap-2">
                     <div class="d-flex align-items-center gap-2">
-                        <i class="bi bi-file-earmark-text text-primary opacity-75"></i>
+                        <i class="bi bi-file-earmark-text text-primary"></i>
                         <span class="small">فایل متنی را انتخاب کنید</span>
                     </div>
                     <label class="btn btn-outline-primary btn-sm mb-0">
@@ -190,18 +151,13 @@
                     </label>
                 </div>
             </div>
-
             <div class="col-12">
-                <label class="form-label fw-semibold text-secondary small mb-1">محتوای دستورالعمل</label>
-                <div class="border rounded-3 overflow-hidden">
-                    <textarea class="form-control rag-content-editor"
-                              rows="25"
-                              style="height: 300px;"
-                              @bind="Request.Content"
-                              spellcheck="false"></textarea>
-                </div>
+                <label class="form-label">محتوای دستورالعمل</label>
+                <textarea class="form-control rag-content-editor"
+                          rows="14"
+                          @bind="Request.Content"
+                          spellcheck="false"></textarea>
             </div>
-
             <div class="col-12 mt-1">
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
                     <div class="d-flex flex-wrap gap-4">
@@ -210,12 +166,11 @@
                                    class="form-check-input"
                                    id="isSystematicCheck"
                                    @bind="Request.IsSystematic" />
-                            <label class="form-check-label fw-semibold"
+                            <label class="form-check-label fw-medium"
                                    for="isSystematicCheck">
                                 سیستماتیک
                             </label>
                         </div>
-
                         @if (EditingId is not null)
                         {
                             <div class="form-check mb-0">
@@ -223,29 +178,20 @@
                                        class="form-check-input"
                                        id="isActiveCheck"
                                        @bind="Request.IsActive" />
-                                <label class="form-check-label fw-semibold"
+                                <label class="form-check-label fw-medium"
                                        for="isActiveCheck">
                                     فعال
                                 </label>
                             </div>
                         }
                     </div>
-
                     <div class="d-flex gap-2">
                         <button type="button"
                                 class="btn btn-primary px-4"
                                 @onclick="SaveAsync"
                                 disabled="@(IsSaving || string.IsNullOrWhiteSpace(Request.Content))">
-                            @if (IsSaving)
-                            {
-                                <span class="spinner-border spinner-border-sm me-2"></span>
-                                <span>در حال ذخیره...</span>
-                            }
-                            else
-                            {
-                                <i class="bi bi-check2 me-1"></i>
-                                <span>@(EditingId is null ? "ذخیره" : "به‌روزرسانی")</span>
-                            }
+                            <i class="bi bi-check2 me-1"></i>
+                            <span>@(EditingId is null ? "ذخیره" : "به‌روزرسانی")</span>
                         </button>
 
                         <button type="button"
@@ -261,3 +207,11 @@
         </div>
     </div>
 </div>
+
+@if (IsSaving || IsLoading)
+{
+    <TelerikLoaderContainer LoaderPosition="@LoaderPosition.End"
+                            LoaderType="LoaderType.InfiniteSpinner"
+                            Text="در حال ذخیره...">
+    </TelerikLoaderContainer>
+}

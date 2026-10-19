@@ -8,69 +8,56 @@
 
 <PageTitle>پایگاه دانش — پنل مدیریت هوش مصنوعی سیلو</PageTitle>
 
-<div class="card-ai mb-4 shadow-sm border-0">
-    <div class="card-ai-header d-flex align-items-center justify-content-between">
-        <div class="d-flex align-items-center gap-2">
-            <div class="header-icon">
-                <i class="bi bi-cloud-upload fs-5"></i>
-            </div>
-            <div>
-                <span class="fw-semibold d-block">بارگذاری فایل دانش</span>
-            </div>
-        </div>
+<div class="card-ai mb-4">
+    <div class="card-ai-header">
+        <span>
+            <i class="bi bi-cloud-upload me-2"></i>
+            بارگذاری فایل دانش
+        </span>
     </div>
-
     <div class="p-4">
         <div class="row g-3">
             <div class="col-md-3">
-                <label class="form-label fw-semibold text-secondary small mb-1">نوع سند</label>
+                <label class="form-label">نوع سند</label>
                 <TelerikDropDownList Data="@DocTypes"
-                                     TItem="DocTypeItem"
+                                     TItem="RagDocTypeItem"
                                      TValue="RagDocType"
                                      TextField="Title"
                                      ValueField="Code"
                                      @bind-Value="_docType"
-                                     Class="w-100" />
+                                     Width="100%" />
             </div>
-
             <div class="col-md-3">
-                <label class="form-label fw-semibold text-secondary small mb-1">
+                <label class="form-label">
                     کلید <span class="text-muted fw-normal">(اختیاری)</span>
                 </label>
                 <TelerikTextBox @bind-Value="_key"
                                 Placeholder="مثلاً: hr-policy-2025"
-                                Class="w-100" />
+                                Width="100%" />
             </div>
-
             <div class="col-md-3">
-                <label class="form-label fw-semibold text-secondary small mb-1">دسته‌بندی</label>
+                <label class="form-label">دسته‌بندی</label>
                 <TelerikTextBox @bind-Value="_category"
                                 Placeholder="مثلاً: قوانین احراز هویت"
-                                Class="w-100" />
+                                Width="100%" />
             </div>
-
             <div class="col-md-3">
-                <label class="form-label fw-semibold text-secondary small mb-1">
+                <label class="form-label">
                     برچسب‌ها <span class="text-muted fw-normal">(اختیاری)</span>
                 </label>
                 <TelerikTextBox @bind-Value="_tags"
                                 Placeholder="مثلاً: auth,security"
-                                Class="w-100" />
+                                Width="100%" />
             </div>
-
             <div class="col-12">
-                <label class="form-label fw-semibold text-secondary small mb-2">فایل</label>
-                
-                <div class="@(_selectedFile is null
-                                    ? "border border-2 border-dashed rounded-3 p-4 text-center position-relative border-secondary-subtle bg-light"
-                                    : "file-drop has-file")"
-                     style="transition: all 0.2s ease;">
+                <label class="form-label">فایل</label>
+                <div class="file-drop @(_selectedFile is null ? "" : "has-file")">
 
                     @if (_selectedFile is null)
                     {
-                        <div class="py-3">
-                            <i class="bi bi-cloud-arrow-up text-primary fs-1 mb-2 d-block opacity-75"></i>
-                            <p class="mb-1 fw-medium">فایل متنی را انتخاب کنید</p>
+                        <div class="py-3 text-center">
+                            <i class="bi bi-cloud-arrow-up text-primary fs-1 mb-2 d-block"></i>
+                            <p class="mb-2 fw-medium">فایل متنی را انتخاب کنید</p>
                             <label class="btn btn-outline-primary btn-sm px-4">
                                 <i class="bi bi-folder2-open me-1"></i>
                                 انتخاب فایل
@@ -86,20 +73,17 @@
                             <div class="file-chip-icon">
                                 <i class="bi bi-file-earmark-text"></i>
                             </div>
-
                             <div class="file-chip-info">
                                 <div class="file-chip-name" title="@_selectedFile.Name">
                                     @_selectedFile.Name
                                 </div>
-
                                 <div class="file-chip-meta">
                                     <span class="file-chip-ext">
                                         @(System.IO.Path.GetExtension(_selectedFile.Name).TrimStart('.').ToUpperInvariant())
                                     </span>
-                                    <span dir="ltr">@FormatBytes(_selectedFile.Size)</span>
+                                    <span class="mono" dir="ltr">@FormatBytes(_selectedFile.Size)</span>
                                 </div>
                             </div>
-
                             <button type="button"
                                     class="file-chip-remove"
                                     @onclick="() => _selectedFile = null"
@@ -111,25 +95,15 @@
                 </div>
             </div>
         </div>
-
         <div class="mt-4 d-flex flex-wrap gap-2 align-items-center justify-content-between">
             <div class="d-flex gap-2">
                 <button type="button"
                         class="btn btn-primary px-4"
                         @onclick="UploadAsync"
                         disabled="@(_isUploading || _selectedFile is null)">
-                    @if (_isUploading)
-                    {
-                        <span class="spinner-border spinner-border-sm me-2"></span>
-                        <span>در حال پردازش...</span>
-                    }
-                    else
-                    {
-                        <i class="bi bi-cloud-arrow-up me-2"></i>
-                        <span>بارگذاری و پردازش</span>
-                    }
+                    <i class="bi bi-cloud-arrow-up me-2"></i>
+                    <span>بارگذاری و پردازش</span>
                 </button>
-
                 <button type="button"
                         class="btn btn-outline-secondary"
                         @onclick="OnOpenKnowledgeFilesModal">
@@ -155,21 +129,14 @@
        @ref="ModalKnowledgeFiles"
        Size="ModalSize.ExtraLarge">
     <ModalBodyContentHtml>
-        @if (_isLoading && _documents is null)
-        {
-            <div class="p-4 text-center text-muted">
-                <div class="spinner-border spinner-border-sm me-2"></div>
-                در حال بارگذاری...
-            </div>
-        }
-        else if (_documents is { Count: 0 })
+        @if (_documents is { Count: 0 })
         {
             <div class="p-5 text-center text-muted">
                 <i class="bi bi-collection fs-2 d-block mb-2"></i>
                 هیچ فایلی بارگذاری نشده است.
             </div>
         }
-        else
+        else if (_documents is not null)
         {
             <TelerikGrid Data="@_documents"
                          PageSize="10"
@@ -177,88 +144,57 @@
                          Pageable="true"
                          Sortable="true"
                          Resizable="true">
-
                 <RowTemplate Context="doc">
-                    <td>
-                        <span class="fw-semibold">
-                            @doc.OriginalFileName
-                        </span>
-                    </td>
-                    <td>
-                        <span class="badge bg-secondary">
-                            @doc.DocType.ToDisplay()
-                        </span>
-                    </td>
-                    <td>
-                        <span class="text-muted">
-                            @(doc.Key ?? "—")
-                        </span>
-                    </td>
-                    <td>
-                        @(doc.Category ?? "—")
-                    </td>
-                    <td>
-                        <span class="text-muted">
-                            @FormatBytes(doc.FileSize)
-                        </span>
-                    </td>
-                    <td>
-                        @doc.ChunkCount
-                    </td>
+                    <td> <span class="fw-medium">@doc.OriginalFileName</span> </td>
+                    <td> <span class="badge-neutral">@doc.DocType.ToDisplay()</span> </td>
+                    <td> <span class="mono text-muted" dir="ltr">@(doc.Key ?? "—")</span> </td>
+                    <td> @(doc.Category ?? "—") </td>
+                    <td> <span class="mono text-muted" dir="ltr">@FormatBytes(doc.FileSize)</span> </td>
+                    <td> <span class="mono">@doc.ChunkCount</span> </td>
                     <td>
                         @switch (doc.ProcessingStatus)
                         {
                             case "Completed":
-                                <span class="badge bg-success">تکمیل شد</span>
+                                <span class="badge-active">تکمیل شد</span>
                                 break;
                             case "Processing":
-                                <span class="badge bg-info">در حال پردازش</span>
+                                <span class="badge-neutral">در حال پردازش</span>
                                 break;
                             case "Failed":
-                                <span class="badge bg-danger" title="@doc.ProcessingError">خطا</span>
+                                <span class="badge-revoked" title="@doc.ProcessingError">خطا</span>
                                 break;
                             default:
-                                <span class="badge bg-secondary">@doc.ProcessingStatus</span>
+                                <span class="badge-neutral">@doc.ProcessingStatus</span>
                                 break;
                         }
                     </td>
                     <td>
-                        <span class="text-muted">
-                            @DateTimeTools.GetUnixPersianTime(doc.CreateDateTime).ToNormalPersianDateTime()
-                        </span>
+                        <span class="mono text-muted"> @DateTimeTools.GetUnixPersianTime(doc.CreateDateTime).ToNormalPersianDateTime() </span>
                     </td>
                     <td class="text-end">
                         @if (_rebuildTarget?.Id == doc.Id)
                         {
-                                <InputFile OnChange="OnRebuildFileSelected"
+                            <InputFile OnChange="OnRebuildFileSelected"
                                        class="form-control"
-                                           accept=".txt,.md,.markdown"
+                                       accept=".txt,.md,.markdown"
                                        disabled="@_isUploading" />
-
-                                @if (_isUploading)
-                                {
-                                <div class="mt-2">
-                                        <span class="spinner-border spinner-border-sm me-1"></span>
-                                        در حال بازسازی...
-                                    </div>
-                                }
                         }
                         else
                         {
-                                <button type="button"
+                            <button type="button"
                                     class="btn btn-sm btn-outline-secondary me-1"
-                                        @onclick="() => StartRebuild(doc)"
+                                    @onclick="() => StartRebuild(doc)"
                                     disabled="@_isUploading">
                                 <i class="bi bi-arrow-clockwise me-1"></i>
                                 بازسازی
-                                </button>
-                                <button type="button"
+                            </button>
+                            <button type="button"
                                     class="btn btn-sm btn-outline-danger"
-                                        @onclick="() => DeleteAsync(doc.Id)"
+                                    @onclick="() => DeleteAsync(doc.Id)"
                                     disabled="@_isUploading">
                                 <i class="bi bi-trash me-1"></i>
                                 حذف
-                                </button>
+                            </button>
                         }
                     </td>
                 </RowTemplate>
@@ -283,12 +219,12 @@
                Width="300px">
     <DialogContent>
         <div class="text-center">
-            <i class="bi bi-check-circle-fill text-success" style="font-size: 36px;"></i>
+            <i class="bi bi-check-circle-fill text-success fs-1"></i>
             <h6 class="fw-bold mt-2 mb-2">بازسازی فایل با موفقیت انجام شد</h6>
             @if (_rebuildChunkCount.HasValue)
             {
-                <span class="badge bg-light text-dark border px-2 py-1">
-                    تعداد قطعات: @_rebuildChunkCount
+                <span class="badge-neutral">
+                    تعداد قطعات: <span class="mono">@_rebuildChunkCount</span>
                 </span>
             }
         </div>
@@ -299,3 +235,11 @@
         </TelerikButton>
     </DialogButtons>
 </TelerikDialog>
+
+@if (_isUploading || _isLoading)
+{
+    <TelerikLoaderContainer LoaderPosition="@LoaderPosition.End"
+                            LoaderType="LoaderType.InfiniteSpinner"
+                            Text="@(_isUploading ? "در حال پردازش..." : TextResources.APP_StringKeys_Loading)">
+    </TelerikLoaderContainer>
+}

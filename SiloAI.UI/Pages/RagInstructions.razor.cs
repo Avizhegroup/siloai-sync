@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Components.Web;
 using SiloAI.UI.Components;
 using Telerik.Blazor;
-using static Telerik.Blazor.ThemeConstants;
 
 namespace SiloAI.UI.Pages;
 public partial class RagInstructions
@@ -13,7 +12,8 @@ public partial class RagInstructions
     public List<RagInstructionDto>? Instructions;
     public RagInstructionDto Request;
     public const long MaxUploadSize = 5 * 1024 * 1024;
-    private List<DocTypeItem> DocTypes { get; } =
+
+    public List<RagDocTypeItem> DocTypes { get; } =
 [
     new()
     {
@@ -42,7 +42,6 @@ public partial class RagInstructions
     [CascadingParameter] public TelerikNotification Notification { get; set; }
     [CascadingParameter] public DialogFactory Dialog { get; set; }
 
-
     private Modal? ModalInstructions;
 
     protected override async Task OnInitializedAsync()
@@ -55,32 +54,21 @@ public partial class RagInstructions
     private async Task LoadInstructionsAsync()
     {
         IsLoading = true;
-        try
-        {
-            Instructions = await ApiClient.GetFromJsonAsync<List<RagInstructionDto>>("api/rag/instructions");
-        }
-        catch (Exception ex)
-        {
-            Notification.Show($"خطا در بارگذاری لیست: {ex.Message}", "error");
-        }
-        finally
-        {
-            IsLoading = false;
-        }
+      
+        Instructions = await ApiClient.GetFromJsonAsync<List<RagInstructionDto>>("api/rag/instructions");
+    
+        IsLoading = false;
+        
     }
 
     private async Task OnFileSelected(InputFileChangeEventArgs args)
     {
-        try
-        {
-            using var stream = args.File.OpenReadStream(MaxUploadSize);
-            using var reader = new StreamReader(stream);
-            Request.Content = await reader.ReadToEndAsync();
-        }
-        catch (Exception ex)
-        {
-            Notification.Show($"خطا در خواندن فایل: {ex.Message}", "error");
-        }
+       using var stream = args.File.OpenReadStream(MaxUploadSize);
+
+       using var reader = new StreamReader(stream);
+
+       Request.Content = await reader.ReadToEndAsync();
+   
     }
 
     private async Task StartEdit(RagInstructionDto instruction)
@@ -110,6 +98,7 @@ public partial class RagInstructions
     private void ResetForm()
     {
         EditingId = null;
+
         Request = NewModel();
     }
 
@@ -120,13 +109,12 @@ public partial class RagInstructions
         System.Diagnostics.Debug.WriteLine($"[RagInstructions.SaveAsync] EditingId={EditingId}, Content.Length={Request.Content?.Length}, Content='{Request.Content}'");
 
         IsSaving = true;
-        try
-        {
-            HttpResponseMessage response;
+       
+        HttpResponseMessage response;
 
-            if (EditingId is null)
+        if (EditingId is null)
             {
-                response = await ApiClient.PostAsJsonAsync("api/rag/instructions", new CreateRagInstructionCommand
+              response = await ApiClient.PostAsJsonAsync("api/rag/instructions", new CreateRagInstructionCommand
                 {
                     DocType = Request.DocType,
                     Key = string.IsNullOrWhiteSpace(Request.Key) ? null : Request.Key.Trim(),
@@ -136,6 +124,7 @@ public partial class RagInstructions
                     IsSystematic = Request.IsSystematic
                 });
             }
+
             else
             {
                 response = await ApiClient.PutAsJsonAsync($"api/rag/instructions/{EditingId}", new UpdateRagInstructionCommand
@@ -155,16 +144,10 @@ public partial class RagInstructions
             Notification.Show(EditingId is null ? "دستورالعمل با موفقیت ثبت شد." : "دستورالعمل با موفقیت به‌روزرسانی شد.", "success");
 
             ResetForm();
+
             await LoadInstructionsAsync();
-        }
-        catch (Exception ex)
-        {
-            Notification.Show($"خطا در ذخیره‌سازی: {ex.Message}", "error");
-        }
-        finally
-        {
+      
             IsSaving = false;
-        }
     }
 
     private async Task DeleteAsync(Guid id)
@@ -183,15 +166,18 @@ public partial class RagInstructions
         IsSaving = true;
 
 
-           var response = await ApiClient.DeleteAsync($"api/rag/instructions/{id}");
-            response.EnsureSuccessStatusCode();
+        var response = await ApiClient.DeleteAsync($"api/rag/instructions/{id}");
 
-            if (EditingId == id)
-                ResetForm();
+        response.EnsureSuccessStatusCode();
 
-            await LoadInstructionsAsync();
+        if (EditingId == id)
+        {
+            ResetForm();
+        }
+
+        await LoadInstructionsAsync();
       
-            IsSaving = false;
+         IsSaving = false;
         
     }
 

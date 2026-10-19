@@ -1,4 +1,6 @@
 @page "/account/login"
+@using Telerik.Blazor.Components;
+
 @attribute [AllowAnonymous]
 
 <PageTitle>ورود — پنل مدیریت هوش مصنوعی سیلو</PageTitle>
@@ -10,10 +12,8 @@
             <h2>پنل مدیریت هوش مصنوعی سیلو</h2>
             <p>برای ادامه، وارد حساب کاربری خود شوید.</p>
         </div>
-
         <EditForm Model="Request" OnValidSubmit="OnLoginSubmit" class="login-form">
             <DataAnnotationsValidator />
-
             <div class="field-group">
                 <label class="field-label" for="login-username">نام کاربری</label>
                 <div class="field">
@@ -26,7 +26,6 @@
                 </div>
                 <ValidationMessage For="() => Request.Username" class="field-error" />
             </div>
-
             <div class="field-group">
                 <label class="field-label" for="login-password">رمز عبور</label>
                 <div class="field">
@@ -45,21 +44,22 @@
                     </button>
                 </div>
                 <ValidationMessage For="() => Request.Password" class="field-error" />
-            </div>
-
-            <button type="submit" class="btn-ai-primary" disabled="@IsLoading">
-                @if (IsLoading)
-                {
-                    <span class="spinner-border spinner-border-sm" role="status"></span>
-                    <span>در حال ورود...</span>
-                }
-                else
-                {
-                    <i class="bi bi-box-arrow-in-right"></i>
-                    <span>ورود</span>
-                }
+            </div>        
+            <button type="submit" class="btn-ai-primary">
+                <i class="bi bi-box-arrow-in-right"></i>
+                <span>ورود</span>
             </button>
         </EditForm>
     </div>
 </div>
+
+@if (IsLoading)
+{
+    <TelerikLoaderContainer
+        LoaderPosition="@LoaderPosition.End"
+        LoaderType="LoaderType.InfiniteSpinner"
+        Text="@TextResources.APP_StringKeys_Loading">
+    </TelerikLoaderContainer>
+}
+
 

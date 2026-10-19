@@ -4,7 +4,26 @@ namespace SiloAI.UI.Pages;
 
 public partial class Index
 {
-    public const int MaxRecords = 5000;   
+    public bool IsLoading = true;
+    public bool _isTruncated;
+    public bool _showUsd;
+    public int _chartVersion;
+    public string _rangeTitle = string.Empty;
+    public decimal _totalToman;
+    public decimal _totalUsd;
+    public decimal _totalCreditUsd;
+    public int _activeCustomers;
+    public int _customerCount;
+
+    public List<UsageRecordDto> _records = [];
+    public List<CustomerDto> _customers = [];
+    public Dictionary<int, decimal> _balances = [];
+    public List<UsageSeries> _series = [];
+    public List<CustomerUsageRow> _rows = [];
+
+    public const int MaxRecords = 5000;
+
+    public string ValueFormat => _showUsd ? "{0:N2}" : "{0:N0}";
 
     public static readonly string[] Palette =
     [
@@ -18,27 +37,8 @@ public partial class Index
         "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"
     ];
 
-    public bool _isLoading = true;
-    public bool _isTruncated;
-    public bool _showUsd;
-    public int _chartVersion;
-    public string _rangeTitle = string.Empty;
-
-    public decimal _totalToman;
-    public decimal _totalUsd;
-    public decimal _totalCreditUsd;
-    public int _activeCustomers;
-    public int _customerCount;
-
-    public List<UsageRecordDto> _records = [];
-    public List<CustomerDto> _customers = [];
-    public Dictionary<int, decimal> _balances = [];
-    public List<UsageSeries> _series = [];
-    public List<CustomerUsageRow> _rows = [];
-
-    public string ValueFormat => _showUsd ? "{0:N2}" : "{0:N0}";
-
     [Inject] public AiApiClient ApiClient { get; set; }
+
     [CascadingParameter] public TelerikNotification Notification { get; set; }
 
     protected override async Task OnInitializedAsync()
@@ -48,48 +48,40 @@ public partial class Index
 
     private async Task LoadData()
     {
-        _isLoading = true;
+        IsLoading = true;
 
-        try
-        {
-            var usageTask = ApiClient.GetFromJsonAsync<List<UsageRecordDto>>(
-                                $"admin/financial/usage?take={MaxRecords}");
-            var accountsTask = ApiClient.GetFromJsonAsync<List<LedgerAccountDto>>(
-                                "admin/financial/accounts");
-            var customersTask = ApiClient.GetFromJsonAsync<List<CustomerDto>>(
-                                "admin/customers");
+        var usageTask = ApiClient.GetFromJsonAsync<List<UsageRecordDto>>( $"admin/financial/usage?take={MaxRecords}");
 
-            await Task.WhenAll(usageTask, accountsTask, customersTask);
+        var accountsTask = ApiClient.GetFromJsonAsync<List<LedgerAccountDto>>( "admin/financial/accounts");
 
-            _records = usageTask.Result ?? [];
-            _customers = customersTask.Result ?? [];
-            _balances = (accountsTask.Result ?? [])
-                .GroupBy(a => a.CustomerId)
+        var customersTask = ApiClient.GetFromJsonAsync<List<CustomerDto>>("admin/customers");
+
+        await Task.WhenAll(usageTask, accountsTask, customersTask);
+
+        _records = usageTask.Result ?? [];
+
+        _customers = customersTask.Result ?? [];
+
+        _balances = (accountsTask.Result ?? [])
+              .GroupBy(a => a.CustomerId)
                 .ToDictionary(g => g.Key, g => g.Sum(a => a.BalanceToman));
 
-            BuildChart();
-        }
-        catch (Exception ex)
-        {
-            Notification.Show($"خطا در بارگذاری آمار مصرف: {ex.Message}", "error");
-            _series = [];
-            _rows = [];
-        }
-        finally
-        {
-            _isLoading = false;
-        }
+         BuildChart();
+     
+         IsLoading = false;
     }
 
     private void SetUnit(bool usd)
     {
         _showUsd = usd;
-        BuildChart();
+
+         BuildChart();
     }
 
     private void BuildChart()
     {
         var pc = new PersianCalendar();
+
         var today = DateTime.Today;
 
         var monthStart = today.AddDays(-(pc.GetDayOfMonth(today) - 1));
@@ -117,6 +109,7 @@ public partial class Index
         var byCustomer = inMonth.ToLookup(r => r.CustomerId);
 
         var names = _customers.ToDictionary(c => c.Id, c => c.Name);
+
         var credits = _customers.ToDictionary(c => c.Id, c => c.RemainingCredit);
 
         foreach (var g in inMonth.GroupBy(r => r.CustomerId))
@@ -128,9 +121,13 @@ public partial class Index
             .ToList();
 
         _totalToman = inMonth.Sum(x => x.Toman);
+
         _totalUsd = inMonth.Sum(x => x.Usd);
+
         _totalCreditUsd = credits.Values.Sum();
+
         _activeCustomers = byCustomer.Count;
+
         _customerCount = names.Count;
 
         _series = ordered
@@ -141,47 +138,48 @@ public partial class Index
                     .ToDictionary(d => d.Key,
                                   d => _showUsd ? d.Sum(x => x.Usd) : d.Sum(x => x.Toman));
 
-                decimal running = 0;
-                var points = new List<DayPoint>();
+         decimal running = 0;
 
-                foreach (var day in days)
-                {
+         var points = new List<DayPoint>();
+
+             foreach (var day in days)
+               {
                     running += perDay.GetValueOrDefault(day);
 
-                    points.Add(new DayPoint($"{pc.GetMonth(day):00}/{pc.GetDayOfMonth(day):00}",running));
+                    points.Add(new DayPoint
+                    {
+                        Label = $"{pc.GetMonth(day):00}/{pc.GetDayOfMonth(day):00}",
+                        Value = running
+                    });
                 }
 
-                return new UsageSeries(names[id], points, Palette[i % Palette.Length]);
+             return new UsageSeries
+                {
+                    Name = names[id],
+                    Points = points,
+                    Color = Palette[i % Palette.Length]
+                };
             })
             .ToList();
 
-        _rows = ordered
+           _rows = ordered
             .Select((id, i) =>
             {
                 var toman = byCustomer[id].Sum(x => x.Toman);
 
-                return new CustomerUsageRow(
-                    names[id],
-                    toman,
-                    byCustomer[id].Sum(x => x.Usd),
-                    credits.GetValueOrDefault(id),
-                    _balances.GetValueOrDefault(id),
-                    _totalToman > 0 ? Math.Round(toman / _totalToman * 100, 1) : 0,
-                    Palette[i % Palette.Length]);
+                return new CustomerUsageRow
+                {
+                    Name = names[id],
+                    Toman = toman,
+                    Usd = byCustomer[id].Sum(x => x.Usd),
+                    CreditUsd = credits.GetValueOrDefault(id),
+                    BalanceToman = _balances.GetValueOrDefault(id),
+                    Share = _totalToman > 0 ? Math.Round(toman / _totalToman * 100, 1) : 0,
+                    Color = Palette[i % Palette.Length]
+                };
             })
             .ToList();
 
         _chartVersion++;
     }
-
-    public record DayPoint(string Label, decimal Value);
-    public record UsageSeries(string Name, List<DayPoint> Points, string Color);
-    public record CustomerUsageRow(
-        string Name,
-        decimal Toman,
-        decimal Usd,
-        decimal CreditUsd,
-        decimal BalanceToman,
-        decimal Share,
-        string Color);
 }

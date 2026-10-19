@@ -2283,142 +2283,124 @@ code {
     justify-content: center;
 }
 
-// ---- Login page (RTL) ----
-$navy-950: #0b1030;
-$navy-800: #16224f;
-$navy-600: #263a7a;
-$blue-600: #2d5bb9;
-$blue-700: #244a99;
-$sky-400: #5aa9ff;
-$ink: #141b34;
-$muted: #6a7491;
-$line: #d9dfee;
-$surface: #f6f8fc;
-$danger: #d64545;
+
+/* =========================
+   SiloAI Login — Design System
+   ========================= */
 
 .login-bg {
     position: relative;
     display: grid;
     place-items: center;
-    min-height: calc(100vh - 140px); 
-    padding: 2rem 1rem;
+    min-height: calc(100vh - 140px);
+    padding: var(--space-8) var(--space-4);
     overflow: hidden;
     isolation: isolate;
-    background: radial-gradient(900px 500px at 50% 35%, rgba($sky-400, .18), transparent 65%), linear-gradient(160deg, $navy-800 0%, $navy-950 100%);
+    background: radial-gradient( 900px 500px at 50% 35%, rgba(90, 169, 255, .12), transparent 65% ), linear-gradient( 160deg, var(--silo-ink) 0%, #121a35 100% );
+
     &::before {
         content: "";
         position: absolute;
         inset: 0;
         z-index: -1;
-        background-image: linear-gradient(rgba(255, 255, 255, .05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .05) 1px, transparent 1px);
+        background-image: linear-gradient(rgba(255, 255, 255, .035) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .035) 1px, transparent 1px);
         background-size: 44px 44px;
-        -webkit-mask-image: radial-gradient(ellipse at center, #000 20%, transparent 75%);
-        mask-image: radial-gradient(ellipse at center, #000 20%, transparent 75%);
+        -webkit-mask-image: radial-gradient( ellipse at center, #000 20%, transparent 75% );
+        mask-image: radial-gradient( ellipse at center, #000 20%, transparent 75% );
     }
 }
+
 
 .login-card {
     width: min(100%, 420px);
-    padding: 2.5rem 2.25rem 2.25rem;
-    background: #fff;
-    border-radius: 20px;
-    box-shadow: 0 40px 80px -30px rgba(3, 8, 35, .75), 0 0 0 1px rgba(255, 255, 255, .6) inset;
+    padding: var(--space-8) 36px 36px;
+    background: var(--silo-surface);
+    border: 1px solid var(--silo-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-login);
 }
 
-// ---- Logo ----
+
 .login-logo {
+    margin-bottom: var(--space-8);
     text-align: center;
-    margin-bottom: 2rem;
 
     .logo-icon {
-        position: relative;
         display: grid;
         place-items: center;
-        width: 68px;
-        height: 68px;
-        margin: 0 auto 1.25rem;
-        border-radius: 18px;
-        background: linear-gradient(145deg, $navy-600, $navy-950);
-        color: $sky-400;
-        font-size: 2rem;
-        box-shadow: 0 12px 24px -10px rgba($navy-950, .7);
-        &::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            border-radius: inherit;
-            border: 2px solid $sky-400;
-            opacity: 0;
-            animation: logo-ping 1.4s .3s ease-out 1;
-        }
+        width: 60px;
+        height: 60px;
+        margin: 0 auto var(--space-5);
+        border: 1px solid rgba(255, 255, 255, .12);
+        border-radius: var(--radius-md);
+        background: var(--silo-ink);
+        color: var(--silo-surface);
+        font-size: 1.75rem;
     }
 
     h2 {
-        margin: 0 0 .4rem;
-        font-size: 1.35rem;
-        font-weight: 800;
-        line-height: 1.6;
-        color: $ink;
+        margin: 0 0 var(--space-2);
+        color: var(--silo-text);
+        font-family: var(--font-sans);
+        font-size: var(--fs-xl);
+        font-weight: 700;
+        line-height: 1.7;
     }
 
     p {
         margin: 0;
-        font-size: .9rem;
-        color: $muted;
+        color: var(--silo-text-muted);
+        font-family: var(--font-sans);
+        font-size: var(--fs-base);
+        line-height: 1.8;
     }
 }
 
-@keyframes logo-ping {
-    0% {
-        opacity: .8;
-        transform: scale(1);
-    }
-
-    100% {
-        opacity: 0;
-        transform: scale(1.7);
-    }
-}
 
 .login-form {
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: var(--space-5);
+}
+
+.field-group {
+    min-width: 0;
 }
 
 .field-label {
     display: block;
-    margin-bottom: .45rem;
-    font-size: .85rem;
-    font-weight: 600;
-    color: $ink;
+    margin-bottom: var(--space-2);
+    color: var(--silo-text-muted);
+    font-family: var(--font-sans);
+    font-size: var(--fs-sm);
+    font-weight: 500;
 }
 
 .field {
     display: flex;
     align-items: center;
-    gap: .6rem;
+    gap: var(--space-2);
+    min-width: 0;
     height: 48px;
-    padding: 0 .9rem;
-    background: $surface;
-    border: 1.5px solid $line;
-    border-radius: 12px;
-    transition: border-color .15s, box-shadow .15s, background-color .15s;
+    padding-inline: var(--space-4);
+    background: var(--silo-surface);
+    border: 1px solid var(--silo-border-strong);
+    border-radius: var(--radius-md);
+    transition: border-color .15s, box-shadow .15s;
 
     &:focus-within {
-        background: #fff;
-        border-color: $blue-600;
-        box-shadow: 0 0 0 4px rgba($blue-600, .15);
+        border-color: var(--silo-accent);
+        box-shadow: 0 0 0 2px var(--silo-accent-tint);
     }
 
     .field-icon {
-        color: $muted;
-        font-size: 1.05rem;
-        transition: color .15s;
+        flex-shrink: 0;
+        color: var(--silo-text-muted);
+        font-size: 1rem;
     }
 
     &:focus-within .field-icon {
-        color: $blue-600;
+        color: var(--silo-accent);
     }
 }
 
@@ -2430,90 +2412,95 @@ $danger: #d64545;
     border: 0;
     outline: 0;
     background: transparent;
-    font: inherit;
-    font-size: .95rem;
-    color: $ink;
+    color: var(--silo-text);
+    font-family: var(--font-sans);
+    font-size: var(--fs-base);
 
     &::placeholder {
-        color: #a3abc2;
+        color: var(--silo-text-faint);
+        opacity: 1;
     }
-    &[type="password"], &[autocomplete="username"] {
+
+    &[type="password"],
+    &[autocomplete="username"] {
         text-align: right;
     }
 }
 
 .field-toggle {
     display: grid;
+    flex-shrink: 0;
     place-items: center;
     width: 32px;
     height: 32px;
     padding: 0;
     border: 0;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
     background: transparent;
-    color: $muted;
+    color: var(--silo-text-muted);
     cursor: pointer;
     transition: background-color .15s, color .15s;
 
     &:hover {
-        background: rgba($blue-600, .1);
-        color: $blue-600;
+        background: var(--silo-accent-tint);
+        color: var(--silo-accent);
     }
 
     &:focus-visible {
-        outline: 2px solid $blue-600;
-        outline-offset: 1px;
+        outline: 2px solid var(--silo-accent);
+        outline-offset: 2px;
     }
 }
 
 .field-error {
     display: block;
-    margin-top: .4rem;
-    font-size: .8rem;
-    color: $danger;
+    margin-top: var(--space-2);
+    color: var(--silo-red);
+    font-family: var(--font-sans);
+    font-size: var(--fs-xs);
 }
 
-// خطای اعتبارسنجی Blazor: کادر قرمز
-.field:has(.invalid) {
-    border-color: $danger;
+
+.field:has(.invalid),
+.field:has(input.invalid) {
+    border-color: var(--silo-red);
 
     &:focus-within {
-        box-shadow: 0 0 0 4px rgba($danger, .15);
+        box-shadow: 0 0 0 2px var(--silo-red-tint);
     }
 }
 
-// ---- Button ----
+
 .btn-ai-primary {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: .6rem;
+    gap: var(--space-2);
     width: 100%;
-    height: 48px;
-    margin-top: .5rem;
-    border: 0;
-    border-radius: 12px;
-    background: $blue-600;
+    min-height: 48px;
+    margin-top: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    background: var(--silo-accent);
     color: #fff;
-    font: inherit;
-    font-size: 1rem;
+    font-family: var(--font-sans);
+    font-size: var(--fs-base);
     font-weight: 700;
     cursor: pointer;
-    box-shadow: 0 10px 20px -10px rgba($blue-600, .9);
-    transition: background-color .15s, transform .1s, box-shadow .15s;
+    transition: background-color .15s, opacity .15s;
 
     &:hover:not(:disabled) {
-        background: $blue-700;
+        background: var(--silo-accent-hover);
     }
 
     &:active:not(:disabled) {
-        transform: translateY(1px);
-        box-shadow: none;
+        background: var(--silo-accent-hover);
     }
 
     &:focus-visible {
-        outline: 3px solid rgba($sky-400, .6);
-        outline-offset: 2px;
+        outline: 2px solid var(--silo-accent);
+        outline-offset: 3px;
     }
 
     &:disabled {
@@ -2524,17 +2511,21 @@ $danger: #d64545;
 
 @media (max-width: 480px) {
     .login-card {
-        padding: 2rem 1.25rem 1.75rem;
-        border-radius: 16px;
+        padding: var(--space-6) var(--space-4);
+        border-radius: var(--radius-lg);
+    }
+
+    .login-bg {
+        min-height: calc(100vh - 100px);
+        padding: var(--space-5) var(--space-3);
     }
 }
 
-@media (prefers-reduced-motion: reduce) {
-    .login-logo .logo-icon::after {
-        animation: none;
-    }
 
-    .btn-ai-primary, .field, .field-toggle {
+@media (prefers-reduced-motion: reduce) {
+    .btn-ai-primary,
+    .field,
+    .field-toggle {
         transition: none;
     }
 }
