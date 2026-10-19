@@ -1,6 +1,5 @@
 ﻿@namespace SiloAI.UI.Components
 
-
 <div class="modal @ModalClass" tabindex="-1" role="dialog" style="display:@ModalDisplay;@(DirectionRTL ? "direction: rtl;" : "")">
     <div class="modal-dialog @(Size == ModalSize.Normal ? "" : Size == ModalSize.Large ? "modal-lg" : "modal-xl")" role="document">
         <div class="modal-content">
@@ -41,7 +40,6 @@
         </div>
     </div>
 </div>
-
 
 @if (ShowBackdrop)
 {
