@@ -19,3 +19,5 @@ public static class RagDocTypeExtensions
         _ => type.ToString()
     };
 }
+
+
