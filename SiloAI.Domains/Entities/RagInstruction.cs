@@ -1,4 +1,4 @@
-namespace SiloAI.Domains;
+﻿namespace SiloAI.Domains;
 
 [Table("tbl_RagInstructions")]
 public class RagInstruction
@@ -47,4 +47,8 @@ public class RagInstruction
     [Column("fld_LastUpdateUserId")]
     [StringLength(100)]
     public string? LastUpdateUserId { get; set; }
+
+    [Column("fld_CustomerId")]
+    public int? CustomerId { get; set; }
+    public Customer? Customer { get; set; }
 }

@@ -1,4 +1,4 @@
-namespace SiloAI.Application.Shared.Features;
+﻿namespace SiloAI.Application.Shared.Features;
 
 public class UploadRagDocumentCommand : IRequest<RagUploadResponseDto>
 {
@@ -10,4 +10,5 @@ public class UploadRagDocumentCommand : IRequest<RagUploadResponseDto>
     public string? Category { get; set; }
     public string? Tags { get; set; }
     public string? CreatorUserId { get; set; }
+    public int? CustomerId { get; set; }
 }

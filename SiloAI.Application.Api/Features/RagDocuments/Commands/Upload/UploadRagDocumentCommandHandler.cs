@@ -1,4 +1,4 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 
 namespace SiloAI.Application.Api.Features;
 
@@ -34,7 +34,8 @@ public class UploadRagDocumentCommandHandler(
             CreateDateTime = now,
             CreatorUserId = request.CreatorUserId,
             LastUpdateDateTime = now,
-            LastUpdateUserId = request.CreatorUserId
+            LastUpdateUserId = request.CreatorUserId,
+            CustomerId = request.CustomerId,
         };
 
         context.RagDocuments.Add(document);

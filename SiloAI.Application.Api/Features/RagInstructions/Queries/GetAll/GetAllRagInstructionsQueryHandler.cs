@@ -1,4 +1,4 @@
-namespace SiloAI.Application.Api.Features;
+﻿namespace SiloAI.Application.Api.Features;
 
 public class GetAllRagInstructionsQueryHandler(AiApiContext context) : IRequestHandler<GetAllRagInstructionsQuery, List<RagInstructionDto>>
 {
@@ -28,6 +28,7 @@ public class GetAllRagInstructionsQueryHandler(AiApiContext context) : IRequestH
         Key = x.Key,
         Category = x.Category,
         Tags = x.Tags,
+        CustomerId = x.CustomerId,
         Content = x.Content,
         IsSystematic = x.IsSystematic,
         IsActive = x.IsActive,

@@ -1,4 +1,4 @@
-namespace SiloAI.Application.Shared.Features;
+﻿namespace SiloAI.Application.Shared.Features;
 
 public class CreateRagInstructionCommand : IRequest<RagInstructionDto>
 {
@@ -9,4 +9,5 @@ public class CreateRagInstructionCommand : IRequest<RagInstructionDto>
     public string Content { get; set; }
     public bool IsSystematic { get; set; }
     public string? CreatorUserId { get; set; }
+    public int? CustomerId { get; set; }
 }

@@ -32,9 +32,12 @@ public class ChatAgentService(
     /// </summary>
     private string? activeModelIdentifier;
 
-    public async Task InitChatAgent(ResolvedAiModel model, List<RagDocType>? promptKeys = null)
+public async Task InitChatAgent(
+    ResolvedAiModel model,
+    List<RagDocType>? promptKeys = null,
+    int? customerId = null)
     {
-        var instructions = await LoadInstructionsAsync(promptKeys);
+        var instructions = await LoadInstructionsAsync(promptKeys, customerId);
 
         InitChatAgentWithInstructions(instructions, model);
     }
@@ -199,12 +202,12 @@ public class ChatAgentService(
         return serializedElement.GetRawText();
     }
 
-    private async Task<string> LoadInstructionsAsync(List<RagDocType>? promptKeys = null)
+private async Task<string> LoadInstructionsAsync(
+    List<RagDocType>? promptKeys = null,
+    int? customerId = null)
     {
         if (promptKeys is null || promptKeys.Count == 0)
-        {
             return string.Empty;
-        }
 
         var contents = new List<string>();
 
@@ -212,12 +215,25 @@ public class ChatAgentService(
         {
             var docTypeValue = (int)docType;
 
-            var cachedInstructions = await agentCache.GetOrCreateInstructionsAsync(docTypeValue, async () =>
-                (IReadOnlyList<CachedRagInstruction>)await context.RagInstructions
-                    .Where(p => p.DocType == docTypeValue && p.IsActive)
-                    .AsNoTracking()
-                    .Select(p => new CachedRagInstruction(p.Content, p.IsSystematic, p.CreateDateTime))
-                    .ToListAsync());
+            var cachedInstructions =
+                await agentCache.GetOrCreateInstructionsAsync(
+                    docTypeValue,
+                    customerId,
+                    async () =>
+                        (IReadOnlyList<CachedRagInstruction>)
+                        await context.RagInstructions
+                            .Where(p =>
+                                p.DocType == docTypeValue &&
+                                p.IsActive &&
+                                (p.CustomerId == null ||
+                                 (customerId.HasValue &&
+                                  p.CustomerId == customerId.Value)))
+                            .AsNoTracking()
+                            .Select(p => new CachedRagInstruction(
+                                p.Content,
+                                p.IsSystematic,
+                                p.CreateDateTime))
+                            .ToListAsync());
 
             contents.AddRange(cachedInstructions.Select(i => i.Content));
         }

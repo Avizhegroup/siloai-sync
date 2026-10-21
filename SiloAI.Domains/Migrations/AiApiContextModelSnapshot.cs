@@ -353,18 +353,17 @@ namespace SiloAI.Domains.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AiModelId")
-                        .HasDatabaseName("IX_tbl_CustomerModelAssignments_fld_AiModelId");
-
-                    b.HasIndex("CustomerId", "Feature")
-                        .IsUnique()
-                        .HasDatabaseName("UX_tbl_CustomerModelAssignments_fld_CustomerId_fld_Feature")
-                        .HasFilter("[fld_CustomerId] IS NOT NULL");
+                    b.HasIndex("AiModelId");
 
                     b.HasIndex("Feature")
                         .IsUnique()
                         .HasDatabaseName("UX_tbl_CustomerModelAssignments_fld_Feature_Default")
                         .HasFilter("[fld_CustomerId] IS NULL");
+
+                    b.HasIndex("CustomerId", "Feature")
+                        .IsUnique()
+                        .HasDatabaseName("UX_tbl_CustomerModelAssignments_fld_CustomerId_fld_Feature")
+                        .HasFilter("[fld_CustomerId] IS NOT NULL");
 
                     b.ToTable("tbl_CustomerModelAssignments");
                 });
@@ -556,6 +555,10 @@ namespace SiloAI.Domains.Migrations
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("fld_CreatorUserId");
 
+                    b.Property<int?>("CustomerId")
+                        .HasColumnType("int")
+                        .HasColumnName("fld_CustomerId");
+
                     b.Property<string>("DocType")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -618,6 +621,8 @@ namespace SiloAI.Domains.Migrations
 
                     b.HasIndex("Category")
                         .HasDatabaseName("IX_tbl_RagDocuments_fld_Category");
+
+                    b.HasIndex("CustomerId");
 
                     b.HasIndex("DocType")
                         .HasDatabaseName("IX_tbl_RagDocuments_fld_DocType");
@@ -693,6 +698,10 @@ namespace SiloAI.Domains.Migrations
                         .HasColumnType("nvarchar(100)")
                         .HasColumnName("fld_CreatorUserId");
 
+                    b.Property<int?>("CustomerId")
+                        .HasColumnType("int")
+                        .HasColumnName("fld_CustomerId");
+
                     b.Property<int>("DocType")
                         .HasMaxLength(50)
                         .HasColumnType("int")
@@ -729,6 +738,8 @@ namespace SiloAI.Domains.Migrations
 
                     b.HasIndex("Category")
                         .HasDatabaseName("IX_tbl_RagInstructions_fld_Category");
+
+                    b.HasIndex("CustomerId");
 
                     b.HasIndex("DocType")
                         .HasDatabaseName("IX_tbl_RagInstructions_fld_DocType");
@@ -817,6 +828,24 @@ namespace SiloAI.Domains.Migrations
                     b.Navigation("Customer");
                 });
 
+            modelBuilder.Entity("SiloAI.Domains.CustomerModelAssignment", b =>
+                {
+                    b.HasOne("SiloAI.Domains.AiModel", "AiModel")
+                        .WithMany("Assignments")
+                        .HasForeignKey("AiModelId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SiloAI.Domains.Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("AiModel");
+
+                    b.Navigation("Customer");
+                });
+
             modelBuilder.Entity("SiloAI.Domains.LedgerAccount", b =>
                 {
                     b.HasOne("SiloAI.Domains.Customer", "Customer")
@@ -846,6 +875,15 @@ namespace SiloAI.Domains.Migrations
                     b.Navigation("UsageRecord");
                 });
 
+            modelBuilder.Entity("SiloAI.Domains.RagDocument", b =>
+                {
+                    b.HasOne("SiloAI.Domains.Customer", "Customer")
+                        .WithMany("RagDocument")
+                        .HasForeignKey("CustomerId");
+
+                    b.Navigation("Customer");
+                });
+
             modelBuilder.Entity("SiloAI.Domains.RagDocumentChunk", b =>
                 {
                     b.HasOne("SiloAI.Domains.RagDocument", "Document")
@@ -855,6 +893,15 @@ namespace SiloAI.Domains.Migrations
                         .IsRequired();
 
                     b.Navigation("Document");
+                });
+
+            modelBuilder.Entity("SiloAI.Domains.RagInstruction", b =>
+                {
+                    b.HasOne("SiloAI.Domains.Customer", "Customer")
+                        .WithMany("RagInstructions")
+                        .HasForeignKey("CustomerId");
+
+                    b.Navigation("Customer");
                 });
 
             modelBuilder.Entity("SiloAI.Domains.UsageRecord", b =>
@@ -868,22 +915,9 @@ namespace SiloAI.Domains.Migrations
                     b.Navigation("Customer");
                 });
 
-            modelBuilder.Entity("SiloAI.Domains.CustomerModelAssignment", b =>
+            modelBuilder.Entity("SiloAI.Domains.AiModel", b =>
                 {
-                    b.HasOne("SiloAI.Domains.Customer", "Customer")
-                        .WithMany()
-                        .HasForeignKey("CustomerId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("SiloAI.Domains.AiModel", "AiModel")
-                        .WithMany("Assignments")
-                        .HasForeignKey("AiModelId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Customer");
-
-                    b.Navigation("AiModel");
+                    b.Navigation("Assignments");
                 });
 
             modelBuilder.Entity("SiloAI.Domains.Customer", b =>
@@ -892,12 +926,11 @@ namespace SiloAI.Domains.Migrations
 
                     b.Navigation("LedgerAccount");
 
-                    b.Navigation("UsageRecords");
-                });
+                    b.Navigation("RagDocument");
 
-            modelBuilder.Entity("SiloAI.Domains.AiModel", b =>
-                {
-                    b.Navigation("Assignments");
+                    b.Navigation("RagInstructions");
+
+                    b.Navigation("UsageRecords");
                 });
 
             modelBuilder.Entity("SiloAI.Domains.LedgerAccount", b =>

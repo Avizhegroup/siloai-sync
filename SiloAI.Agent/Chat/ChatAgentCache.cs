@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using Microsoft.Agents.AI;
 using SiloAI.Application.Shared.Features;
 
@@ -35,7 +35,9 @@ public sealed class ChatAgentCache
     /// however they need. Invalidated explicitly whenever a RagInstruction is created, updated
     /// or deleted.
     /// </summary>
-    private readonly ConcurrentDictionary<int, IReadOnlyList<CachedRagInstruction>> _instructionsCache = new();
+    private readonly ConcurrentDictionary<
+     (int DocType, int? CustomerId),
+     IReadOnlyList<CachedRagInstruction>> _instructionsCache = new();
 
     public AIAgent GetOrCreate(string cacheKey, Func<AIAgent> factory)
         => _cache.GetOrAdd(cacheKey, _ => factory());
@@ -44,20 +46,20 @@ public sealed class ChatAgentCache
     /// Returns the cached rows for <paramref name="docType"/>, loading them through
     /// <paramref name="factory"/> on a cache miss.
     /// </summary>
-    public async Task<IReadOnlyList<CachedRagInstruction>> GetOrCreateInstructionsAsync(
-        int docType,
-        Func<Task<IReadOnlyList<CachedRagInstruction>>> factory)
+    public async Task<IReadOnlyList<CachedRagInstruction>>
+        GetOrCreateInstructionsAsync(
+            int docType,
+            int? customerId,
+            Func<Task<IReadOnlyList<CachedRagInstruction>>> factory)
     {
-        if (_instructionsCache.TryGetValue(docType, out var cached))
-        {
+        var cacheKey = (docType, customerId);
+
+        if (_instructionsCache.TryGetValue(cacheKey, out var cached))
             return cached;
-        }
 
         var contents = await factory();
 
-        _instructionsCache[docType] = contents;
-
-        return contents;
+        return _instructionsCache.GetOrAdd(cacheKey, contents);
     }
 
     /// <summary>
@@ -65,13 +67,19 @@ public sealed class ChatAgentCache
     /// create/update/delete of a RagInstruction so the next read re-loads from the database.
     /// </summary>
     public void InvalidateInstructions(int docType)
-        => _instructionsCache.TryRemove(docType, out _);
+    {
+        foreach (var key in _instructionsCache.Keys)
+        {
+            if (key.DocType == docType)
+                _instructionsCache.TryRemove(key, out _);
+        }
+    }
 
     /// <summary>
     /// Drops all cached instruction contents.
     /// </summary>
     public void InvalidateAllInstructions()
-        => _instructionsCache.Clear();
+     => _instructionsCache.Clear();
 
     public static string BuildKey(
         string? modelName,

@@ -37,13 +37,21 @@ public class RagChatSendHandler(
             existingSessionJson = chatSession.SessionState;
         }
 
-
-        var instructions = await agentCache.GetOrCreateInstructionsAsync((int)request.DocType, async () =>
-            (IReadOnlyList<CachedRagInstruction>)await dbContext.RagInstructions
-                .Where(p => p.DocType == (int)request.DocType && p.IsActive)
-                .AsNoTracking()
-                .Select(p => new CachedRagInstruction(p.Content, p.IsSystematic, p.CreateDateTime))
-                .ToListAsync(cancellationToken));
+        var instructions = await agentCache.GetOrCreateInstructionsAsync((int)request.DocType, request.CustomerId,
+     async () =>
+         (IReadOnlyList<CachedRagInstruction>)await dbContext.RagInstructions
+             .Where(p =>
+                 p.DocType == (int)request.DocType &&
+                 p.IsActive &&
+                 (p.CustomerId == null ||
+                  (request.CustomerId.HasValue &&
+                   p.CustomerId == request.CustomerId.Value)))
+             .AsNoTracking()
+             .Select(p => new CachedRagInstruction(
+                 p.Content,
+                 p.IsSystematic,
+                 p.CreateDateTime))
+             .ToListAsync(cancellationToken));
 
         var agentInstructions = BuildAgentInstructions(instructions);
 
@@ -66,10 +74,9 @@ public class RagChatSendHandler(
             agentInstructions, resolvedModel, includeAutoRagContext: false,
             ragDocType: request.DocType, ragKey: request.Key, includeSearchTool: true);
 
-        var topK = 20; 
+        var topK = 20;
 
-        var hits = await search.SearchAsync(
-            request.Message, topK, request.DocType, request.Key, cancellationToken);
+        var hits = await search.SearchAsync(request.Message, topK, request.DocType, request.Key, request.CustomerId, cancellationToken);
 
         // Materialized above — no extra DB round-trip here.
         var systematicInstructions = instructions.FirstOrDefault(p => p.IsSystematic);

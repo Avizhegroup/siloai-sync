@@ -1,4 +1,4 @@
-using DocumentFormat.OpenXml.InkML;
+﻿using DocumentFormat.OpenXml.InkML;
 using SiloAI.Agent.Chat;
 using System.Net;
 
@@ -21,6 +21,7 @@ public class UpdateRagInstructionCommandHandler(AiApiContext context, ChatAgentC
         instruction.Key = string.IsNullOrWhiteSpace(request.Key) ? null : request.Key.Trim();
         instruction.Category = request.Category;
         instruction.Tags = request.Tags;
+        instruction.CustomerId = request.CustomerId;
         instruction.Content = rawContent;
         instruction.IsSystematic = request.IsSystematic;
         instruction.IsActive = request.IsActive;
@@ -40,6 +41,7 @@ public class UpdateRagInstructionCommandHandler(AiApiContext context, ChatAgentC
             Key = instruction.Key,
             Category = instruction.Category,
             Tags = instruction.Tags,
+            CustomerId = instruction.CustomerId,
             Content = instruction.Content,
             IsSystematic = instruction.IsSystematic,
             IsActive = instruction.IsActive,

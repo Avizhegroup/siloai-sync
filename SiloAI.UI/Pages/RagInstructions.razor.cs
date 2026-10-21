@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Components.Forms;
+﻿using Microsoft.AspNetCore.Components.Forms;
 
 namespace SiloAI.UI.Pages;
 public partial class RagInstructions
@@ -9,6 +9,7 @@ public partial class RagInstructions
     public List<RagInstructionDto>? Instructions;
     public RagInstructionDto Request;
     public const long MaxUploadSize = 5 * 1024 * 1024;
+    public List<CustomerDto> _customers = new();
 
     [Inject] public AiApiClient ApiClient { get; set; }
     [CascadingParameter] public TelerikNotification Notification { get; set; }
@@ -18,6 +19,8 @@ public partial class RagInstructions
         Request = NewModel();
 
         await LoadInstructionsAsync();
+
+        await LoadCustomersAsync();
     }
 
     private async Task LoadInstructionsAsync()
@@ -35,6 +38,11 @@ public partial class RagInstructions
         {
             IsLoading = false;
         }
+    }
+
+    private async Task LoadCustomersAsync()
+    {
+        _customers = await ApiClient.GetFromJsonAsync<List<CustomerDto>>("admin/customers") ?? new();
     }
 
     private async Task OnFileSelected(InputFileChangeEventArgs args)
@@ -60,6 +68,7 @@ public partial class RagInstructions
             Id = instruction.Id,
             DocType = instruction.DocType,
             Key = instruction.Key ?? string.Empty,
+            CustomerId = instruction.CustomerId,
             Category = instruction.Category ?? string.Empty,
             Tags = instruction.Tags ?? string.Empty,
             Content = instruction.Content,
@@ -93,6 +102,7 @@ public partial class RagInstructions
                 {
                     DocType = Request.DocType,
                     Key = string.IsNullOrWhiteSpace(Request.Key) ? null : Request.Key.Trim(),
+                    CustomerId = Request.CustomerId,
                     Category = Request.Category,
                     Tags = Request.Tags,
                     Content = Request.Content,
@@ -105,6 +115,7 @@ public partial class RagInstructions
                 {
                     DocType = Request.DocType,
                     Key = string.IsNullOrWhiteSpace(Request.Key) ? null : Request.Key.Trim(),
+                    CustomerId = Request.CustomerId,
                     Category = Request.Category,
                     Tags = Request.Tags,
                     Content = Request.Content,
@@ -158,6 +169,7 @@ public partial class RagInstructions
     {
         DocType = RagDocType.GeneralChat,
         Key = string.Empty,
+        CustomerId = null,
         Category = string.Empty,
         Tags = string.Empty,
         Content = string.Empty,

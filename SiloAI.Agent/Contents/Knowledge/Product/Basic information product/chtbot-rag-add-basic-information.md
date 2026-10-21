@@ -12,6 +12,24 @@ The purpose of this part of the system is to provide an organized way to manage 
 
 ---
 
+## 2.Customer-Specific Terminology Reference and Update Rule
+
+The document titled **`# Customer customization document for terminology: Sazb-Khodro Project`** is the authoritative source for customer-specific terminology and naming conventions.
+
+Whenever this knowledge base is used for the Sazb-Khodro Project, you must:
+
+1. Consult the customer customization document whenever a term, concept, form, field, relationship, or procedure in the knowledge base corresponds to an entry defined in that document.
+2. Replace the corresponding general Silo terminology with the names currently defined in the customer customization document.
+3. Update the relevant knowledge-base content accordingly, including headings, definitions, examples, cross-references, and operational instructions. Do not merely replace terms in the final answer if the underlying knowledge-base content also needs updating.
+4. Always use the latest version of the customer customization document. If its terminology changes, apply the new names wherever relevant without requiring the mappings to be copied into this knowledge base.
+5. Preserve the original meaning, business rules, relationships, and functionality when updating names. A terminology change alone must not change the underlying concept or its behavior.
+6. Do not invent mappings or assume that two concepts are equivalent unless the customer customization document establishes that equivalence.
+7. If the customer customization document is unavailable or does not define a required mapping, do not guess. Retain the existing terminology until the correct mapping can be confirmed.
+
+**Priority rule:** For the Sazb-Khodro Project, the latest customer customization document takes precedence over general Silo terminology. The general knowledge base remains the source of business knowledge and functionality; the customer customization document determines which names must be used for the corresponding concepts.
+
+---
+
 # 2. Product Master Information
 
 Master information consists of concepts used to identify, classify, and manage products in the system.
