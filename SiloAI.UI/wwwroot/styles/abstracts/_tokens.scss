@@ -31,6 +31,27 @@
     --silo-red: #C23B3B;
     --silo-red-tint: #FBEAEA;
 
+    // ---- Color: on-ink (text / lines on --silo-ink surfaces) ----
+    // Used by: login background, welcome banner on Home.
+    --silo-ink-deep: #141C36; // darker end of ink gradients
+    --silo-on-ink: var(--silo-surface); // primary text on ink
+    --silo-on-ink-muted: rgba(255, 255, 255, .72);
+    --silo-on-ink-line: rgba(255, 255, 255, .12);
+
+    // ---- Color: data series (charts, customer dots, share bars) ----
+    // Categorical palette, deliberately NOT dominated by amber/red/green
+    // (those three carry meaning elsewhere — see DESIGN.md §2.1).
+    // C# code (ChartPalette.cs) must mirror these hex values 1:1,
+    // because Telerik Chart receives colors as strings, not CSS vars.
+    --chart-1: #2F5AA8; // = --silo-accent
+    --chart-2: #2A9D8F;
+    --chart-3: #7A5FB5;
+    --chart-4: #3C9DBF;
+    --chart-5: #B5547A;
+    --chart-6: #5C6B8A;
+    --chart-7: #8A9A3B;
+    --chart-8: #8E6B4E;
+
     // ---- Typography ----
     --font-sans: 'IRANSans', Tahoma, 'Segoe UI', sans-serif;
     --font-mono: ui-monospace, 'JetBrains Mono', 'Cascadia Code', Consolas, 'Courier New', monospace;
@@ -63,6 +84,35 @@
     --shadow-sm: 0 1px 2px rgba(18, 21, 28, .04);
     --shadow-md: 0 8px 24px rgba(18, 21, 28, .08);
     --shadow-login: 0 20px 60px rgba(18, 21, 28, .25);
+
+    // ---- Control sizes (inputs, buttons, Telerik inputs share these) ----
+    --control-h-sm: 30px; // .btn-sm, .form-control-sm, inline-edit inputs
+    --control-h: 38px; // default inputs/buttons (Bootstrap + Telerik)
+    --control-h-lg: 48px; // login fields and login button only
+
+    // ---- Icon tiles (square icon containers) ----
+    --tile-sm: 32px; // citation icon, file-chip icon
+    --tile-md: 40px; // agent avatar, setting icon, message avatar
+    --tile-lg: 68px; // login logo, empty-state icon
+
+    // ---- Focus rings ----
+    --ring-focus: 0 0 0 2px var(--silo-accent-tint);
+    --ring-danger: 0 0 0 2px var(--silo-red-tint);
+
+    // ---- Motion ----
+    --dur-fast: .15s; // hover / focus transitions
+    --dur-base: .2s; // drawers, collapses
+    --ease: ease;
+
+    // ---- Z-index scale ----
+    // Fixes "loader hides behind modal" and Telerik popups inside modals.
+    // Apply in _overrides.scss: .k-loader-container -> --z-loader,
+    // .k-animation-container / .k-popup -> --z-popup.
+    --z-sidebar: 1020;
+    --z-modal: 1055;
+    --z-notification: 1080;
+    --z-popup: 1090;
+    --z-loader: 1100;
 
     // ---- Legacy alias ----
     // layout.scss previously defined --sidebar-width/--sidebar-bg/--accent
