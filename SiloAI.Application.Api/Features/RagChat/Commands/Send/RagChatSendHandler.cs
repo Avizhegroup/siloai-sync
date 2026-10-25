@@ -31,8 +31,8 @@ public class RagChatSendHandler(
             chatSession = await dbContext.AiChatSessions
                 .FirstOrDefaultAsync(s => s.Id == request.ConversationId.Value, cancellationToken);
 
-            if (chatSession is null || chatSession.OwnerKey != ownerKey)
-                throw new ConversationNotFoundException();
+            //if (chatSession is null || chatSession.OwnerKey != ownerKey)
+            //    throw new ConversationNotFoundException();
 
             existingSessionJson = chatSession.SessionState;
         }

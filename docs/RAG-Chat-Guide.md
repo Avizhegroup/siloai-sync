@@ -160,9 +160,50 @@ Token usage object (`ChatTokenUsageDto`):
 - `400 Bad Request` — `message` is missing/blank.
 - `404 Not Found` — `conversationId` does not exist or does not belong to the caller.
 
+#### `POST /api/rag/chat/voice`
+
+Voice version of `send`: the user speaks, the server answers with both text and speech.
+
+**How it works:** the uploaded audio is transcribed (speech-to-text), the transcript is
+processed by the same chat pipeline as `send` (retrieval, instructions, session state,
+pricing), and the answer text is converted to speech (text-to-speech).
+
+**Input** (`multipart/form-data`, max request size 25 MB):
+
+| Field            | Type      | Required | Default       | Description                                                              |
+|------------------|-----------|----------|---------------|----------------------------------------------------------------------------|
+| `audio`          | file      | **yes**  | —             | Recorded user speech (e.g. `webm`, `mp3`, `wav`, `m4a`).                   |
+| `conversationId` | guid?     | no       | `null`        | Existing conversation to continue.                                         |
+| `docType`        | enum      | no       | `GeneralChat` | Same as `send`.                                                            |
+| `key`            | string?   | no       | `null`        | Same as `send`.                                                            |
+| `isMainChat`     | bool      | no       | `false`       | Same as `send`.                                                            |
+| `language`       | string?   | no       | `null`        | Optional language hint for transcription (e.g. `fa`, `en`).                |
+| `voice`          | string?   | no       | `null`        | Optional voice name for the spoken answer (provider-specific).             |
+
+**Output:** the spoken answer as a binary audio file (`Content-Type: audio/mpeg`).
+The text data is returned in response headers:
+
+| Header              | Description                                                                   |
+|---------------------|---------------------------------------------------------------------------------|
+| `X-Transcript`      | Text recognized from the user's audio (URL-encoded).                            |
+| `X-Response-Text`   | The AI-generated answer as text (URL-encoded).                                  |
+| `X-Conversation-Id` | Conversation id — store it to continue the chat.                                |
+
+Header values containing text are encoded with `encodeURIComponent` semantics; decode them
+with `decodeURIComponent` (or equivalent). Very long answers may exceed server/proxy header
+size limits.
+**Error responses:**
+
+- `400 Bad Request` — `audio` is missing/empty, or no speech could be recognized.
+- `402 Payment Required` — insufficient credit.
+
+**Client tip (browser):** record with `MediaRecorder`, upload as `audio`, then play the
+response using `new Audio(URL.createObjectURL(await response.blob()))` and read the text
+from `response.headers`.
+
 ---
 
-### 5.2 RAG Documents (Knowledge Base Management)
+### 5.2 RAG Documents
 
 Base route: `api/rag/documents` (JWT only).
 
