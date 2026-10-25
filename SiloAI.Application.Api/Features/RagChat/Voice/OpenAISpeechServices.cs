@@ -1,32 +1,73 @@
-﻿using Microsoft.Extensions.Options;
+﻿using System.ClientModel;
+using System.Net.Http.Headers;
+using Microsoft.Extensions.Options;
 using OpenAI;
 using OpenAI.Audio;
 using SiloAI.Agent.Rag;
-using System.ClientModel;
 
 namespace SiloAI.Application.Api;
 
 public sealed class OpenAISpeechToTextService : ISpeechToTextService
 {
     public const string Model = "microsoft/mai-transcribe-2";
-
     private readonly AudioClient _client;
+    private IOptions<OpenAIOptions> _options;
 
     public OpenAISpeechToTextService(IOptions<OpenAIOptions> options)
     {
+        _options = options;
         _client = new AudioClient(Model, OpenAIClientFactory.Credential(options.Value), OpenAIClientFactory.ClientOptions(options.Value));
     }
 
     public async Task<string> TranscribeAsync(Stream audio, string fileName, string? language, CancellationToken cancellationToken)
     {
-        var transcriptionOptions = new AudioTranscriptionOptions();
+        //var transcriptionOptions = new AudioTranscriptionOptions();
+        //if (!string.IsNullOrWhiteSpace(language))
+        //    transcriptionOptions.Language = language;
+
+        //audio.Position = 0;
+
+        //var result = await _client.TranscribeAudioAsync(audio, fileName, transcriptionOptions, cancellationToken);
+
+
+        var baseUrl = _options.Value.Endpoint.TrimEnd('/');
+        if (!baseUrl.EndsWith("/v1", StringComparison.OrdinalIgnoreCase))
+            baseUrl += "/v1";
+
+        using var client = new HttpClient { BaseAddress = new Uri(baseUrl + "/") };
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", _options.Value.ApiKey);
+
+        using var form = new MultipartFormDataContent();
+        
+        form.Add(new StringContent(Model), "model");
+       
         if (!string.IsNullOrWhiteSpace(language))
-            transcriptionOptions.Language = language;
+            form.Add(new StringContent(language), "language");
 
-        audio.Position = 0;
+        var contentType = Path.GetExtension(fileName).ToLowerInvariant() switch
+        {
+            ".mp3" or ".mpeg" or ".mpga" => "audio/mpeg",
+            ".flac" => "audio/flac",
+            ".m4a" or ".mp4" => "audio/mp4",
+            ".ogg" => "audio/ogg",
+            ".webm" => "audio/webm",
+            _ => "audio/wav"
+        };
 
-        var result = await _client.TranscribeAudioAsync(audio, fileName, transcriptionOptions, cancellationToken);
-        return result.Value.Text ?? string.Empty;
+        if (audio.CanSeek)
+            audio.Position = 0;
+
+        var audioContent = new StreamContent(audio);
+        audioContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+        form.Add(audioContent, "file", string.IsNullOrWhiteSpace(fileName) ? "audio.wav" : fileName);
+
+        using var response = await client.PostAsync("audio/transcriptions", form, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        using var doc = System.Text.Json.JsonDocument.Parse(body);
+        return doc.RootElement.TryGetProperty("text", out var text) ? text.GetString() ?? string.Empty : string.Empty;
     }
 }
 
