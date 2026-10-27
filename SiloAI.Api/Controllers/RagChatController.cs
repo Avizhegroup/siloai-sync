@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using SiloAI.Api.Auth;
 using SiloAI.Application.Api;
 using SiloAI.Shared;
-using System.Reflection;
 using System.Text;
 
 namespace SiloAI.Api.Controllers;
@@ -27,6 +26,52 @@ public class RagChatController(IMediator mediator) : ControllerBase
         var result = await mediator.Send(request, cancellationToken);
 
         return Ok(result);
+    }
+
+    [HttpPost("voice")]
+    [RequestSizeLimit(25 * 1024 * 1024)]
+    public async Task<IActionResult> Voice(
+        [FromForm] RagVoiceChatForm form,
+        [FromServices] IRagVoiceChatService voiceService,
+        CancellationToken cancellationToken)
+    {
+        if (form.Audio is null || form.Audio.Length == 0)
+            return BadRequest(new { message = "Audio file is required." });
+
+        try
+        {
+            await using var audioStream = form.Audio.OpenReadStream();
+
+            var result = await voiceService.SendAsync(new RagVoiceChatRequest
+            {
+                Audio = audioStream,
+                FileName = form.Audio.FileName,
+                Language = form.Language,
+                Voice = form.Voice,
+                ConversationId = form.ConversationId,
+                DocType = form.DocType,
+                Key = form.Key,
+                IsMainChat = form.IsMainChat,
+                Username = User?.Identity?.Name ?? string.Empty,
+                OwnerId = User.GetOwnerId(),
+                CustomerId = int.TryParse(User.GetCustomerId(), out var customerId) ? customerId : null
+            }, cancellationToken);
+
+            Response.Headers["X-Conversation-Id"] = result.ConversationId.ToString();
+            Response.Headers["X-Transcript"] = Uri.EscapeDataString(result.Transcript);
+            Response.Headers["X-Response-Text"] = Uri.EscapeDataString(result.ResponseText);
+            Response.Headers.AccessControlExposeHeaders = "X-Conversation-Id,X-Transcript,X-Response-Text";
+
+            return File(result.Audio, result.AudioContentType);
+        }
+        catch (InsufficientCreditException)
+        {
+            return StatusCode(402, new { message = "Insufficient credit to perform this action." });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpPost("send")]
@@ -56,4 +101,15 @@ public class RagChatController(IMediator mediator) : ControllerBase
             return StatusCode(402, new { message = "Insufficient credit to perform this action." });
         }
     }
+}
+
+public class RagVoiceChatForm
+{
+    public IFormFile Audio { get; set; } = default!;
+    public Guid? ConversationId { get; set; }
+    public RagDocType DocType { get; set; } = RagDocType.GeneralChat;
+    public string? Key { get; set; }
+    public bool IsMainChat { get; set; }
+    public string? Language { get; set; }
+    public string? Voice { get; set; }
 }

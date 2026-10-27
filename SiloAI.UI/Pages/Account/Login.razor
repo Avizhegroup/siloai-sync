@@ -1,4 +1,6 @@
 @page "/account/login"
+@using Telerik.Blazor.Components;
+
 @attribute [AllowAnonymous]
 
 <PageTitle>ورود — پنل مدیریت هوش مصنوعی سیلو</PageTitle>
@@ -6,45 +8,58 @@
 <div class="login-bg">
     <div class="login-card">
         <div class="login-logo">
-            <div class="logo-icon"><i class="bi bi-robot"></i></div>
-            <h4>پنل مدیریت هوش مصنوعی سیلو</h4>
+            <div class="logo-icon" aria-hidden="true"><i class="bi bi-robot"></i></div>
+            <h2>پنل مدیریت هوش مصنوعی سیلو</h2>
+            <p>برای ادامه، وارد حساب کاربری خود شوید.</p>
         </div>
-
-        <EditForm Model="Request" OnValidSubmit="OnLoginSubmit">
+        <EditForm Model="Request" OnValidSubmit="OnLoginSubmit" class="login-form">
             <DataAnnotationsValidator />
-            <div class="mb-3">
-                <label class="form-label fw-semibold">نام کاربری</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-person"></i></span>
-                    <InputText @bind-Value="Request.Username"
-                               class="form-control"
-                               autocomplete="username" />
+            <div class="field-group">
+                <label class="field-label" for="login-username">نام کاربری</label>
+                <div class="field">
+                    <i class="bi bi-person field-icon" aria-hidden="true"></i>
+                    <InputText id="login-username"
+                               @bind-Value="Request.Username"
+                               class="field-input"
+                               autocomplete="username"
+                               placeholder="نام کاربری خود را وارد کنید" />
                 </div>
-                <ValidationMessage For="() => Request.Username" class="text-danger small mt-1" />
+                <ValidationMessage For="() => Request.Username" class="field-error" />
             </div>
-            <div class="mb-4">
-                <label class="form-label fw-semibold">رمز عبور</label>
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                    <InputText @bind-Value="Request.Password"
-                               type="password"
-                               class="form-control"
-                               autocomplete="current-password" />
+            <div class="field-group">
+                <label class="field-label" for="login-password">رمز عبور</label>
+                <div class="field">
+                    <i class="bi bi-lock field-icon" aria-hidden="true"></i>
+                    <InputText id="login-password"
+                               @bind-Value="Request.Password"
+                               type="@(_showPassword ? "text" : "password")"
+                               class="field-input"
+                               autocomplete="current-password"
+                               placeholder="رمز عبور خود را وارد کنید" />
+                    <button type="button"
+                            class="field-toggle"
+                            aria-label="@(_showPassword ? "پنهان کردن رمز عبور" : "نمایش رمز عبور")"
+                            @onclick="() => _showPassword = !_showPassword">
+                        <i class="bi @(_showPassword ? "bi-eye-slash" : "bi-eye")"></i>
+                    </button>
                 </div>
-                <ValidationMessage For="() => Request.Password" class="text-danger small mt-1" />
-            </div>
-            <button type="submit" class="btn-ai-primary" disabled="@IsLoading">
-                @if (IsLoading)
-                {
-                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
-                    <span>در حال ورود...</span>
-                }
-                else
-                {
-                    <i class="bi bi-box-arrow-in-right me-2"></i>
-                    <span>ورود</span>
-                }
+                <ValidationMessage For="() => Request.Password" class="field-error" />
+            </div>        
+            <button type="submit" class="btn-ai-primary">
+                <i class="bi bi-box-arrow-in-right"></i>
+                <span>ورود</span>
             </button>
         </EditForm>
     </div>
 </div>
+
+@if (IsLoading)
+{
+    <TelerikLoaderContainer
+        LoaderPosition="@LoaderPosition.End"
+        LoaderType="LoaderType.InfiniteSpinner"
+        Text="@TextResources.APP_StringKeys_Loading">
+    </TelerikLoaderContainer>
+}
+
+

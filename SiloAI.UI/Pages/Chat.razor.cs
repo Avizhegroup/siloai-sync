@@ -1,26 +1,19 @@
-using Microsoft.AspNetCore.Components.Web;
+﻿using Microsoft.AspNetCore.Components.Web;
 
 namespace SiloAI.UI.Pages;
 
 public partial class Chat
 {
-    private class ChatMessage
-    {
-        public bool IsUser { get; set; }
-        public string Text { get; set; } = string.Empty;
-        public DateTime Time { get; set; } = DateTime.Now;
-        public List<RagChatCitationDto>? Citations { get; set; }
-    }
-
-    private readonly List<ChatMessage> _messages = new();
-    private string _input = string.Empty;
-    private Guid? _conversationId;
-    private bool _isSending;
-    private int _topK = 5;
-    private RagDocType _docType = RagDocType.GeneralChat;
-    private string _key = string.Empty;
+    public readonly List<ChatMessage> _messages = new();
+    public string _input = string.Empty;
+    public Guid? _conversationId;
+    public bool _isSending;
+    public int _topK = 5;
+    public RagDocType _docType = RagDocType.GeneralChat;
+    public string _key = string.Empty;
 
     [Inject] public AiApiClient ApiClient { get; set; }
+
     [CascadingParameter] public TelerikNotification Notification { get; set; }
 
     private void StartNewChat()
@@ -28,7 +21,9 @@ public partial class Chat
         if (_isSending) return;
 
         _messages.Clear();
+
         _conversationId = null;
+
         _input = string.Empty;
     }
 
@@ -45,9 +40,11 @@ public partial class Chat
         if (_isSending) return;
 
         var text = (_input ?? string.Empty).Trim();
+
         if (string.IsNullOrEmpty(text)) return;
 
         _isSending = true;
+
         _input = string.Empty;
 
         _messages.Add(new ChatMessage
@@ -57,8 +54,6 @@ public partial class Chat
             Time = DateTime.Now
         });
 
-        try
-        {
             var request = new RagChatRequest
             {
                 Message = text,
@@ -69,12 +64,15 @@ public partial class Chat
             };
 
             var response = await ApiClient.PostAsJsonAsync("api/rag/chat/send", request);
+
             response.EnsureSuccessStatusCode();
 
             var result = await response.Content.ReadFromJsonAsync<RagChatResponse>();
+
             if (result is null)
             {
                 Notification?.Show("پاسخی از سرور دریافت نشد.", "warning");
+
                 return;
             }
 
@@ -87,14 +85,16 @@ public partial class Chat
                 Time = DateTime.Now,
                 Citations = result.Citations
             });
-        }
-        catch (Exception ex)
-        {
-            Notification?.Show($"خطا در ارسال پیام: {ex.Message}", "error");
-        }
-        finally
-        {
+    
             _isSending = false;
-        }
     }
+
+    private readonly List<RagDocTypeItem> _ragDocTypes =
+    Enum.GetValues<RagDocType>()
+        .Select(type => new RagDocTypeItem
+        {
+            Code = type,
+            Title = type.ToDisplay()
+        })
+        .ToList();
 }

@@ -1,4 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using SiloAI.Application.Api.Services;
 
 namespace SiloAI.Application.Api;
@@ -14,6 +14,12 @@ public static class ApplicationAiApiServices
         services.AddScoped<ICreditLedgerService, CreditLedgerService>();
 
         services.AddScoped<IAiModelResolver, AiModelResolver>();
+
+        services.AddScoped<ISpeechToTextService, OpenAISpeechToTextService>();
+
+        services.AddScoped<ITextToSpeechService, OpenAITextToSpeechService>();
+
+        services.AddScoped<IRagVoiceChatService, RagVoiceChatService>();
 
         return services;
     }

@@ -1,4 +1,7 @@
-using Microsoft.AspNetCore.Components.Forms;
+﻿using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.Components.Web;
+using SiloAI.UI.Components;
+using Telerik.Blazor;
 
 namespace SiloAI.UI.Pages;
 public partial class RagInstructions
@@ -10,8 +13,36 @@ public partial class RagInstructions
     public RagInstructionDto Request;
     public const long MaxUploadSize = 5 * 1024 * 1024;
 
+    public List<RagDocTypeItem> DocTypes { get; } =
+[
+    new()
+    {
+        Code = RagDocType.GeneralChat,
+        Title = "گفتگوی عمومی"
+    },
+    new()
+    {
+        Code = RagDocType.Report,
+        Title = "گزارش"
+    },
+    new()
+    {
+        Code = RagDocType.ImageOCR,
+        Title = "تصویر"
+    },
+    new()
+    {
+        Code = RagDocType.PageAgent,
+        Title = "عامل صفحه محور"
+    }
+];
+
     [Inject] public AiApiClient ApiClient { get; set; }
+
     [CascadingParameter] public TelerikNotification Notification { get; set; }
+    [CascadingParameter] public DialogFactory Dialog { get; set; }
+
+    private Modal? ModalInstructions;
 
     protected override async Task OnInitializedAsync()
     {
@@ -23,35 +54,24 @@ public partial class RagInstructions
     private async Task LoadInstructionsAsync()
     {
         IsLoading = true;
-        try
-        {
-            Instructions = await ApiClient.GetFromJsonAsync<List<RagInstructionDto>>("api/rag/instructions");
-        }
-        catch (Exception ex)
-        {
-            Notification.Show($"خطا در بارگذاری لیست: {ex.Message}", "error");
-        }
-        finally
-        {
-            IsLoading = false;
-        }
+      
+        Instructions = await ApiClient.GetFromJsonAsync<List<RagInstructionDto>>("api/rag/instructions");
+    
+        IsLoading = false;
+        
     }
 
     private async Task OnFileSelected(InputFileChangeEventArgs args)
     {
-        try
-        {
-            using var stream = args.File.OpenReadStream(MaxUploadSize);
-            using var reader = new StreamReader(stream);
-            Request.Content = await reader.ReadToEndAsync();
-        }
-        catch (Exception ex)
-        {
-            Notification.Show($"خطا در خواندن فایل: {ex.Message}", "error");
-        }
+       using var stream = args.File.OpenReadStream(MaxUploadSize);
+
+       using var reader = new StreamReader(stream);
+
+       Request.Content = await reader.ReadToEndAsync();
+   
     }
 
-    private void StartEdit(RagInstructionDto instruction)
+    private async Task StartEdit(RagInstructionDto instruction)
     {
         EditingId = instruction.Id;
 
@@ -68,11 +88,17 @@ public partial class RagInstructions
             CreateDateTime = instruction.CreateDateTime,
             LastUpdateDateTime = instruction.LastUpdateDateTime
         };
+
+        if (ModalInstructions is not null)
+        {
+            await ModalInstructions.Close(new MouseEventArgs());
+        }
     }
 
     private void ResetForm()
     {
         EditingId = null;
+
         Request = NewModel();
     }
 
@@ -83,13 +109,12 @@ public partial class RagInstructions
         System.Diagnostics.Debug.WriteLine($"[RagInstructions.SaveAsync] EditingId={EditingId}, Content.Length={Request.Content?.Length}, Content='{Request.Content}'");
 
         IsSaving = true;
-        try
-        {
-            HttpResponseMessage response;
+       
+        HttpResponseMessage response;
 
-            if (EditingId is null)
+        if (EditingId is null)
             {
-                response = await ApiClient.PostAsJsonAsync("api/rag/instructions", new CreateRagInstructionCommand
+              response = await ApiClient.PostAsJsonAsync("api/rag/instructions", new CreateRagInstructionCommand
                 {
                     DocType = Request.DocType,
                     Key = string.IsNullOrWhiteSpace(Request.Key) ? null : Request.Key.Trim(),
@@ -99,6 +124,7 @@ public partial class RagInstructions
                     IsSystematic = Request.IsSystematic
                 });
             }
+
             else
             {
                 response = await ApiClient.PutAsJsonAsync($"api/rag/instructions/{EditingId}", new UpdateRagInstructionCommand
@@ -118,39 +144,41 @@ public partial class RagInstructions
             Notification.Show(EditingId is null ? "دستورالعمل با موفقیت ثبت شد." : "دستورالعمل با موفقیت به‌روزرسانی شد.", "success");
 
             ResetForm();
+
             await LoadInstructionsAsync();
-        }
-        catch (Exception ex)
-        {
-            Notification.Show($"خطا در ذخیره‌سازی: {ex.Message}", "error");
-        }
-        finally
-        {
+      
             IsSaving = false;
-        }
     }
 
     private async Task DeleteAsync(Guid id)
     {
+        var dialogResult = await Dialog.ConfirmAsync(
+       "آیا از حذف این فایل اطمینان دارید؟",
+       "توجه",
+        "حذف",
+       "انصراف");
+
+        if (!dialogResult)
+        {
+            return;
+        }
+
         IsSaving = true;
-        try
-        {
-            var response = await ApiClient.DeleteAsync($"api/rag/instructions/{id}");
-            response.EnsureSuccessStatusCode();
 
-            if (EditingId == id)
-                ResetForm();
 
-            await LoadInstructionsAsync();
-        }
-        catch (Exception ex)
+        var response = await ApiClient.DeleteAsync($"api/rag/instructions/{id}");
+
+        response.EnsureSuccessStatusCode();
+
+        if (EditingId == id)
         {
-            Notification.Show($"خطا در حذف: {ex.Message}", "error");
+            ResetForm();
         }
-        finally
-        {
-            IsSaving = false;
-        }
+
+        await LoadInstructionsAsync();
+      
+         IsSaving = false;
+        
     }
 
     private RagInstructionDto NewModel()
@@ -164,4 +192,14 @@ public partial class RagInstructions
         IsSystematic = false,
         IsActive = true
     };
+
+    private async Task OpenInstructionsModal()
+    {
+        await LoadInstructionsAsync();
+
+        if (ModalInstructions is not null)
+        {
+            await ModalInstructions.Open(new MouseEventArgs());
+        }
+    }
 }

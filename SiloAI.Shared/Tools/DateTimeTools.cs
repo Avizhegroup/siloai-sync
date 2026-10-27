@@ -1,5 +1,7 @@
 ﻿using System.Globalization;
 
+namespace SiloAI.Shared.Tools;
+
 public static class DateTimeTools
 {
     public static string ToNormalPersianDate(this string unixDate)
