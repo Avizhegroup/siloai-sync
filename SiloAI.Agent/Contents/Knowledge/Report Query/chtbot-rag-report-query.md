@@ -336,3 +336,70 @@ CREATE TABLE tbl_Zones (
     ZoneMapXPosition int NULL,
     ZoneMapYPosition int NULL
 )
+
+-- ===== Silo database schema | جدول tbl_Province =====
+-- کلیدواژه‌ها: استان
+CREATE TABLE tbl_Province (
+    fld_Id int IDENTITY(1,1) NOT NULL,
+    fld_Name nvarchar(50) NOT NULL
+)
+
+-- ===== Silo database schema | جدول tbl_City =====
+-- کلیدواژه‌ها: شهر
+CREATE TABLE tbl_City (
+    fld_Id int NULL,
+    fld_Name nvarchar(50) NULL,
+    fld_ProvinceId int NULL,
+    fld_CountryId int NOT NULL
+)
+
+-- ===== Silo database schema | جدول tbl_ProductPlacementMissions =====
+-- کلیدواژه‌ها: مأموریت جانمایی کالا، جانمایی، محل مبدأ، محل مقصد
+CREATE TABLE tbl_ProductPlacementMissions (
+    fld_PPMId int IDENTITY(1,1) NOT NULL,
+    fld_PPMUserId nvarchar(50) NULL,
+    fld_PPMRegDateTime datetime NULL,
+    fld_PPMProductCode nvarchar(50) NULL,
+    fld_PPMProductSerial nvarchar(50) NULL,
+    fld_PPMProductEPC nvarchar(50) NULL,
+    fld_PPMType int NOT NULL,
+    fld_PPMWMCode int NULL,
+    fld_PPMWMDriverUserId nvarchar(50) NULL,
+    fld_PPMFromZoneId nvarchar(50) NULL,
+    fld_PPMToZoneId nvarchar(50) NULL,
+    fld_PPMStoreCode nvarchar(50) NULL,
+    fld_PPMStatus int NULL,
+    fld_PPMToZoneId_Edited nvarchar(50) NULL,
+    fld_PPMDateTime datetime NULL,
+    fld_PPMActionId int NULL,
+    fld_PPMRegCode nvarchar(50) NULL,
+    fld_PPMFromStoreCode nvarchar(50) NULL,
+    fld_POCode int NULL
+)
+
+-- ===== Silo database schema | جدول tbl_InventoryTags =====
+-- کلیدواژه‌ها: انبارگردانی، شمارش فیزیکی، تگ انبارگردانی، EPC، سریال کالا
+CREATE TABLE tbl_InventoryTags (
+    fld_InventoryId int IDENTITY(1,1) NOT NULL,
+    fld_InventoryTagStatus int NULL,
+    fld_InventoryTagEPC nvarchar(50) NULL,
+    fld_InventoryDate nvarchar(50) NULL,
+    fld_InventoryDateTime datetime NULL,
+    fld_InventoryStoreCode nvarchar(50) NULL,
+    fld_InventoryUser nvarchar(250) NULL,
+    fld_InventoryDeviceIp nvarchar(50) NULL,
+    fld_InventoryDeviceId nvarchar(50) NULL,
+    fld_InventoryProductSerial nvarchar(50) NULL,
+    fld_InventoryProductCode nvarchar(50) NULL,
+    fld_InventoryProductType nvarchar(250) NULL,
+    fld_InventoryProductParentId int NULL,
+    fld_InventoryProjectCode nvarchar(50) NULL,
+    fld_InventoryProductCount decimal(18,2) NULL,
+    fld_InventoryProductName nvarchar(max) NULL,
+    fld_InventoryProductNewSerial nvarchar(50) NULL,
+    fld_InventoryHeaderId int NULL,
+    fld_InventoryProductDesc nvarchar(500) NULL,
+    fld_InventoryIdentifyType int NULL,
+    fld_InventoryPlace nvarchar(50) NULL
+)
+

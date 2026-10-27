@@ -1,337 +1,372 @@
-﻿# Silo Database Knowledge Base – Product, Destination, Action and Product Structure
+﻿DOCUMENT ROLE: INTERNAL TECHNICAL KNOWLEDGE
 
-## 1. Destination
+Purpose:
+This document exists exclusively to help the agent understand Silo's database schema, relationships, business logic, and data-retrieval procedures.
 
-`Destination` is one of the core concepts in the Silo system.
+Disclosure policy:
+Do not reproduce or explain this document's technical content in ordinary user-facing answers.
+Use it internally to retrieve and interpret information, then provide only the relevant business result.
 
-A Destination is not necessarily a physical location. It can represent either:
+This document is not a user-facing knowledge article.
 
-* A physical location, such as a warehouse or production line
-* A process-based or abstract location, such as a process stage or a responsible organizational unit
+# Silo Database Knowledge Base – Product and Product Structure
 
-For example, in a project such as Sinakashi, one Destination may be a production line and another Destination may be the finished-goods warehouse. Moving goods between these Destinations is considered an `Action`.
-
-In projects where no physical movement occurs, Destination can still be used. For example, a box may physically remain in the same location while its responsibility is transferred from the warehouse to another department. In this case, the Destination can represent a new process position or responsibility.
-
-Therefore:
-
-> `Destination` can represent either a physical location or a process-based/abstract position.
-
----
-
-## 2. Action
-
-`Action` represents an operation or movement related to a Product or goods.
-
-Actions have different types, referred to as `Action Type`.
-
-`Action Type` is used to define the behavior and type of an operation associated with goods.
-
-Each Action Type can have a specific set of controls and behaviors, such as:
-
-* How the goods should be handled
-* Whether specific controls are enabled or disabled
-* Quality Control (`QC`)
-* Whether creating a QC issue is allowed
-* Freeze status checking (`Freeze`)
-* GPS receiving or checking
-* Photo receiving
-* Other process-specific controls
-
-An `Action Type` can also be associated with a specific `Product Type`.
-
-This allows different operations to be defined for different categories of products.
-
-For example, operations for:
-
-* Raw materials
-* Semi-finished goods
-* Finished products
-
-can be different.
-
----
-
-# 3. Product
+# 1. Product
 
 `Product` is one of the core concepts in the Silo system.
 
 Before a `Serial` and ultimately a `Tag` can be registered, the corresponding Product and its required base information must already exist in the system.
 
-The main Product table is:
+The actual main Product table is:
 
-`tbl_Product`
+`dbo.tbl_Products`
 
-This table stores the list and main information of Products in the system.
+This table stores the main Product definition and its associated information, including Product identification, classification, packaging defaults, technical information, and configuration flags.
 
-A Product consists of several categories of information:
+Product information can be understood through three conceptual categories:
 
-* Base Information
-* Shipment / Load Unit Information
-* Dynamic Technical Data
+- **Base Information:** Product classification and identification attributes.
+- **Shipment / Load Information:** Measurement, quantity, and packaging defaults for the registered unit.
+- **Dynamic Technical Data:** Product-specific technical characteristics.
+
+These categories describe the business organization of Product information. They do not imply that each category corresponds to a separate database table.
+
+The authoritative database schema determines the actual tables, columns, and relationships.
+
+Important columns in `tbl_Products` include:
+
+- `ProductCode`
+- `ProductTitle`
+- `ProductENTitle`
+- `ProductTechnicalCode`
+- `ProductType`
+- `ProductStatus`
+- `ProductSize`
+- `ProductUnit`
+- `ProductValue`
+- `ProductCountInPack`
+- `ProductPackValue`
+- `ProductPackWeight`
+- `ProductPackVolume`
+- `ProductProperties`
+- `ProductTechnicalData`
+- `fld_ProductGroup`
+- `fld_ProductBrand`
+- `fld_ProductSubGroup`
+- `fld_ProductClass`
+- `ProductRegUser`
+- `ProductRegDateTime`
+- `fld_ProductIsActive`
+- `fld_HasDoubleTag`
+
+The Product classification columns connect to their corresponding base-information tables through the business-code columns documented below.
 
 ---
 
-# 4. Product Type
+# 2. Product Type
 
 `Product Type` is a key concept in the Product structure and represents the main classification of Products from a business-process perspective.
 
 For example, in the Faradid project, Product Types can include:
 
-* Raw Material (`Paper Base`)
-* Semi-Finished Product
-* Finished Product (`Cut`)
+- Raw Material (`Paper Base`)
+- Semi-Finished Product
+- Finished Product (`Cut`)
 
-Therefore, Product Type determines which business/process category a Product belongs to.
+The physical Product Type table is:
+
+`dbo.tbl_ProductType`
+
+Relevant columns include:
+
+- `ProductTypeId`
+- `ProductTypeCode`
+- `ProductTypeTitle`
+- `ProductTypeParentId`
+- `ProductTypeParentsId`
+
+The Product Type relationship is:
+
+`tbl_Products.ProductType → tbl_ProductType.ProductTypeCode`
+
+For serialized/tagged Product records, the corresponding relationship is:
+
+`tbl_Tags.ProductType → tbl_ProductType.ProductTypeCode`
+
+`ProductTypeTitle` is the human-readable Product Type name. Queries intended for users should display the title rather than an internal code when the title is available.
+
+Product Type identifies the business/process category of a Product and may affect which Action Types are applicable to it.
+
+The available Product Types and their operational behavior depend on the project configuration.
 
 ---
 
-# 5. Product Base Information
+# 3. Product Base Information
 
 Before creating a Product, the required base information must be defined.
 
 Product Base Information can include:
 
-* Product Brand
-* Product Class
-* Product Group
-* Product Size
-* Subgroup
-* Product Status
-* Product Type
-* Other project-specific base information
+- Product Brand
+- Product Class
+- Product Group
+- Product Size
+- Product Subgroup
+- Product Status
+- Product Type
+- Product Unit
+- Other project-specific base information
 
-These values are managed through dedicated base-information tables.
+These values help classify, identify, search, and manage Products.
 
-Examples of Product base-information tables include:
+Base information is distinct from dynamic technical characteristics. For example, Brand and Product Type are classification attributes, while voltage and power may be technical properties.
 
-* `ProductSize`
-* `ProductBrand`
-* `ProductGroup`
-* `ProductStatus`
-* Other Product base-information tables
+The physical table names and relationships confirmed for the Product base-information structure include:
 
-The technical structure of these tables is fixed, but the business meaning and displayed name can vary between projects.
+| Business concept | Physical table | Relationship from `tbl_Products` |
+|---|---|---|
+| Product Brand | `tbl_ProductBrand` | `tbl_Products.fld_ProductBrand → tbl_ProductBrand.fld_ProductBrandCode` |
+| Product Group | `tbl_ProductGroup` | `tbl_Products.fld_ProductGroup → tbl_ProductGroup.fld_ProductGroupCode` |
+| Product Subgroup | `tbl_ProductSubGroup` | `tbl_Products.fld_ProductSubGroup → tbl_ProductSubGroup.fld_ProductSubGroupCode` |
+| Product Class | `tbl_ProductClass` | `tbl_Products.fld_ProductClass → tbl_ProductClass.fld_ProductClassCode` |
+| Product Status | `tbl_ProductStatus` | `tbl_Products.ProductStatus → tbl_ProductStatus.ProductStatusCode` |
+| Product Type | `tbl_ProductType` | `tbl_Products.ProductType → tbl_ProductType.ProductTypeCode` |
+| Product Size | `tbl_ProductPropertyC` | `tbl_Products.ProductSize → tbl_ProductPropertyC.fld_ProductPropertyCId` |
+
+These relationships use the documented business-code or identifier columns. Do not replace them with joins on similarly named `Id` columns unless the authoritative schema explicitly defines that relationship.
+
+The relevant table columns include:
+
+- `tbl_ProductBrand`: `fld_ProductBrandId`, `fld_ProductBrandCode`, `fld_ProductBrandTitle`, `fld_ProductBrandData`
+- `tbl_ProductGroup`: `fld_ProductGroupId`, `fld_ProductGroupCode`, `fld_ProductGroupTitle`, `fld_ProductGroupData`
+- `tbl_ProductSubGroup`: `fld_ProductSubGroupId`, `fld_ProductSubGroupCode`, `fld_ProductSubGroupTitle`, `fld_ProductSubGroupSubTitle`, `fld_ProductSubGroupDesc`, `fld_ProductGroupCode`
+- `tbl_ProductClass`: `fld_ProductClassId`, `fld_ProductClassCode`, `fld_ProductClassTitle`, `fld_ProductClassSubTitle`, `fld_ProductClassDesc`
+- `tbl_ProductStatus`: `ProductStatusId`, `ProductStatusCode`, `ProductStatusTitle`, `ProductStatusDesc`
+- `tbl_ProductType`: `ProductTypeId`, `ProductTypeCode`, `ProductTypeTitle`, `ProductTypeParentId`, `ProductTypeParentsId`
+- `tbl_ProductPropertyC`: `fld_ProductPropertyCIdentity`, `fld_ProductPropertyCId`, `fld_ProductPropertyCTitle`, `fld_ProductPropertyCDesc`, `fld_ProductPropertyCData`, `fld_ProductPropertyCTemp`
+
+The Product Subgroup parent relationship is:
+
+`tbl_ProductSubGroup.fld_ProductGroupCode → tbl_ProductGroup.fld_ProductGroupCode`
+
+Product Size is represented by `tbl_ProductPropertyC`; do not assume that a separate physical table named `ProductSize` exists.
+
+The underlying structure of base information is defined by the database schema. Its displayed business meaning and terminology may vary between projects.
 
 ---
 
-# 6. Technical Table Name vs. User-Facing Name
+# 4. Technical Table Name vs. User-Facing Name
 
 The technical names of database tables remain fixed, while the names displayed to users can be customized for each project.
 
-For example:
+For example, the Product Group concept may be displayed as:
 
-`ProductGroup`
+- `گروه کالا`
+- `تیپ خودرو`
 
-may be displayed to users as:
+Similarly, Product Size may be displayed as:
 
-* `گروه کالا`
-* `تیپ خودرو`
+- `سایز`
+- `عرض کالا`
+- `گراماژ`
 
-depending on the project.
-
-Similarly, `ProductSize` may be displayed as:
-
-* `سایز`
-* `عرض کالا`
-* `گراماژ`
-
-depending on the project's terminology.
-
-These terminology settings are managed through:
+The terminology settings are managed through:
 
 `Strings > Settings`
 
-Changing a term is not necessarily limited to a single form. The configured terminology can be applied throughout the software wherever that term is used.
+Changing a term may affect its display throughout the software wherever that configured term is used.
 
-Therefore, when analyzing the database structure, the Agent must distinguish between:
+The Agent must distinguish between:
 
 1. The technical database/table concept
 2. The user-facing business terminology
 
-The technical table name does not change just because its business meaning or displayed name changes.
+A displayed name does not establish that the underlying table or column has changed. The Agent must not infer physical database names from user-facing terminology alone.
+
+For SQL generation, use the physical names documented in the authoritative schema, even when the user refers to a concept by its configured Persian display name.
 
 ---
 
-# 7. Product Code
+# 5. Product Code
 
-`Product Code` is the primary identifier of a Product.
+`ProductCode` is the main business identifier of a Product.
 
-Product information is connected to Serial and Tag through the Product Code.
+The main Product table is `tbl_Products`. Its `ProductCode` identifies the Product definition associated with serialized units.
 
-Conceptually:
+The primary documented Product-to-Tag relationship is:
+
+`tbl_Tags.ProductCode → tbl_Products.ProductCode`
+
+Conceptually, Product information is associated with a Serial through the Product Code, and the Serial is associated with its Tag.
 
 ```text
-Product Code → Serial → Tag
+tbl_Products.ProductCode
+          ↑
+tbl_Tags.ProductCode
+
+Serial / Tag identity:
+tbl_Tags.ProductSerial + tbl_Tags.TagEpc
 ```
 
-When a Product Code is assigned to a Serial, the Product information associated with that code becomes associated with the Serial.
+The relevant columns in `tbl_Tags` include `ProductCode`, `ProductSerial`, and `TagEpc`.
 
-This can include:
+The documented business/composite key for a Tag record is:
 
-* Color
-* Type
-* Brand
-* Other Product base information
+`(tbl_Tags.ProductSerial, tbl_Tags.TagEpc)`
 
-Therefore, `Product Code` is the main connection point between Product information and Serial/Tag information.
+`tbl_Tags.Id` is an identity column and is not the documented relationship key for Tag records.
 
-The system also provides search capabilities so that operators do not need to search through thousands of Products manually.
+Product information associated with the Product Code may include:
 
-An operator can search using:
+- Product Type
+- Brand
+- Group
+- Class
+- Size
+- Subgroup
+- Status
+- Other Product characteristics
 
-* Part of the Product title
-* Product type
-* Other Product characteristics
+The Product Code provides the main business connection between a Product definition and the serialized units associated with it.
 
-to find the required Product Code.
+The system also provides Product search capabilities. Depending on the available configuration, operators may search using part of the Product Title, Product Type, or other Product characteristics to find the required Product.
 
----
-
-# 8. Technical Code / Nickname
-
-In addition to the main `Product Code`, the system supports a shorter identifier or alias for a Product.
-
-This is referred to as:
-
-`Technical Code`
-
-or
-
-`Nickname`
-
-The purpose is to provide a short identifier that operators can easily use in day-to-day warehouse or production operations.
-
-For example, a Product may be commonly identified by a short code such as:
-
-`2142`
-
-while its main Product Code may be longer or more complex.
-
-Therefore:
-
-* `Product Code` is the main Product identifier.
-* `Technical Code / Nickname` is a shorter operational identifier.
-
-These two concepts should not be treated as the same field or concept.
+For SQL generation, the Agent must verify the actual columns and relationships against the authoritative database schema rather than treating the conceptual flow as a complete database join definition.
 
 ---
 
-# 9. Automatic Product Code and Title Generation
+# 6. Technical Code / Nickname
 
-The system supports automatic generation of:
+In addition to the main `ProductCode`, the Product table contains the additional identifier:
 
-* `Product Code`
-* Product Title
+`ProductTechnicalCode`
 
-based on a predefined formula or algorithm.
+This identifier can provide a short or familiar way for operators to identify and search for a Product.
 
-In this mode, the operator does not need to manually enter the Product Code.
+For example, employees may commonly recognize a Product by `2142`, even if its official Product Code is longer.
+
+- `ProductCode`: The primary Product identifier.
+- `ProductTechnicalCode`: An additional operational identifier.
+
+These concepts must not be treated as interchangeable.
+
+The physical column `tbl_Products.ProductTechnicalCode` is distinct from `tbl_Products.ProductTechnicalData`.
+
+**Technical Code is not the same as Technical Data.** Technical Code identifies a Product; Technical Data describes its technical characteristics.
+
+The Agent must not assume that Technical Code is always shorter or always exists for every Product.
+
+---
+
+# 7. Automatic Product Code and Title Generation
+
+The system supports automatic generation of `ProductCode` and Product Title based on a predefined formula or algorithm where this functionality is configured.
 
 The operator selects the required base information, such as:
 
-* Size
-* Brand
-* Class
-* Other Product characteristics
+- Size
+- Brand
+- Class
+- Other Product characteristics
 
-and the system generates the Product Code and Product Title according to the configured algorithm.
+The system then generates the Product Code or Title according to the configured rules.
 
-This functionality helps to:
+This functionality can help reduce data-entry errors and standardize Product identification and naming.
 
-* Reduce human input errors
-* Standardize Product Codes
-* Standardize Product Titles
+The exact generation rules depend on the project configuration. The Agent must not assume that automatic generation is enabled for every project.
 
 ---
 
-# 10. Shipment / Load Unit
+# 8. Shipment / Load Unit
 
-The system has a concept referred to as `محموله` (Shipment / Load Unit).
+The system uses the concept of `محموله` (Shipment / Load Unit).
 
-In the Silo system, `محموله` is a contractual concept referring to the Serial or packaging unit for which a Tag is going to be issued.
+A Shipment / Load Unit is the traceable unit registered as a Serial and associated with one or more Tags according to the relevant Product and process configuration.
 
-The actual physical unit being tagged can vary between industries and projects.
+Its physical meaning can vary between projects. For example, in the tile industry, the registered unit may be a pallet.
 
-For example, in the tile industry, the Tagging unit may be a `پالت` (pallet).
+A Shipment / Load Unit may contain multiple smaller units and represent a measurable quantity, weight, or volume.
 
-Therefore, in that project, a `محموله` can represent one pallet.
-
-The concept of `محموله` is not necessarily a fixed industrial concept. It represents the unit that is registered as a Serial and tracked/tagged in the specific process.
-
+Therefore, `Shipment / Load` should be understood as the registered and traceable unit, rather than assuming it always represents a single item or a specific type of package.
 
 ## Product Packaging and Shipment Fields
 
 ### Purpose
 
-This section defines the business meaning and database column mapping of Product packaging and shipment fields in Silo.
-
-The Agent must use these mappings when interpreting user requests and generating SQL queries.
+This section defines the documented business meanings and physical database column mappings of Product packaging and shipment fields in `dbo.tbl_Products`.
 
 ### 1. Main Unit
 
-- **Database column:** `ProductUnit`
+- **Database column:** `tbl_Products.ProductUnit`
 - **Business meaning:** واحد اصلی کالا
 - **Usage:** Use this column when the user asks about the Product's main unit.
 
 ### 2. Second Unit Value
 
-- **Database column:** `ProductValue`
-- **Business meaning:** مقدار واحد دوم
-- **Usage:** Use this column when the user asks about the value or quantity of the second unit assigned to a Product.
+- **Database column:** `tbl_Products.ProductValue`
+- **Business meaning:** مقدار هر واحد دوم
+- **Usage:** Use this column when the user asks about the quantity or measurable value represented by one second unit.
+
+For example, one carton may represent `1.5 m²`.
 
 ### 3. Number of Second Units in a Shipment
 
-- **Database column:** `ProductCountInPack`
+- **Database column:** `tbl_Products.ProductCountInPack`
 - **Business meaning:** تعداد واحد دوم در محموله
-- **Usage:** Use this column when the user asks how many second units are included in a shipment or package.
+- **Usage:** Use this column when the user asks how many second units are included in a standard shipment or package.
+
+For example, one pallet may contain 45 cartons.
 
 ### 4. Shipment Value
 
-- **Database column:** `ProductPackValue`
-- **Business meaning:** مقدار محموله
-- **Usage:** Use this column when the user asks about the configured shipment value or مقدار محموله for a Product.
+- **Database column:** `tbl_Products.ProductPackValue`
+- **Business meaning:** مقدار استاندارد محموله
+- **Usage:** Use this column when the user asks about the configured total quantity represented by a standard shipment or registered unit.
+
+For example, a pallet containing 45 cartons of `1.5 m²` each has a standard shipment value of `67.5 m²`.
 
 ### 5. Shipment Weight
 
-- **Database column:** `ProductPackWeight`
+- **Database column:** `tbl_Products.ProductPackWeight`
 - **Business meaning:** وزن محموله
-- **Usage:** Use this column when the user asks about the weight of a Product's shipment or package.
+- **Usage:** Use this column when the user asks about the configured shipment or package weight.
 
 ### 6. Shipment Volume
 
-- **Database column:** `ProductPackVolume`
+- **Database column:** `tbl_Products.ProductPackVolume`
 - **Business meaning:** حجم محموله
-- **Usage:** Use this column when the user asks about the volume of a Product's shipment or package.
+- **Usage:** Use this column when the user asks about the configured shipment or package volume.
 
 ### 7. Mandatory SQL Column Mapping Rules
 
-When generating SQL queries, the Agent must use the following exact mappings:
+When generating SQL queries, use the following exact mappings:
 
-| User-facing concept | Database column |
+| User-facing concept | Physical database column |
 |---|---|
-| واحد اصلی کالا | `ProductUnit` |
-| مقدار واحد دوم | `ProductValue` |
-| تعداد واحد دوم در محموله | `ProductCountInPack` |
-| مقدار محموله | `ProductPackValue` |
-| وزن محموله | `ProductPackWeight` |
-| حجم محموله | `ProductPackVolume` |
+| واحد اصلی کالا | `tbl_Products.ProductUnit` |
+| مقدار هر واحد دوم | `tbl_Products.ProductValue` |
+| تعداد واحد دوم در محموله | `tbl_Products.ProductCountInPack` |
+| مقدار محموله | `tbl_Products.ProductPackValue` |
+| وزن محموله | `tbl_Products.ProductPackWeight` |
+| حجم محموله | `tbl_Products.ProductPackVolume` |
 
-These mappings define the relationship between business terminology and existing database columns. They do not authorize the creation or assumption of additional columns.
+These mappings define the documented relationship between business terminology and database columns. They do not authorize the creation or assumption of additional columns.
 
-The Agent must not substitute guessed column names such as `Unit`, `SecondUnit`, `SecondUnitQuantity`, or `ShipmentQuantity` for the documented columns.
+The Agent must not substitute guessed column names such as `Unit`, `SecondUnit`, `SecondUnitQuantity`, or `ShipmentQuantity` for the documented mappings.
 
-For example, when the user asks for the second-unit value, the Agent must use `ProductValue`, not an assumed `SecondUnit` column.
+For example:
 
-When the user asks for the number of second units in a shipment, the Agent must use `ProductCountInPack`, not an assumed `SecondUnitQuantity` column.
+- For the value of one second unit, use `tbl_Products.ProductValue`, not an assumed `SecondUnit` column.
+- For the number of second units in a shipment, use `tbl_Products.ProductCountInPack`, not an assumed `SecondUnitQuantity` column.
+- For the configured shipment value, use `tbl_Products.ProductPackValue`, not an assumed `ShipmentQuantity` column.
 
-When the user asks for the shipment value, the Agent must use `ProductPackValue`, not an assumed `ShipmentQuantity` column.
+### 8. Authoritative Schema Validation
 
-### 8.Authoritative Schema Validation
+Before generating SQL, the Agent must verify every referenced table and column against the actual `CREATE TABLE` definitions in the database schema section beginning with:
 
-Before generating SQL, the Agent must verify every referenced table and column against the actual `CREATE TABLE` definitions in the database schema section beginning with `# Application sql server table definitions:`.
+`# Application sql server table definitions:`
 
-This section defines business meanings and column mappings only. The authoritative database schema remains the source of truth for determining whether a table or column exists.
+This section defines business meanings and documented column mappings. The authoritative database schema remains the source of truth for determining whether a table or column exists.
 
 The Agent must never invent a database column, even if a business concept appears in another knowledge document.
 
@@ -339,346 +374,559 @@ If a requested concept cannot be mapped to a column confirmed by the authoritati
 
 ---
 
-# 11. Quantity
+# 9. Quantity
 
-The system supports the concept of `Quantity`.
+The system supports `Quantity`, which can represent either a count or a measurable amount, depending on the Product and project.
 
-Quantity can represent either:
+Examples include:
 
-* A count
-* A measurable amount based on a unit of measurement
+- A shipment containing 100 pieces
+- A pallet containing a number of cartons
+- A shipment measured in square meters
 
-For example:
+A Product can have a configured standard or default quantity for its registered unit.
 
-* A Serial may represent a shipment containing 100 pieces.
-* A shipment may be measured in square meters.
+During `Register`, the operator selects the Product Code and the system may initialize the registered unit's quantity using the Product's configured default value.
 
-A default Quantity can be defined for a Product.
+The actual quantity may differ from the standard value when the registered shipment is incomplete, where the process allows the operator to adjust it.
 
-For example, in the tile industry:
-
-* One carton may contain 1.5 square meters.
-* A pallet may contain 45 cartons.
-* The default Quantity of a full pallet can therefore be calculated based on the cartons contained in it.
-
-During `Register`, the operator selects the Product Code and the system automatically displays the Product's default Quantity.
-
-However, the operator can modify the Quantity for a specific shipment.
-
-For example, if the last pallet is incomplete, its actual Quantity may be lower than the default Quantity of a complete pallet.
+For example, a full tile pallet may represent `67.5 m²`, while an incomplete pallet may contain only `20 m²`.
 
 Therefore:
 
-> Default Quantity is a predefined value, but the actual Quantity of an individual shipment can be adjusted during Register.
+> A Product's configured default shipment quantity does not necessarily equal the actual quantity of every registered Serial.
+
+For SQL interpretation, the Agent must distinguish the configured Product-level shipment value stored in `tbl_Products.ProductPackValue` from the actual quantity recorded for an individual Serial.
+
+The relevant Serial-level quantity column is:
+
+`tbl_Tags.ProductCount`
+
+The relationship between a Product and its serialized/tagged units is established through:
+
+`tbl_Tags.ProductCode → tbl_Products.ProductCode`
+
+The Agent must not treat `tbl_Tags.ProductCount` and `tbl_Products.ProductPackValue` as interchangeable. They represent different levels of information and may use different quantity conventions.
 
 ---
 
-# 12. Second Unit
+# 10. Second Unit
 
-The system supports a second unit of measurement called `Second Unit`.
-
-Second Unit is useful when a shipment needs to be represented using two measurement units simultaneously.
+A `Second Unit` is used when a Product or registered shipment needs to be represented using two related measurement units.
 
 Examples:
 
 ### Tile Industry
 
-* Number of cartons
-* Square meters
+- Number of cartons
+- Square meters
 
 ### Paper Industry
 
-* Number of rolls
-* Weight or length
+- Number of rolls
+- Weight or length
 
-In projects where goods are counted individually, Second Unit values are usually considered equal to one.
+The relationship between the second-unit value, the number of second units in a shipment, and the total shipment value must be interpreted separately.
 
-In industries such as:
+For example:
 
-* Carpet (`فرش`)
-* Paper (`کاغذ`)
-* Tile (`کاشی`)
+- One carton represents `1.5 m²`.
+- One standard pallet contains 45 cartons.
+- The standard pallet value is `67.5 m²`.
 
-the Second Unit quantity can vary and should be recorded according to the actual characteristics of the shipment.
+The documented Product column mappings are:
 
----
+- `tbl_Products.ProductValue`: Value represented by one second unit.
+- `tbl_Products.ProductCountInPack`: Number of second units in a standard package or shipment.
+- `tbl_Products.ProductPackValue`: Total standard quantity represented by the package or shipment.
 
-# 13. Accounting System Integration
+Where these values are defined consistently, the total can be calculated as:
 
-The Product section of Silo can integrate with accounting systems such as:
+`ProductValue × ProductCountInPack = ProductPackValue`
 
-* راهکاران
-* شایگان
+This relationship is an example of the expected packaging calculation. The Agent must not assume the values are populated, that the equality holds for every Product, or that every project uses the same measurement convention without supporting data.
 
-If a Product already exists in the accounting system, its information can be retrieved through a Web Service and automatically added to the Product table in Silo.
+Some Products are managed by count only. Other Products require both a count and a measurable amount.
 
-This integration helps to:
-
-* Avoid defining the same Product twice
-* Reduce duplicate data entry
-* Keep Product information synchronized with the accounting system
+The exact units and conventions depend on the Product and project configuration.
 
 ---
 
-# 14. Technical Data
+# 11. Accounting System Integration
 
-In addition to Product Base Information and Shipment Information, the system supports dynamic `Technical Data`.
+The Product section of Silo can integrate with accounting or ERP systems, including systems such as Rahkaran or Shayegan where the relevant integration is configured.
 
-Technical Data contains dynamic and project-specific technical characteristics.
+Product information may be retrieved through a Web Service and added or synchronized in Silo.
 
-These characteristics can vary depending on the Product type and project requirements.
+This integration can help to:
 
-For example, a pump or device may require technical information such as:
+- Avoid defining the same Product manually in multiple systems
+- Reduce duplicate data entry
+- Maintain consistency between Product information in connected systems
 
-* Input voltage
-* Device power
-* Body color
-* Other specific technical characteristics
+The Agent must not assume that a specific integration, Web Service, or synchronization process is enabled in every project.
 
-Technical Data is stored as `JSON` using a Key/Value structure.
+Product import from Excel may also be available where supported. Its availability and behavior must be confirmed for the relevant project.
+
+---
+
+# 12. Technical Data
+
+In addition to Product Base Information and Shipment Information, Silo supports Product-level technical information through the following documented columns in `tbl_Products`:
+
+- `ProductProperties`
+- `ProductTechnicalData`
+
+These columns are distinct from `ProductTechnicalCode`.
+
+Technical Data describes technical characteristics that can vary between Products or projects.
+
+Examples include:
+
+- Input voltage
+- Device power
+- Body color
+- Length and width
+- Other Product-specific technical characteristics
+
+The documented concept describes Technical Data as dynamic Key/Value data stored in JSON:
+
+```text
+Technical Data
+    Key → Value
+    Key → Value
+    Key → Value
+```
+
+This approach allows Products to have different technical characteristics without requiring a fixed database column for every possible property.
+
+Technical Data may be used for:
+
+- Label / Tag printing
+- Reporting
+- Filtering Products
+- Retrieving specific technical characteristics
+
+For example, a report may identify inventory containing pumps with a voltage of `24V`.
+
+### Product-Level Data vs. Serial-Level Data
+
+The Agent must distinguish between:
+
+- **Product-level Technical Data:** Describes the Product definition, including the Product-level JSON columns documented in `tbl_Products`.
+- **Serial-level information:** Describes a specific registered unit, such as the production furnace used for that Serial, where such information is recorded at Serial level.
+
+The exact storage location and database representation of each type of information must be verified against the authoritative schema. The conceptual distinction alone does not establish a specific table, column, or relationship.
+
+The Agent must not assume that `ProductProperties` and `ProductTechnicalData` have identical meanings or contents. It must not assume that all technical characteristics are stored at Product level or that every project uses the same technical-data structure.
+
+---
+
+# 13. Product Information Categories
+
+Product information in Silo can be understood through three conceptual categories.
+
+## 13.1. Base Information
+
+Base Information contains general Product characteristics such as:
+
+- Brand
+- Group
+- Class
+- Size
+- Subgroup
+- Status
+- Product Type
+- Unit
+- Other project-specific classification attributes
+
+The relevant physical tables and relationships include:
+
+- `tbl_Products.fld_ProductBrand → tbl_ProductBrand.fld_ProductBrandCode`
+- `tbl_Products.fld_ProductGroup → tbl_ProductGroup.fld_ProductGroupCode`
+- `tbl_Products.fld_ProductSubGroup → tbl_ProductSubGroup.fld_ProductSubGroupCode`
+- `tbl_Products.fld_ProductClass → tbl_ProductClass.fld_ProductClassCode`
+- `tbl_Products.ProductSize → tbl_ProductPropertyC.fld_ProductPropertyCId`
+- `tbl_Products.ProductStatus → tbl_ProductStatus.ProductStatusCode`
+- `tbl_Products.ProductType → tbl_ProductType.ProductTypeCode`
+
+The parent relationship for Product Subgroup is:
+
+`tbl_ProductSubGroup.fld_ProductGroupCode → tbl_ProductGroup.fld_ProductGroupCode`
+
+These values are generally managed through dedicated base-information tables. The Agent must use the correct title columns when displaying human-readable names.
+
+## 13.2. Shipment Information
+
+Shipment Information describes the measurement and packaging defaults associated with the Product's registered unit.
+
+It can include:
+
+- Main Unit
+- Second-unit value
+- Number of second units in a package
+- Standard shipment quantity
+- Weight
+- Volume
+
+The documented column mappings are:
+
+| Concept | Database column |
+|---|---|
+| Main Unit | `tbl_Products.ProductUnit` |
+| Second-unit value | `tbl_Products.ProductValue` |
+| Number of second units in a package | `tbl_Products.ProductCountInPack` |
+| Standard shipment quantity | `tbl_Products.ProductPackValue` |
+| Shipment weight | `tbl_Products.ProductPackWeight` |
+| Shipment volume | `tbl_Products.ProductPackVolume` |
+
+Product-level defaults must not be confused with the actual quantity or other values recorded for an individual Serial.
+
+## 13.3. Product Technical Data
+
+Dynamic Technical Data describes technical characteristics that may vary by Product or project.
+
+The documented Product-level columns include `ProductProperties` and `ProductTechnicalData` in `tbl_Products`. These are separate from `ProductTechnicalCode`.
+
+The documented concept uses JSON Key/Value data and may support label printing, reporting, and filtering.
+
+The Agent must verify the precise meaning and structure of each JSON column against the authoritative schema and any applicable data-format documentation.
+
+---
+
+# 14. IsActive
+
+The Product structure includes an active/inactive concept represented by the physical column:
+
+`tbl_Products.fld_ProductIsActive`
+
+When a Product is no longer produced or used, it may be deactivated rather than deleted.
+
+When a Product is inactive:
+
+- It is not intended for new operational use and may no longer be available for selection.
+- Existing Product records and history are not deleted.
+- Historical information may remain available in records and reports.
+
+The exact behavior in forms and operations depends on the project implementation.
+
+For SQL generation, use the actual column name `fld_ProductIsActive`, not the conceptual name `IsActive`.
+
+The Agent must verify the column's data type and stored values against the authoritative schema before interpreting a specific record as active or inactive.
+
+---
+
+# 15. HasDoubleTag
+
+The Product structure includes a double-tag requirement represented by the physical column:
+
+`tbl_Products.fld_HasDoubleTag`
+
+When the requirement is enabled for a Product, each relevant Serial is expected to have two Tags according to the configured registration process.
 
 Conceptually:
 
 ```text
-Technical Data
-    Key   → Value
-    Key   → Value
-    Key   → Value
-```
-
-The reason for using dynamic JSON data is that technical characteristics vary between Products and projects.
-
-It would therefore not be practical to add fixed database columns for every possible technical characteristic.
-
-Technical Data can be used for:
-
-* Label / Tag printing
-* Reporting
-* Filtering Products
-* Retrieving specific technical characteristics
-
-For example, a report could identify how many pumps with a voltage of `24V` currently exist in inventory.
-
----
-
-# 15. Product Information Categories
-
-Product information in Silo can be divided into three main categories.
-
-## 15.1. Base Information
-
-Base Information contains general Product characteristics such as:
-
-* Brand
-* Group
-* Class
-* Size
-* Subgroup
-* Status
-* Product Type
-* Other project-specific base information
-
-These values are generally managed through dedicated base-information tables.
-
----
-
-## 15.2. Shipment Information
-
-Shipment Information describes the unit or shipment that will be registered and tagged.
-
-It can include:
-
-* Weight
-* Volume
-* Quantity
-* Default Quantity
-* Main Unit
-* Second Unit
-* Second Unit Quantity
-
-These values depend on how the Product is packaged and measured in the specific project.
-
----
-
-## 15.3. ProductTechnicalData
-
-Dynamic Technical Information contains project-specific and variable technical characteristics.
-
-These values:
-
-* Are dynamic
-* Are stored as JSON
-* Can vary between Products
-* Can be used for Label/Tag printing
-* Can be used for reporting and filtering
-
-Therefore, Product information is not limited to a fixed set of database fields.
-
----
-
-# 16. IsActive
-
-The Product structure contains a field called:
-
-`IsActive`
-
-This field controls whether a Product is active or inactive.
-
-If a Product is no longer produced or used, it can be deactivated.
-
-When a Product is inactive:
-
-* It is no longer shown in menus or selectable options for operators.
-* Existing Product records and history are not deleted.
-* Historical information remains available in records and reports.
-
-Therefore, `IsActive` is used to deactivate old Products without deleting their historical data.
-
----
-
-# 17. HasDoubleTag
-
-The Product structure also contains a field called:
-
-`HasDoubleTag`
-
-This field is used for Products where each Serial must have two Tags.
-
-If `HasDoubleTag` is enabled for a Product, the system requires two Tags to be issued when the related Serial is registered.
-
-For example, in some projects, Products such as copper sulfate (`سولفات مس`) or zinc (`روی`) may require two Tags for each Serial.
-
-Therefore:
-
-```text
-HasDoubleTag = true
+Double-tag requirement enabled
         ↓
-Serial requires two Tags
+The registered Serial requires two Tags
 ```
+
+This requirement may apply to specific Products or processes in a project.
+
+The Agent must use `fld_HasDoubleTag` as the physical Product column and verify its data type and stored values against the authoritative schema.
+
+The Agent must not assume that all Products require two Tags or that the presence of this flag alone proves that a specific Serial has two registered Tag records. Actual Tag records must be checked when the question concerns a particular Serial.
 
 ---
 
-# 18. Product Database Structure Summary
+# 16. Product Database Structure Summary
 
-Based only on the available information, the Product structure can be conceptually represented as:
+The following diagram summarizes the conceptual Product information structure and the documented physical relationships.
 
 ```text
-Product
+dbo.tbl_Products
 │
-├── Product Code
-├── Technical Code / Nickname
+├── ProductCode
+├── ProductTitle
+├── ProductENTitle
+├── ProductTechnicalCode
+│
 ├── Product Type
+│   └── ProductType
+│       → tbl_ProductType.ProductTypeCode
 │
-├── Base Information
-│   ├── Brand
-│   ├── Group
-│   ├── Class
-│   ├── Size
-│   ├── Subgroup
-│   └── Status
+├── Product Base Information
+│   ├── fld_ProductBrand
+│   │   → tbl_ProductBrand.fld_ProductBrandCode
+│   ├── fld_ProductGroup
+│   │   → tbl_ProductGroup.fld_ProductGroupCode
+│   ├── fld_ProductSubGroup
+│   │   → tbl_ProductSubGroup.fld_ProductSubGroupCode
+│   ├── fld_ProductClass
+│   │   → tbl_ProductClass.fld_ProductClassCode
+│   ├── ProductSize
+│   │   → tbl_ProductPropertyC.fld_ProductPropertyCId
+│   └── ProductStatus
+│       → tbl_ProductStatus.ProductStatusCode
 │
 ├── Shipment Information
-│   ├── Quantity
-│   ├── Default Quantity
-│   ├── Weight
-│   ├── Volume
-│   ├── Main Unit
-│   ├── Second Unit
-│   └── Second Unit Quantity
+│   ├── ProductUnit
+│   ├── ProductValue
+│   ├── ProductCountInPack
+│   ├── ProductPackValue
+│   ├── ProductPackWeight
+│   └── ProductPackVolume
 │
-├── Dynamic Technical Data
-│   └── JSON Key/Value
+├── Product-Level Data
+│   ├── ProductProperties (JSON)
+│   └── ProductTechnicalData (JSON)
 │
-├── IsActive
-└── HasDoubleTag
+├── ProductRegUser
+│   → tbl_User.Id
+│
+├── fld_ProductIsActive
+└── fld_HasDoubleTag
 ```
 
-This structure describes the concepts available in the provided Product information. It does not imply additional database columns or relationships that have not been explicitly described.
+The Product-to-Tag relationship is:
+
+```text
+tbl_Products.ProductCode
+    ↑
+tbl_Tags.ProductCode
+```
+
+The Tag record is identified for the documented business relationship by the combination:
+
+```text
+tbl_Tags.ProductSerial + tbl_Tags.TagEpc
+```
+
+This is a conceptual and relationship summary, not a complete physical database schema.
+
+It does not establish that every item above is a separate table, that all projects use the same terminology, or that every concept is stored in the same table.
+
+Only tables, columns, and relationships confirmed by the authoritative database schema may be used in SQL queries.
 
 ---
 
-# 19. Product → Serial → Tag Relationship
+# 17. Product → Serial → Tag Relationship
 
-Registering a Tag requires the corresponding Product to already exist.
+Registering a Serial or Tag requires the corresponding Product to exist and be identifiable.
+
+The main Product-to-Tag relationship is:
+
+`tbl_Tags.ProductCode → tbl_Products.ProductCode`
 
 The general conceptual flow is:
 
 ```text
 Product
    ↓
-Product Code
-   ↓
-Serial
-   ↓
-Tag
+tbl_Products.ProductCode
+   ↑
+tbl_Tags.ProductCode
+
+Serialized/tagged unit:
+tbl_Tags.ProductSerial + tbl_Tags.TagEpc
 ```
 
-Therefore:
+The Product Code identifies the Product definition associated with the Serial. The Serial is then associated with its Tag or Tags according to the relevant process.
 
-1. Product must exist.
-2. Required Product Base Information must exist.
-3. A Product Code identifies the Product.
-4. The Product Code is associated with the Serial.
-5. The Serial is then associated with the Tag.
+The Product structure provides the identity, classification, and configured packaging defaults needed by the registration process.
 
-The Product structure therefore provides the required foundation for the Register process.
+Other documented relationships in `tbl_Tags` include:
+
+- `tbl_Tags.fld_ProductBrand → tbl_ProductBrand.fld_ProductBrandCode`
+- `tbl_Tags.fld_ProductGroup → tbl_ProductGroup.fld_ProductGroupCode`
+- `tbl_Tags.fld_ProductSubGroup → tbl_ProductSubGroup.fld_ProductSubGroupCode`
+- `tbl_Tags.fld_ProductClass → tbl_ProductClass.fld_ProductClassCode`
+- `tbl_Tags.ProductType → tbl_ProductType.ProductTypeCode`
+- `tbl_Tags.ProductStatus → tbl_ProductStatus.ProductStatusCode`
+- `tbl_Tags.fld_ProductPropertyCId → tbl_ProductPropertyC.fld_ProductPropertyCId`
+- `tbl_Tags.fld_ProductPropertyAId → tbl_ProductPropertyA.fld_ProductPropertyAId`
+- `tbl_Tags.fld_ProductPropertyBId → tbl_ProductPropertyB.fld_ProductPropertyBId`
+- `tbl_Tags.TagRegisterUser → tbl_User.Id`
+- `tbl_Tags.ProductCode → tbl_Products.ProductCode`
+
+The Product-level classification columns in `tbl_Products` represent the Product definition. Some similarly named classification columns in `tbl_Tags` are denormalized snapshots associated with serialized/tagged units. The Agent must not assume that the values in `tbl_Tags` and `tbl_Products` are always synchronized or interchangeable without verifying the relevant data and application behavior.
+
+The Tag table also contains the following documented fields related to other parts of the warehouse system:
+
+- `TagInDestinationId`
+- `TagInActionId`
+- `TagInDestinationId2`
+- `TagInActionId2`
+- `TagZone`
+- `fld_InspectActionId`
+- `fld_LastInspectResult`
+
+These fields belong to Destination, Action, location, and inspection workflows, which are documented separately. Their detailed behavior should not be inferred from this Product document.
+
+The conceptual flow does not, by itself, define every physical database join. Use the explicit relationships documented here and verify additional joins against the authoritative schema.
 
 ---
 
-# 20. Important Database Tables
+# 18. Important Database Tables and Relationships
 
-The following database tables are explicitly mentioned as part of the Product structure:
+The following physical table names and relationships are documented for the Product structure.
 
-| Technical Table Name                  | Purpose                                       |
-| ------------------------------------- | --------------------------------------------- |
-| `tbl_Product`                         | Main table containing Product information     |
-| `ProductSize`                         | Stores Product Size base information          |
-| `ProductBrand`                        | Stores Product Brand base information         |
-| `ProductGroup`                        | Stores Product Group base information         |
-| `ProductStatus`                       | Stores Product Status base information        |
-| Other Product base-information tables | Store other required Product base information |
+## 18.1. Main Product and Base-Information Tables
 
-The technical names of these tables remain fixed even when their user-facing terminology changes.
+| Physical table | Relevant columns | Purpose / relationship |
+|---|---|---|
+| `dbo.tbl_Products` | `ProductCode`, `ProductTitle`, `ProductTechnicalCode`, `ProductType`, `ProductStatus`, `ProductSize`, `ProductUnit`, packaging fields, Product JSON fields, classification fields | Main Product definition |
+| `dbo.tbl_ProductBrand` | `fld_ProductBrandId`, `fld_ProductBrandCode`, `fld_ProductBrandTitle`, `fld_ProductBrandData` | Brand information |
+| `dbo.tbl_ProductGroup` | `fld_ProductGroupId`, `fld_ProductGroupCode`, `fld_ProductGroupTitle`, `fld_ProductGroupData` | Group information |
+| `dbo.tbl_ProductSubGroup` | `fld_ProductSubGroupId`, `fld_ProductSubGroupCode`, `fld_ProductSubGroupTitle`, `fld_ProductSubGroupSubTitle`, `fld_ProductSubGroupDesc`, `fld_ProductGroupCode` | Subgroup information and parent Group relationship |
+| `dbo.tbl_ProductClass` | `fld_ProductClassId`, `fld_ProductClassCode`, `fld_ProductClassTitle`, `fld_ProductClassSubTitle`, `fld_ProductClassDesc` | Class information |
+| `dbo.tbl_ProductStatus` | `ProductStatusId`, `ProductStatusCode`, `ProductStatusTitle`, `ProductStatusDesc` | Product Status information |
+| `dbo.tbl_ProductType` | `ProductTypeId`, `ProductTypeCode`, `ProductTypeTitle`, `ProductTypeParentId`, `ProductTypeParentsId` | Product Type classification |
+| `dbo.tbl_ProductPropertyC` | `fld_ProductPropertyCIdentity`, `fld_ProductPropertyCId`, `fld_ProductPropertyCTitle`, `fld_ProductPropertyCDesc`, `fld_ProductPropertyCData`, `fld_ProductPropertyCTemp` | Product Size information |
+| `dbo.tbl_ProductPropertyA` | `fld_ProductPropertyAId`, `fld_ProductPropertyATitle`, `fld_ProductPropertyADesc`, `fld_ProductPropertyAData` | Production-line dimension |
+| `dbo.tbl_ProductPropertyB` | `fld_ProductPropertyBId`, `fld_ProductPropertyBTitle`, `fld_ProductPropertyBDesc`, `fld_ProductPropertyBData`, `fld_ProductPropertyAId` | Shift dimension, associated with Property A |
+| `dbo.tbl_Tags` | `ProductSerial`, `ProductCode`, `TagEpc`, `ProductCount`, classification snapshots, property IDs | Serialized/tagged unit information |
+| `dbo.tbl_User` | `Id` | User relationship for Product registration and Tag registration |
+| `dbo.tbl_Gallery` | `fld_GalleryId`, `fld_GalleryUserId`, `fld_GalleryMediaName`, `fld_GalleryMediaPath`, `fld_GalleryUsageType`, `fld_GalleryUploadDateTime`, `fld_GalleryUsageId`, `fld_GalleryMediaExtensionType`, `fld_GalleryAdditionalData` | Product image gallery; stores media file information, including file name and storage path. |
 
-For example:
+## 18.2. Exact Product Relationships
+
+The following relationships must be used when joining `tbl_Products` to its documented base-information tables:
 
 ```text
-Technical Table:
-ProductGroup
+tbl_Products.fld_ProductBrand
+    → tbl_ProductBrand.fld_ProductBrandCode
 
-Possible User-Facing Name:
-گروه کالا
-or
-تیپ خودرو
+tbl_Products.fld_ProductGroup
+    → tbl_ProductGroup.fld_ProductGroupCode
+
+tbl_Products.fld_ProductSubGroup
+    → tbl_ProductSubGroup.fld_ProductSubGroupCode
+
+tbl_Products.fld_ProductClass
+    → tbl_ProductClass.fld_ProductClassCode
+
+tbl_Products.ProductType
+    → tbl_ProductType.ProductTypeCode
+
+tbl_Products.ProductStatus
+    → tbl_ProductStatus.ProductStatusCode
+
+tbl_Products.ProductSize
+    → tbl_ProductPropertyC.fld_ProductPropertyCId
+
+tbl_Products.ProductRegUser
+    → tbl_User.Id
+
+tbl_Products.ProductGalleryId
+    → tbl_Gallery.fld_GalleryId
+The ProductGalleryId field in tbl_Products references the fld_GalleryId field in dbo.tbl_Gallery. The gallery record contains the media file name in fld_GalleryMediaName and the storage path in fld_GalleryMediaPath.
 ```
 
-The displayed name does not change the technical table name.
+The documented Product Subgroup parent relationship is:
+
+```text
+tbl_ProductSubGroup.fld_ProductGroupCode
+    → tbl_ProductGroup.fld_ProductGroupCode
+```
+
+The main Product-to-Tag relationship is:
+
+```text
+tbl_Tags.ProductCode
+    → tbl_Products.ProductCode
+```
+
+The documented Tag-to-base-information relationships include:
+
+```text
+tbl_Tags.fld_ProductBrand
+    → tbl_ProductBrand.fld_ProductBrandCode
+
+tbl_Tags.fld_ProductGroup
+    → tbl_ProductGroup.fld_ProductGroupCode
+
+tbl_Tags.fld_ProductSubGroup
+    → tbl_ProductSubGroup.fld_ProductSubGroupCode
+
+tbl_Tags.fld_ProductClass
+    → tbl_ProductClass.fld_ProductClassCode
+
+tbl_Tags.ProductType
+    → tbl_ProductType.ProductTypeCode
+
+tbl_Tags.ProductStatus
+    → tbl_ProductStatus.ProductStatusCode
+
+tbl_Tags.fld_ProductPropertyAId
+    → tbl_ProductPropertyA.fld_ProductPropertyAId
+
+tbl_Tags.fld_ProductPropertyBId
+    → tbl_ProductPropertyB.fld_ProductPropertyBId
+
+tbl_Tags.fld_ProductPropertyCId
+    → tbl_ProductPropertyC.fld_ProductPropertyCId
+
+tbl_Tags.TagRegisterUser
+    → tbl_User.Id
+```
+
+`tbl_ProductPropertyB.fld_ProductPropertyAId` associates Property B with Property A.
+
+`tbl_ProductPropertyC.fld_ProductPropertyCIdentity` is the table's identity/primary-key column, while `fld_ProductPropertyCId` is the documented relationship column used by Product Size and Tag property references. Do not substitute one for the other.
+
+`tbl_Tags.Id` is an identity value and is not the documented business key for Tag relationships. The relevant Tag identity is the combination of `ProductSerial` and `TagEpc`.
+
+**Schema validation requirement:** These documented relationships must be checked against the authoritative `CREATE TABLE` definitions when additional constraints, data types, or relationships are required. Do not invent foreign keys or replace documented relationship columns with similarly named columns.
 
 ---
 
-# 21. Important Agent Rules
+# 19. Important Agent Rules
 
-When answering questions about the Silo Product database structure, the Agent should follow these rules:
+When answering questions about the Silo Product database structure, the Agent must follow these rules:
 
-1. `tbl_Product` is the main table for Product information.
+1. `dbo.tbl_Products` is the physical main Product table. Do not use `tbl_Product` as its physical name.
 2. A Product must exist before its Serial or Tag can be registered.
 3. Required Product Base Information must exist before the Product can be properly defined.
-4. `Product Code` is the primary identifier connecting Product information to Serial and Tag.
-5. `Technical Code / Nickname` is a shorter operational identifier and should not be treated as the same concept as Product Code.
-6. `Product Type` is a major business/process classification of Product.
-7. Base-information tables include `ProductSize`, `ProductBrand`, `ProductGroup`, `ProductStatus`, and other Product base-information tables mentioned in the system.
-8. Technical database table names are fixed, while user-facing terminology can change between projects.
-9. User-facing terminology is configured through `Strings > Settings`.
-10. `Technical Data` is dynamic technical information stored as JSON Key/Value data.
-11. Technical Data can be used for Label/Tag printing, reporting, and filtering.
-12. `IsActive` is used to deactivate Products without deleting their historical records.
-13. `HasDoubleTag` indicates that each Serial for that Product requires two Tags.
-14. `Quantity` can have a default value, but the actual Quantity of a specific shipment can be modified during Register.
-15. `Second Unit` is used when a shipment is represented using two measurement units.
-16. `Destination` does not necessarily represent a physical location; it can also represent a process-based or abstract position.
-17. `Action` represents an operation or movement related to goods.
-18. `Action Type` defines the behavior and controls associated with an Action.
-19. Action Type may include controls such as QC, Freeze, GPS, photo receiving, and other process-specific controls.
-20. An `Action Type` can be associated with a `Product Type`, allowing different Product Types to have different operational behaviors.
-21. The Product structure should be understood as a combination of Base Information, Shipment Information, and Dynamic Technical Data.
-22. Only relationships, fields, or database structures explicitly described in this knowledge base should be assumed. Unknown database details must not be invented.
+4. `tbl_Products.ProductCode` is the main Product identifier associated with serialized/tagged units through `tbl_Tags.ProductCode`.
+5. The documented Tag business/composite key is `(tbl_Tags.ProductSerial, tbl_Tags.TagEpc)`. Do not use `tbl_Tags.Id` as a substitute relationship key.
+6. `ProductTechnicalCode` is distinct from `ProductCode` and Technical Data.
+7. Product Type classifies a Product from a business/process perspective and may affect applicable Action Types.
+8. Product base-information concepts include Brand, Group, Class, Size, Subgroup, Status, and other project-specific attributes.
+9. Use the documented physical relationships:
+   - `tbl_Products.fld_ProductBrand → tbl_ProductBrand.fld_ProductBrandCode`
+   - `tbl_Products.fld_ProductGroup → tbl_ProductGroup.fld_ProductGroupCode`
+   - `tbl_Products.fld_ProductSubGroup → tbl_ProductSubGroup.fld_ProductSubGroupCode`
+   - `tbl_Products.fld_ProductClass → tbl_ProductClass.fld_ProductClassCode`
+   - `tbl_Products.ProductType → tbl_ProductType.ProductTypeCode`
+   - `tbl_Products.ProductStatus → tbl_ProductStatus.ProductStatusCode`
+   - `tbl_Products.ProductSize → tbl_ProductPropertyC.fld_ProductPropertyCId`
+   - `tbl_Products.ProductRegUser → tbl_User.Id`
+10. The documented Product Subgroup parent relationship is `tbl_ProductSubGroup.fld_ProductGroupCode → tbl_ProductGroup.fld_ProductGroupCode`.
+11. Technical table names and user-facing terminology must be distinguished. Do not infer database names from displayed labels.
+12. User-facing terminology is documented as configurable through `Strings > Settings`; the physical schema must still be verified independently.
+13. `ProductProperties` and `ProductTechnicalData` are separate columns in `tbl_Products`. Do not assume they have identical contents or meanings.
+14. Technical Data may be used for label printing, reporting, and filtering where supported.
+15. Product deactivation is represented by `tbl_Products.fld_ProductIsActive`. Do not substitute a guessed `IsActive` column.
+16. A double-tag requirement is represented by `tbl_Products.fld_HasDoubleTag`. Verify actual Tag records when determining whether a specific Serial has two Tags.
+17. `tbl_Products.ProductUnit` represents the main Product unit.
+18. `tbl_Products.ProductValue` represents the value of one second unit.
+19. `tbl_Products.ProductCountInPack` represents the number of second units in a standard package or shipment.
+20. `tbl_Products.ProductPackValue` represents the configured standard quantity of a package or shipment.
+21. `tbl_Products.ProductPackWeight` represents the configured shipment weight.
+22. `tbl_Products.ProductPackVolume` represents the configured shipment volume.
+23. Product-level default shipment quantity must not be confused with `tbl_Tags.ProductCount`, which records quantity at the serialized/tagged-unit level.
+24. The relationship `ProductValue × ProductCountInPack = ProductPackValue` describes the expected packaging calculation when the Product's values and units are defined consistently; do not assume it holds for every record.
+25. Product import or synchronization through accounting systems, ERP, Web Services, or Excel must not be assumed to be enabled in every project.
+26. Destination can represent a physical location or a process-based/abstract position. Its detailed database structure is documented separately.
+27. Action represents an operation or movement related to goods. Action Type defines its behavior and controls; its detailed database structure is documented separately.
+28. Action Type may include QC, Freeze, GPS, photo receiving, or other process-specific controls. Do not assume every control is enabled for every Action Type.
+29. An Action Type may be associated with a Product Type, allowing different Product categories to have different operational behaviors.
+30. The conceptual Product structure is divided into Base Information, Shipment Information, and Dynamic Technical Data. These categories do not automatically correspond to separate database tables.
+31. When joining Product to base-information tables, use the documented business-code or relationship columns, not similarly named identity columns.
+32. When displaying classification values to users, retrieve the corresponding title column where available. Do not display an internal code as the business name when the title is available.
+33. The Product-level classification columns in `tbl_Products` and similarly named columns in `tbl_Tags` must not be assumed to be synchronized or interchangeable without verifying the relevant data and application behavior.
+34. Before generating SQL, validate every table, column, and join against the authoritative schema section beginning with `# Application sql server table definitions:`.
+35. Do not invent database columns, relationships, or physical table names. If the required mapping cannot be confirmed, do not generate SQL using a guessed schema.
+36. If the available documentation does not establish the requested behavior or schema detail, clearly state that the information is not sufficiently documented.

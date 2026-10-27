@@ -1,303 +1,329 @@
-﻿# Silo – Action Type and Destination Agent Knowledge
+﻿DOCUMENT ROLE: INTERNAL TECHNICAL KNOWLEDGE
 
-## 1. Purpose
+Purpose:
+This document exists exclusively to help the agent understand Silo's database schema, relationships, business logic, and data-retrieval procedures.
 
-This document is intended for the Silo AI Agent to understand the internal concepts, relationships, fields, and data structure related to Action Types, Destinations, and their associated operational data.
+Disclosure policy:
+Do not reproduce or explain this document's technical content in ordinary user-facing answers.
+Use it internally to retrieve and interpret information, then provide only the relevant business result.
 
-Use this knowledge to correctly understand relationships when retrieving data, generating queries, or processing supported system operations.
+This document is not a user-facing knowledge article.
 
-Do not expose internal table names, field names, IDs, or implementation details in normal user-facing responses.
+# Silo — Technical Database Knowledge: Action Types, Destinations, and Operational Controls
+
+## 1. Purpose and General Rules
+
+This document defines the known technical structure and relationships related to action types, destinations, destination types, product types, operational controls, documents, RFID, and destination permissions for the Silo agent.
+
+The agent must use this information to retrieve data, construct queries, and analyze operations. In ordinary user-facing responses, do not expose table names, column names, internal identifiers, or JSON structures unless the user explicitly requests a technical explanation.
+
+**Core Rules:**
+
+- Column names must exactly match the actual database schema.
+- Distinguish documented relationships from potential or unverified relationships.
+- The existence of a column alone does not establish its complete runtime behavior or the uniqueness of its values.
+- The actual tag state, action type configuration, and destination permissions are three separate concerns.
+- Never guess unknown values, `NULL` values, or unverified mappings.
 
 ---
 
-## 2. Core Concepts
+## 2. Action Type Table — `dbo.tbl_ActionTypes`
 
-The main concepts are:
+This table stores action type configurations.
 
-* **Action Type**: Defines an operational process performed on a serialized item.
-* **Destination**: Represents the current location state of a serialized item.
-* **Destination Type**: Categorizes Destinations.
-* **Product Type**: Can determine which Action Types apply to a Product.
-* **Active Controls**: Define validations or requirements during an operation.
-* **Document Status Rules**: Define allowed document status before and after an operation.
-* **Tag Location Behavior**: Determines how location information is handled after an operation.
+| Actual Column Name | Data Type | Purpose |
+|---|---|---|
+| `Id` | `int IDENTITY(1,1) NOT NULL` | Internal identifier generated when a record is inserted |
+| `fld_ActionTypeId` | `int NULL` | Operational action type identifier |
+| `fld_ActionTypeTitle` | `nvarchar(50) NULL` | Action type title |
+| `fld_ActionTypeFromDestinationType` | `nvarchar(50) NULL` | Source destination type |
+| `fld_ActionTypeToTypeDestinationType` | `nvarchar(50) NULL` | Target destination type |
+| `fld_ActionTypeProductType` | `nvarchar(50) NULL` | Product type code associated with the action |
+| `fld_ActionTypePermitedDocStatus` | `nvarchar(50) NULL` | Permitted document status configuration |
+| `fld_ActionTypeChangeDocStatus` | `nvarchar(50) NULL` | Document status change configuration |
+| `fld_ActionTypeActiveControls` | `nvarchar(max) NULL` | Active control settings stored as JSON |
+| `fld_ActionTypeRfidPower` | `int NULL` | RFID power configuration |
+| `fld_ActionTypeChangeTagLocation` | `int NULL` | Configuration controlling changes to a tag's location or zone information |
+
+### Difference Between Identifiers
+
+`Id` and `fld_ActionTypeId` are two different columns. The first is an `IDENTITY` column. However, in the provided DDL, neither a primary key constraint on `Id` nor a uniqueness constraint on `fld_ActionTypeId` has been defined.
+
+The known station relationship uses `fld_ActionTypeId`. Do not treat these two identifiers as interchangeable. Before relying on `fld_ActionTypeId` being unique, verify the actual data.
+
+---
+
+## 3. Destinations, Destination Types, and Tags
+
+### 3.1. Destination — `dbo.tbl_Destination`
+
+A destination represents a specific operational location or destination point.
+
+| Actual Column Name | Purpose |
+|---|---|
+| `DestinationCode` | Destination code |
+| `DestinationType` | Destination type code |
+| `DestinationEpc` | JSON data containing destination settings and permissions |
+
+### 3.2. Destination Type — `dbo.tbl_DestinationType`
+
+The known destination type column is:
+
+`fld_DestinationTypeCode`
+
+Relationship:
+
+`tbl_Destination.DestinationType → tbl_DestinationType.fld_DestinationTypeCode`
+
+**Important distinction:** `DestinationCode` identifies a specific destination, while `DestinationType` and `fld_DestinationTypeCode` refer to the destination type classification. These concepts are not interchangeable.
+
+### 3.3. Current Recorded Destination of a Tag — `dbo.tbl_Tags`
+
+The column that stores the tag's currently recorded destination is:
+
+`TagInDestinationId`
+
+Relationship:
+
+`tbl_Tags.TagInDestinationId → tbl_Destination.DestinationCode`
+
+The combination of `ProductSerial` and `TagEpc` is the business key used to identify a tag in the documented data model. Do not assume that `Id` can replace this combination in relationships.
+
+The destination recorded for a tag does not necessarily represent its exact physical location within a zone, aisle, or shelf.
+
+### 3.4. Source and Target Destination Types in an Action Definition
+
+The following columns in `tbl_ActionTypes` store the source and target destination types for an action:
+
+- `fld_ActionTypeFromDestinationType`
+- `fld_ActionTypeToTypeDestinationType`
 
 Conceptual relationship:
 
-**Product Type**
-↓
-**Action Type**
-├── From Destination Type
-├── To Destination Type
-├── Document Rules
-├── Active Controls
-└── Tag Location Behavior
+`From Destination Type → Action Type → To Destination Type`
 
-A **Destination** belongs to a **Destination Type**.
-
-A serialized item or Tag is associated with a Destination representing its current location or operational state.
+Both columns have the data type `nvarchar(50)`. Do not assume their values are numeric identifiers or confirmed codes from another table without examining the actual data. Join them to the destination type table only after their value mapping has been verified.
 
 ---
 
-## 3. Action Type
+## 4. Relationship Between Action Types and Product Types
 
-An Action Type represents a predefined operational workflow.
+Product type table:
 
-Each Action Type has a unique identifier:
+`dbo.tbl_ProductType`
 
-* `ActionTypeId`
+Known structure:
 
-Important conceptual fields include:
+| Actual Column Name | Data Type | Purpose |
+|---|---|---|
+| `ProductTypeId` | `int IDENTITY(1,1) NOT NULL` | Internal product type identifier |
+| `ProductTypeTitle` | `nvarchar(50) NULL` | Product type title |
+| `ProductTypeParentId` | `nvarchar(10) NULL` | Value associated with the parent product type |
+| `ProductTypeParentsId` | `nvarchar(max) NULL` | Information associated with product type ancestors |
+| `ProductTypeCode` | `nvarchar(50) NULL` | Product type code |
 
-* `FromDestinationType`
-* `ToDestinationType`
-* Product Type
-* `PermittedDocStatus`
-* `ChangeDocStatus`
-* `ChangeTagLocation`
-* Active Controls
-* RFID-related configuration
+### Correct JOIN Relationship
 
-An Action Type generally defines an operation between **Destination Types**, not necessarily between specific Destinations.
+The action type must be joined to the product type through `ProductTypeCode`:
 
-Therefore, when interpreting an operation:
+```sql
+LEFT JOIN dbo.tbl_ProductType AS PT
+    ON AT.fld_ActionTypeProductType = PT.ProductTypeCode
+```
 
-`FromDestinationType → ActionType → ToDestinationType`
+In this example:
 
-Example:
+- `AT` is the alias for `dbo.tbl_ActionTypes`.
+- `PT` is the alias for `dbo.tbl_ProductType`.
+- The correct join condition is `AT.fld_ActionTypeProductType = PT.ProductTypeCode`.
+- **Do not use `ProductTypeId` for this JOIN.**
 
-`انبار محصول → ارسال → انبار فروش‌رفته`
+To display the product type title, use `PT.ProductTypeTitle`. Do not display the product type code in place of its title.
 
-Do not assume that a specific `ActionTypeId` represents a specific business operation unless its mapping is explicitly available.
+The provided DDL does not establish a uniqueness constraint on `ProductTypeCode`. Before assuming a one-to-one relationship, check whether duplicate codes exist.
 
----
-
-## 4. Destination and Destination Type
-
-A Destination represents the current location or operational state of a serialized item.
-
-A Destination may represent:
-
-* Physical location
-* Warehouse
-* Production line
-* Quarantine area
-* Scrap area
-* Process stage
-* Operational state
-
-Each Destination belongs to a Destination Type.
-
-Conceptually:
-
-`Destination → Destination Type`
-
-Multiple Destinations can belong to the same Destination Type.
-
-Action Types normally operate based on Destination Types rather than individual Destination records.
-
-When querying or validating an operation, distinguish carefully between:
-
-* The specific Destination
-* The category or type of that Destination
-
-These are not interchangeable.
+A value in `fld_ActionTypeProductType` may indicate a configured association between an action type and a product type. However, whether the action is ultimately permitted still depends on the system's configuration and runtime logic.
 
 ---
 
-## 5. Source and Target Relationship
+## 5. Relationship Between Action Types and Stations
 
-The source and target of an Action Type are represented conceptually by:
+### 5.1. Station — `dbo.tbl_Station`
 
-* `FromDestinationType`
-* `ToDestinationType`
+Known relationship:
 
-These define the allowed source and target categories for the operation.
+`tbl_Station.fld_StationActionType → tbl_ActionTypes.fld_ActionTypeId`
 
-When analyzing an operation:
-
-1. Identify the Action Type.
-2. Determine its source Destination Type.
-3. Determine its target Destination Type.
-4. Determine the actual Destination associated with the serialized item when required.
-5. Apply configured validation or control rules.
-
-Do not assume that every Destination belonging to a Destination Type is automatically valid for every operation unless supported by the relevant configuration.
+To determine which action type is configured for a station, join `fld_StationActionType` to `fld_ActionTypeId`, not to `Id`.
 
 ---
 
-## 6. Product Type Relationship
+## 6. Document Status and Document Status Changes
 
-An Action Type can be associated with a Product Type.
+The following two columns in `dbo.tbl_ActionTypes` store document-related configuration:
 
-Conceptually:
+- `fld_ActionTypePermitedDocStatus`: The configured permitted document status value.
+- `fld_ActionTypeChangeDocStatus`: The configured document status change value.
 
-`Product → Product Type → Allowed Action Type`
+The spelling `Permited` is part of the actual column name and must not be corrected in queries.
 
-This relationship can be used to determine whether a specific operation is applicable to a Product or serialized item.
+Both columns have the data type `nvarchar(50)`. Do not assume that their stored values are status titles or identifiers from another table without verifying the actual data and application logic.
 
-Do not assume that every Action Type applies to every Product Type.
-
----
-
-## 7. Document Status Rules
-
-An Action Type may contain document-related configuration.
-
-### `PermittedDocStatus`
-
-Represents the required or permitted document status before the operation.
-
-When applicable, the document should satisfy this requirement before the operation is processed.
-
-### `ChangeDocStatus`
-
-Represents the document status to apply after a successful operation.
-
-Conceptually:
-
-`Document Current Status → Validate PermittedDocStatus → Perform Operation → ChangeDocStatus`
-
-Do not assume that every Action Type requires a document or changes its status.
+The existence of these columns alone does not prove that every action requires a document or changes a document's status. The runtime conditions under which these settings are applied must be verified from the application logic.
 
 ---
 
-## 8. Active Controls
+## 7. Active Action Controls — `fld_ActionTypeActiveControls`
 
-An Action Type may have configurable Active Controls.
+The active control settings are stored in the following column of `dbo.tbl_ActionTypes`:
 
-These controls determine validations or requirements during an operation.
+`fld_ActionTypeActiveControls`
 
-Possible examples include:
+The column has the data type `nvarchar(max)` and stores JSON data.
 
-* GPS/location validation
-* Image capture
-* Document matching
-* Source filtering
-* Other operation-specific controls
+### 7.1. Rule for Determining Whether a Control Is Active
 
-When processing or generating logic for an operation, only apply a control when its configuration indicates that it is active.
+Report a control as active only when the corresponding JSON key has the exact string value `"true"`.
 
-Do not assume that all controls are enabled for every Action Type.
+- `"false"` does not mean the control is active.
+- A missing key, `null`, or an unknown value does not prove that the control is active.
+- The actual JSON Boolean `true` without quotation marks is not the same as the string `"true"`. Do not treat it as active unless the storage contract has been verified.
+- Do not replace invalid or unreadable JSON with a default value.
 
----
+### 7.2. Documented JSON Keys
 
-## 9. ChangeTagLocation
+| JSON Key | Documented Meaning |
+|---|---|
+| `NotInSourceIgnore` | Ignore tags that are not at the expected source. |
+| `NotInSourceError` | Raise an error when a tag is not at the expected source. |
+| `Freezed` | Apply the control associated with a frozen tag or product. |
+| `FailedQC` | Apply restrictions to products that failed quality control. |
+| `NotQc` | Apply restrictions to products that have no quality control result. |
+| `NotRegisterIgnore` | Ignore unregistered tags or serials. |
+| `NotRegisterError` | Require the tag or serial to be registered; otherwise, raise an error. |
+| `TagLifeLessThanIgnore` | Ignore tags whose lifetime is below the configured minimum. |
+| `DocCodeSet` | Require the document number or code to be provided. |
+| `DocItemsCheck1` | Check for an exact match between the identified items and the items in the document. |
+| `DocItemsCheck2` | Check that the product exists in the document and that the cumulative processed quantity does not exceed the document's total quantity. |
+| `DocItemsCheck3` | The exact meaning has not yet been verified. Do not guess its behavior. |
 
-`ChangeTagLocation` controls how the Tag's location or Zone information is handled after an operation.
+### 7.3. Rules for Reporting Active Controls
 
-* `True`: The Tag's current Zone/location information is cleared.
-* `False`: The existing Zone/location information remains unchanged.
+When answering the question, "Which controls are active for this action type?":
 
-Important distinction:
+1. Identify the action type using its actual title in `fld_ActionTypeTitle`.
+2. If the title matches multiple records, resolve the ambiguity using the actual data.
+3. Read `fld_ActionTypeActiveControls` from the relevant record.
+4. Report only documented keys whose values are exactly `"true"`.
+5. Explain their meanings according to the table above.
+6. If the settings cannot be retrieved or interpreted, state that the active controls cannot be verified.
 
-Changing the operational Destination of an item and changing its physical Zone/location information are not necessarily the same operation.
-
-Do not treat `ChangeTagLocation` as automatically meaning that the Destination does or does not change.
-
----
-
-## 10. RFID Configuration
-
-An Action Type may include RFID-related configuration.
-
-For example, RFID reader settings such as transmission power may vary depending on the Action Type.
-
-Conceptually:
-
-`Action Type → RFID Configuration`
-
-Do not assume that all operations use the same RFID configuration.
-
----
-
-## 11. Destination-Level Permissions
-
-A Destination may contain configuration that controls which actions are allowed for Tags or serialized items located there.
-
-Examples include:
-
-* `AllowCancelTag`
-* `AllowReprintTag`
-* `AllowEditInformation`
-* `AllowEditTagValue`
-
-These settings are associated with the Destination and should not automatically be treated as Action Type controls.
-
-Conceptually:
-
-`Destination → Destination-Level Permissions`
-
-while:
-
-`Action Type → Operation-Level Controls`
-
-These represent different levels of configuration.
+The fact that a control is active does not, by itself, prove that a specific tag has violated that rule.
 
 ---
 
-## 12. Operational Relationship Summary
+## 8. Tag Location Change Setting
 
-The general operational flow can be understood as:
+Actual column:
 
-`Serialized Item / Tag`
-↓
-`Current Destination`
-↓
-`Current Destination Type`
-↓
-`Applicable Action Type`
-↓
-`FromDestinationType → ToDestinationType`
-↓
-`Validate Product Type / Document / Active Controls`
-↓
-`Process Operation`
-↓
-`Update Destination or Operational State when applicable`
-↓
-`Apply ChangeDocStatus when applicable`
-↓
-`Handle Zone/Location based on ChangeTagLocation`
+`fld_ActionTypeChangeTagLocation` — `int NULL`
 
-The exact update behavior depends on the configuration and supported workflow.
+This setting determines how the tag's zone or location information is handled after an action:
+
+- When enabled, the tag's zone or location information is cleared so that it can be determined again during the relevant process.
+- When disabled, the previous location information is retained.
+
+The numeric values corresponding to enabled and disabled must be verified against the application logic. The `int` data type alone does not establish that `1` means enabled and `0` means disabled. Do not assume that `NULL` is equivalent to either zero or one without documentation.
+
+Changing a tag's operational destination is not the same as changing its zone or physical location information.
 
 ---
 
-## 13. Important Query and Reasoning Rules
+## 9. RFID Power Setting
 
-When generating a query or reasoning about these concepts:
+Actual column:
 
-1. Do not confuse a Destination with a Destination Type.
-2. Do not treat `FromDestinationType` or `ToDestinationType` as specific Destination records.
-3. Resolve the Action Type before determining its source and target rules.
-4. Consider Product Type restrictions when they are configured.
-5. Check document status rules only when the operation uses a document.
-6. Apply Active Controls only when enabled.
-7. Treat Destination permissions separately from Action Type controls.
-8. Do not infer the meaning of an ID without an explicit mapping.
-9. Do not assume that every Action Type changes physical location.
-10. Do not assume that `ChangeTagLocation` determines Destination changes.
-11. Do not assume that every Product Type supports every Action Type.
-12. Do not expose internal database terminology in normal user-facing answers.
+`fld_ActionTypeRfidPower` — `int NULL`
+
+This column stores the configured RFID power associated with an action type.
+
+Read the value from the actual record for the relevant action type. Do not assume that all actions use the same power setting or that the stored value necessarily equals the actual power applied by the device. Do not replace `NULL` with a guessed default value.
 
 ---
 
-## 14. Accuracy Rules
+## 10. Destination-Level Permissions
 
-The Agent must not assume:
+Destination permissions are stored in the following JSON column of `dbo.tbl_Destination`:
 
-* A specific Action Type exists.
-* A specific `ActionTypeID` has a known meaning without documented mapping.
-* A specific Destination exists.
-* A specific Destination Type exists.
-* Every operation requires a document.
-* Every operation changes document status.
-* Every operation changes Destination.
-* Every operation changes physical Zone/location.
-* Every Active Control is enabled.
-* Every Product Type supports every Action Type.
-* Every Destination permission is enabled.
-* Every Action Type uses the same RFID configuration.
+`DestinationEpc`
 
-If the required relationship, configuration, or mapping is not available in the provided system knowledge, the Agent must not invent it.
+Documented keys:
+
+| Key | Meaning |
+|---|---|
+| `AllowCancelTag` | Permission to cancel a tag |
+| `AllowReprintTag` | Permission to reprint a label |
+| `AllowEditInformation` | Permission to edit tag information |
+| `AllowEditTagValue` | Permission to edit the tag value |
+
+To check a permission, identify the tag's current recorded destination through `tbl_Tags.TagInDestinationId → tbl_Destination.DestinationCode`, then inspect the JSON data for that destination.
+
+Interpret each key according to its actual stored format and value. Do not apply the `"true"` string rule used for `fld_ActionTypeActiveControls` to `DestinationEpc` without verification.
+
+Destination permissions are independent of action type controls. For example, permission to cancel a tag does not imply permission to transfer or edit it.
+
+---
+
+## 11. Tag State and Analysis of Operation Rejections
+
+When analyzing an operation, keep the actual tag state separate from action type settings and destination permissions.
+
+The following two states are different:
+
+- `Lock = true`: A locked state associated with the quality control rejection process.
+- `Freeze = true`: A frozen state.
+
+Neither state alone proves that all actions are prohibited. Their effects must be evaluated against the relevant active control and the actual conditions of the operation.
+
+To investigate why an action cannot be performed on a tag:
+
+1. Identify the tag using `ProductSerial` or `TagEpc`, using both if necessary.
+2. Retrieve its actual state and currently recorded destination.
+3. Identify the action type and read the actual settings for the relevant record.
+4. Check the active controls.
+5. If destination permissions are relevant, check the permissions for the current destination separately.
+6. Report only causes supported by the actual data and documented rules.
+
+Do not provide a generic list of possible causes instead of examining the actual data.
+
+---
+
+## 12. Reference of Known JOIN Relationships
+
+| Source Table | Source Column | Target Table | Target Column |
+|---|---|---|---|
+| `tbl_Station` | `fld_StationActionType` | `tbl_ActionTypes` | `fld_ActionTypeId` |
+| `tbl_Destination` | `DestinationType` | `tbl_DestinationType` | `fld_DestinationTypeCode` |
+| `tbl_Tags` | `TagInDestinationId` | `tbl_Destination` | `DestinationCode` |
+| `tbl_ActionTypes` | `fld_ActionTypeProductType` | `tbl_ProductType` | `ProductTypeCode` |
+
+This table lists the relationships documented in the system knowledge. It does not guarantee that corresponding `FOREIGN KEY` constraints exist in the DDL. Code uniqueness must also be verified separately.
+
+**Confirmed product type relationship:** `fld_ActionTypeProductType` must be joined to `ProductTypeCode`, not to `ProductTypeId`.
+
+---
+
+## 13. Final Rules for the Agent
+
+- Identify the actual action type first, then read the settings from the corresponding record.
+- Do not treat `Id` and `fld_ActionTypeId` as interchangeable.
+- Distinguish a destination, a destination type, and a tag's physical location.
+- For the product type JOIN, use `fld_ActionTypeProductType = ProductTypeCode`.
+- Determine whether a control is active only from the actual JSON data for the relevant action type.
+- Evaluate tag state, action type controls, and destination permissions independently.
+- Do not interpret document status values, numeric location-change settings, or JSON structures without supporting documentation.
+- Do not guess the meaning of `DocItemsCheck3`.
+- If duplicate codes or multiple matching records exist, evaluate their effect on the query.
+- Never invent an unverified table name, column name, identifier, relationship, or runtime behavior.
+
+**Final Principle:** Conclusions must be based on the actual record, the correct relationship, and the documented meaning. If sufficient information is unavailable to verify a relationship or cause, explicitly preserve that uncertainty.

@@ -1,316 +1,475 @@
-﻿# Serial Generation and Registration
+﻿# Silo User Guide: صدور سریال, چاپ لیبل, and رجیستر تگ RFID
 
-## 1. Serial and Tag Concept
+## 1. Purpose and Scope of the Guide
 
-In the Silo system, each individual unit of a product can have a unique **شماره سریال (Serial Number)**. The serial number is used to identify and track each individual product unit.
+This guide explains how to create product identity records (شناسنامه کالا), generate or obtain serial numbers (صدور یا تأمین شماره سریال), complete product information, print labels (چاپ لیبل), and register RFID tags (رجیستر تگ RFID) in the Silo system.
 
-A serial can belong to products such as vehicles, tiles, paper rolls, material bags, or other products used in a project.
+The guide addresses common user questions about the following topics:
 
-Each serial must be unique, and two product units must not have the same serial number.
+- روش‌های صدور یا تأمین شماره سریال.
+- صدور تکی و گروهی سریال.
+- Required information when generating a serial number.
+- Dynamic fields and product-specific information (اطلاعات اختصاصی محصول).
+- Label printing and reprinting .
+- رجیستر تگ RFID.
+- Differences between Android forms.
+- Differences between online and offline versions.
+- Warehouse information, documents, and quality control.
+- Editing information and access restrictions.
 
-Creating a serial and registering an **RFID تگ (Tag)** are two separate steps. A serial may be created and its label printed first, while the RFID tag is connected to the serial and registered later.
+Available features may vary depending on the project, software version, and system configuration. This guide therefore describes the general process. Project-specific details must be verified against the actual configuration.
 
----
+## 2. Difference Between Serial Number Generation, Label Printing, and Tag Registration
 
-## 2. Dynamic Fields
+Three separate activities are involved in creating an identity record for a product.
 
-The Silo system allows project-specific information to be defined as **فیلد پویا (Dynamic Field)**.
+**Serial Number Generation (صدور سریال):** Creating or obtaining a number used to identify a specific product unit, package, or quantity.
 
-Dynamic fields can be used in three main areas:
+**Label Printing (چاپ لیبل):** Printing the serial number, barcode, or other required information on a label.
 
-- Product information
-- Serial information
-- Operation information
+**RFID Tag Registration (رجیستر تگ RFID):** Associating an RFID tag identifier with the corresponding serial number and registering that association in the system.
 
-### Product Dynamic Fields
+These steps may be performed as part of one continuous workflow or at different times.
 
-These fields are used for characteristics related to the definition of a product.
+For example, a product's serial number may be generated and its label printed, while the RFID tag is attached and registered later.
 
-For example, a project may require the following fields for a product:
+Likewise, successfully reading an RFID tag does not, by itself, prove that registration has been completed. The operation result must be checked to confirm successful registration.
 
-- Width
-- Grammage
-- Fuel Type
-- Usage Type
+## 3. Methods of Generating or Obtaining Serial Numbers
 
-For example, a field named **گرماژ (Grammage)** can be defined with values such as 50 and 55.
+The method used to generate or obtain a serial number depends on project requirements and system configuration.
 
-### Serial Dynamic Fields
+### 3.1. Sequential Numeric Serial Numbers (سریال عددی متوالی)
 
-These fields are used for information specific to an individual serial.
+In this method, serial numbers are generated according to a numeric sequence.
 
-For example, in a vehicle project, the following information can be recorded for each serial:
+For example:
 
--   پلاک انتظامی (License Plate)
-- شماره شاسی (Chassis Number)
-- شماره بدنه (Body Number)
+`1000, 1001, 1002, 1003`
+
+Under certain circumstances, gaps may occur between numbers. Therefore, uninterrupted numbering must not be assumed without verification.
+
+### 3.2. Automatically Generated Serial Numbers (سریال مبتنی بر شناسه خودکار)
+
+In some projects, the system uses an automatically generated identifier to create or obtain serial numbers.
+
+This method can be suitable for assigning numbers, but it does not necessarily guarantee uninterrupted sequential numbering.
+
+### 3.3. Serial Numbers Generated Using a Custom Formula (سریال با فرمول اختصاصی)
+
+In some projects, serial numbers are generated according to a defined pattern.
+
+For example, a pattern may combine a product code, a date, and a counter.
+
+The actual formula depends on the project. Serial number formats and their components are therefore not necessarily the same across all Silo projects.
+
+### 3.4. Using an Existing Serial Number (استفاده از سریال موجود)
+
+Sometimes, a product already has a serial number. For example, certain devices have an IMEI number.
+
+Depending on the project's rules, the system may use that number directly or combine it with other information to produce the final serial number.
+
+**Important:** The presence of an input number does not guarantee that the same number will be registered as the final serial number.
+
+## 4. Serial Number Generation by Quantity
+
+Serial numbers may be generated individually or in batches.
+
+### 4.1. Individual Serial Number Generation (صدور تکی)
+
+In this method, a serial number is requested for one specific product unit or identity record.
+
+This method may be useful in projects where each unit requires extensive individual information. For example, in automotive projects, each vehicle may have its own chassis number, VIN, or license plate.
+
+### 4.2. Batch Serial Number Generation (صدور گروهی)
+
+In this method, the user requests a specified number of serial numbers for a product.
+
+For example, a user may request 20 serial numbers for one product.
+
+This approach may be useful in projects where general product information has already been defined and less individual information needs to be entered for each unit.
+
+Support for individual or batch generation, as well as the maximum number of serial numbers allowed, depends on the form and project configuration.
+
+## 5. Where Can Serial Numbers Be Generated?
+
+Depending on the features enabled in a Silo project, serial numbers may be generated or obtained through the following platforms:
+
+- نرم‌افزار تحت وب.
+- نرم‌افزار اندروید آنلاین.
+- نرم‌افزار اندروید آفلاین.
+- ‌افزارهای ویندوزی یا کیوسک.
+- Integration with other systems through an API (ارتباط از طریق API).
+
+The serial number generation method and the platform used to execute it are two separate matters. For example, a serial number may be generated using a custom formula through the web application, or it may be obtained from another system and then used in Silo.
+
+A feature available in one version is not necessarily enabled in every version or project.
+
+## 6. Generating Serial Numbers Through the Web Application
+
+### 6.1. Form Location (مسیر فرم)
+
+In the configuration described here, the serial number generation form is located under:
+
+`Print / Management`
+
+The form title or menu path may differ depending on the software version and project configuration.
+
+If the form does not appear in the user's menu, the menu structure or access permissions may be responsible. The absence of a visible form does not, by itself, prove that the feature is unavailable in the system.
+
+### 6.2. General Steps for Serial Number Generation 
+
+**Step 1: Select the Product**
+
+Select the required product from the list of defined products. General product information may be displayed according to the form configuration.
+
+**Step 2: Enter Production Information**
+
+Depending on the project, enter or select information such as the production line, production hall, work shift (شیفت کاری), or other production details.
+
+**Step 3: Select the Destination Warehouse**
+
+If the form requires destination information for recording the product's warehouse entry (ورود به انبار), select the appropriate warehouse.
+
+Whether a warehouse must be selected, and at which stage it is required, depends on the project's operational workflow.
+
+**Step 4: Complete Document Information**
+
+Some operations require a document number or related document information. If the relevant controls are enabled, the system may compare the request with the document's permitted items and quantities.
+
+**Step 5: Specify the Product Quantity**
+
+The quantity specifies how much product each serial number represents.
+
+**Step 6: Specify the Number of Serial Numbers**
+
+In forms that support batch generation, specify the required number of serial numbers. In some forms or scenarios, the number may be predefined or determined by the workflow.
+
+**Step 7: Complete Product-Specific Information**
+
+Depending on the product type and project configuration, additional information may be required, such as technical specifications, an order number, or information specific to an individual unit.
+
+Some fields may be editable, while others may be populated automatically.
+
+**Step 8: Submit the Request**
+
+After completing the required information, submit the request and check the result reported by the system.
+
+Submitting a request does not, by itself, prove that all requested serial numbers were successfully generated.
+
+## 7. Dynamic Fields and Product-Specific Information
+
+Some Silo forms use dynamic fields (فیلدهای پویا) to collect project-specific information. These fields allow the system to request information appropriate to the product or operation.
+
+Dynamic fields may be used in three areas.
+
+### 7.1. Dynamic Product Information
+
+This information relates to the general characteristics of a product.
+
+For example, a project may record the following product attributes:
+
+- عرض
+- گرماژ
+- نوع سوخت
+- نوع کاربری
+
+The required fields and values depend on the product type and project configuration.
+
+### 7.2. Serial-Specific Information 
+
+This information belongs to a specific product unit or identity record.
+
+For example, an automotive project may record the following information for each serial number:
+
+- پلاک انتظامی
+- شماره شاسی
+- شماره بدنه
 - شماره VIN
 
-Two serials may belong to the same product, while their specific information can be different.
+Two units of the same product may share identical general product information while having different unit-specific information.
 
-### Operation Dynamic Fields
+If the form supports it, serial-specific information may be entered during serial number generation or completed in a separate step.
 
-Some information is only required when an operation is being performed.
+### 7.3. Dynamic Operation Information 
 
-For example, during a pressing operation, the system may ask the user how the operation was performed:
+Some information is required only when a particular operation is performed.
 
-- دستگاه چنگک (Grab/Clamp Machine)
-- دستگاه پرس (Press Machine)
+For example, during a production operation, the user may be asked to specify the device type or the method used to execute the operation.
 
-This information belongs to the operation itself.
+This information relates to the operation itself and is not necessarily part of the product's general specifications.
 
----
+### 7.4. Field Types 
 
-## 3. Serial Generation Request
+Depending on the form design, fields may be:
 
-After a product has been defined in the system, the user can submit a request to generate serials for that product.
+- Editable by the user (قابل ویرایش).
+- Read-only and used only to display information (فقط نمایشی).
+- Populated automatically (تکمیل خودکار).
+- Calculated from other information (محاسباتی).
 
-A serial generation request can be created for:
+The actual behavior of each field must be verified in the relevant form and project.
 
-- One serial
-- Multiple serials
-- A large number of serials
+## 8. Product Quantity and Default Quantity (مقدار کالا و مقدار پیش‌فرض)
 
-The serial generation method depends on the project requirements.
+Some projects define a default quantity for a product. However, if the form supports it, the quantity associated with a particular serial number may be adjustable.
 
----
+For example, if the default quantity for one pallet of tiles is 60 square meters, a permitted scenario might allow the quantity for a specific pallet to be changed to 30 square meters.
 
-## 4. Individual Serial Generation
+This example does not mean that quantity editing is available in every project. The ability to change the quantity depends on the form configuration and applicable restrictions.
 
-In projects where each serial contains a significant amount of specific information, serials can be generated individually.
+### Difference Between the Number of Serial Numbers and the Quantity per Serial Number
 
-For example:
+- **Number of serial numbers (تعداد سریال):** The number of identity records to be created.
+- **Quantity per serial number (مقدار هر سریال):** The quantity of product represented by each identity record.
 
-- Vehicle projects
-- Projects where each product unit has its own detailed dynamic information
+For example, five serial numbers representing 87 pieces each are not equivalent to one serial number representing 435 pieces, even though the total product quantity is the same.
 
-In this case, after selecting the product, the specific information for that serial is completed.
+## 9. Label Printing and Reprinting
 
----
+After a serial number has been generated, a label can be printed if the form supports printing and an appropriate print template is available.
 
-## 5. Batch Serial Generation
+Depending on project requirements, the print template may contain different types of information, such as:
 
-In projects where the product does not have complex serial-level information, multiple serials can be generated as a batch.
+- Serial number or barcode (شماره سریال یا بارکد).
+- General product information (مشخصات عمومی محصول).
+- Product-specific information required to identify the item (اطلاعات اختصاصی کالا).
 
-For example, in the tile industry, a user may select a product and request 20 serials.
+The system may also support reprinting (چاپ مجدد).
 
-In this case, most of the product information is already defined, and the user mainly specifies the required quantity.
+Reprinting does not necessarily generate a new serial number. The same existing serial number may simply be printed again.
 
----
+Likewise, the existence of a serial number does not prove that its label has been printed. Printing status must be verified using the operation status and the actual capabilities of the system.
 
-## 6. Information Required for Serial Generation
+## 10. RFID Tag Registration (رجیستر تگ RFID)
 
-When requesting serial generation, the following information is specified depending on the project configuration:
+Tag registration is the process of associating an RFID identifier with the appropriate serial number and recording that association in the system.
 
-- کالا (Product)
-- خط تولید (Production Line)
-- شیفت کاری (Work Shift)
-- انبار مقصد (Destination Warehouse)
-- سند مربوطه (Related Document)
-- مقدار کالا (Product Quantity)
-- اطلاعات پویای سریال (Serial Dynamic Information)
+In a typical scenario, the steps are as follows:
 
-In some projects, entering the document number is mandatory.
+1. The serial number and required information are available.
+2. The RFID tag identifier is obtained through a supported device or method.
+3. The system identifies the corresponding serial number.
+4. The RFID identifier is associated with the relevant serial number.
+5. The tag registration operation is performed.
 
-The system may also compare the request information with the items included in the related document.
+The exact steps may vary between projects.
 
----
+### 10.1. Difference Between Reading and Registration (تفاوت قرائت و رجیستر)
 
-## 7. Serial Number Generation Methods
+Reading an RFID identifier only indicates that the identifier has been received. It does not, by itself, prove that the tag has been successfully registered.
 
-Serial numbers can be generated using two main methods.
+The operation result must be checked to confirm that registration is complete.
 
-### Sequential Numbering
+### 10.2. Barcode-Based Projects 
 
-In this method, serial numbers start from a base number and increase sequentially.
+In some projects, the registration method differs from the typical RFID workflow. The serial number itself may be used as the tag identifier.
 
-For example:
+This behavior depends on the design and configuration of the specific project and must not be generalized to all Silo projects.
 
-- 10001
-- 10002
-- 10003
-- 10004
+### 10.3. Tag Registration and Warehouse Entry
 
-### Formula-Based Generation
+Tag registration and completion of the warehouse-entry process (فرایند ورود کالا به انبار) are not necessarily the same thing.
 
-In this method, the serial number is generated according to a defined pattern or formula.
+In some workflows, after registration, product movement or destination information must also be recorded. To determine whether the operation is complete, identify all the steps required by the relevant workflow.
 
-For example, a serial number may be generated by combining:
+## 11. Serial Number Generation on Android 
 
-- Product Code
-- Date
-- Counter
+This guide distinguishes between two Android forms:
 
-In this case, the system generates the serial number according to the configured formula.
+1. Registration by Product Code (ثبت با کد کالا).
+2. Registration by Product Code and Serial Number (ثبت با کد کالا و سریال).
 
----
+The exact capabilities of each form depend on the software version and project configuration.
 
-## 8. Product Quantity
+### 11.1. “Registration by Product Code” Form (فرم ثبت با کد کالا)
 
-The product quantity can be specified when generating a serial.
+In this form, the user first selects the product and enters the required information, then reads the RFID tags.
 
-A product may have a default quantity, while the quantity of a specific serial can still be changed when required.
+In the scenario described here, the number of tags read determines the number of serial numbers required for the current request.
 
-For example, if the default quantity of a tile pallet is 60 meters, the quantity for a specific pallet can be changed to 30 meters.
+For example, if six tags are read during the current process, the request will require six serial numbers.
 
----
+This count defines the number of serial numbers required by the request. It does not necessarily mean that all serial numbers will be generated successfully or that all tags will be registered.
 
-## 9. Label Printing
+**حالت Multi-tag**
 
-After a serial is generated, its label can be prepared and printed.
+This mode supports reading multiple tags during a single process.
 
-Printing a label does not necessarily mean that the RFID tag has already been registered.
+The number of tags read can determine the number of serial numbers required by the request.
 
-The process may be:
+**حالت Single-tag**
 
-1. Generate the serial.
-2. Print the label.
-3. Receive the RFID tag later.
-4. Attach the tag to the product.
-5. Perform the registration.
+This mode limits the reading process to one tag.
 
-Therefore, serial generation, label printing, and tag registration may take place at different times.
+Multi-tag and Single-tag describe how tags are read. They must not be confused with the serial number generation method or with whether the device operates online or offline.
 
----
+### 11.2. “Registration by Product Code and Serial Number” Form (فرم ثبت با کد کالا و سریال)
 
-## 10. Tag Registration
+This form is used when the product's serial number already exists or is obtained from the product or another input source.
 
-**رجیستر (Registration)** is the step in which a serial is connected to an RFID tag.
+Depending on the project's rules, the input number may be used as-is, or the final serial number may be created by combining it with other information.
 
-After registration, the serial is recognized as a registered entity in the system.
+In the form logic described here, the request is made for one specific serial number and is therefore a single-item request in terms of quantity.
 
-At this stage, the RFID identifier or **EPC** of the tag is assigned to the serial.
+This form is not equivalent to Multi-tag mode in the “Registration by Product Code” form.
 
-Registration must be performed for a serial that has already been created during the serial generation process.
+## 12. Differences Between Online and Offline Android (اندروید آنلاین و آفلاین)
 
----
+### 12.1. Online Version 
 
-## 11. Registration Result
+In online mode, the device is connected to the server and sends the request for processing.
 
-After successful registration:
+The result must be verified using the system response and recorded operation status. A server connection alone does not prove that the operation succeeded.
 
-* The serial is connected to the RFID tag.
-* Tag information is registered.
-* The serial moves out of its pre-registration state.
-* The product is placed in the destination warehouse.
-* Product movement is recorded.
+### 12.2. Offline Version
 
-Therefore, registration is not merely the act of reading an RFID tag. It is part of the process of registering and creating the product entity in the system.
+In offline mode, some operations may initially be performed using local device data and may not yet be registered on the central server.
 
----
+After connectivity is restored, the data is transferred according to the system's synchronization mechanism (همگام‌سازی).
 
-## 12. Destination Warehouse
+Some controls available in the online version may not be available offline because they require access to central data or communication with the server.
 
-The destination warehouse is specified when requesting serial generation.
+To verify the status of an offline operation, determine:
 
-This warehouse determines where the product will be recognized as inventory after registration.
+- Whether the operation was performed only on the device or was also transferred to the server.
+- Whether synchronization has completed.
+- What final processing result was returned by the server.
 
-Every active serial must belong to a specific warehouse.
+The exact behavior depends on the implementation of the specific version.
 
-Depending on the project, the destination warehouse may be different. Examples include:
+## 13. Document Information and Operational Controls 
 
-- انبار صدور شناسنامه (Identification/Registration Warehouse)
-- انبار مواد شیمیایی (Chemical Materials Warehouse)
-- انبار سالن برش (Cutting Hall Warehouse)
-- انبار محصول (Finished Product Warehouse)
-- انبار مواد اولیه (Raw Materials Warehouse)
+In some projects, entering a document number is mandatory when generating serial numbers or performing an operation.
 
----
+Depending on the project configuration, the system may:
 
-## 13. Registering Vehicle-Specific Information
+1. Receive and validate the document number.
+2. Retrieve the document items from the relevant source.
+3. Compare the requested product with the document items.
+4. Compare the requested quantity with the quantity permitted by the document.
 
-In projects such as vehicle management, each vehicle has specific information in addition to its general product information.
+For example, if the requested product is not included in the document or the requested quantity exceeds the permitted quantity, the system may prevent the operation from continuing.
 
-Information such as:
+In some projects, document information is retrieved from an external system.
 
-- پلاک (License Plate)
-- VIN
-- شماره شاسی (Chassis Number)
-- شماره بدنه (Body Number)
+These controls are not identical across all operations. Whether each control is enabled and how it is executed depend on the actual project configuration.
 
-can be recorded or edited for each serial.
+## 14. Quality Control (کنترل کیفیت)
 
-This information may be completed after the serial is created, using the vehicle-specific information form.
+Some products or operations may require quality control.
 
----
+For example, receiving a finished product into the finished-goods warehouse may require quality approval or inspection, while certain raw materials may follow a different workflow.
 
-## 14. Registration Using a Handheld Device
+Consequently, the conditions for registering and receiving products may vary according to the product type and operation type.
 
-In some projects, registration is performed using a **دستگاه هندهلد (Handheld Device)**.
+Do not assume that quality control is mandatory for every product or every Silo operation.
 
-For example, in a vehicle project, the registration process may involve:
+## 15. Registration Using a هندهلد Device 
 
-- Reading the RFID tag.
-- Recording the device location.
-- Completing the serial-related information.
+In some projects, tag registration is performed using a handheld device (دستگاه هندهلد).
 
-The use of a handheld device and location recording depends on the project requirements.
+Depending on project requirements, the device may be used not only to read RFID tags but also to complete information or record a location.
 
----
+For example, in an automotive project, the device's GPS information may be required during registration.
 
-## 15. Document Information Validation
+This is not a universal feature across all projects. The requirement to record a location depends on the configuration and requirements of the specific project.
 
-In some operations, the system requests the document number from the user.
+## 16. Editing and Cancelling Information (ویرایش و ابطال اطلاعات)
 
-Depending on the configuration, the system may:
+The ability to edit or cancel information depends on the record's status, the user's permissions, and the project's rules.
 
-- Require the document number.
-- Retrieve the document items from another system.
-- Compare the selected product with the document items.
-- Compare the requested quantity with the document quantity.
+Do not assume that every serial number or tag can be edited or cancelled at every stage.
 
-If the request does not comply with the document restrictions, the system may prevent the operation from being registered.
+Editing serial-specific information, changing an RFID identifier, reprinting a label, and cancelling a tag may be separate activities.
 
----
+To determine whether a particular activity is permitted, check the actual capabilities of the form and the current status of the record.
 
-## 16. Quality Control
+## 17. Web Version and Windows Applications 
 
-Some products or operations may require **کنترل کیفیت (Quality Control)**.
+Some Silo capabilities, such as registration operations or Gate functionality, were provided as Windows applications in older versions, while some capabilities have been moved to the web application in newer architectures.
 
-For example, entry of a finished product into the finished-product warehouse may require quality approval or inspection.
+The web version can support centralized software change management and reduce the need to update each user's system separately.
 
-In contrast, such a control may not be required for certain raw materials.
+However, the availability of a feature in the web or Windows version must be verified for the specific project. Do not assume that every feature available in older versions also exists in every newer version.
 
-Therefore, registration conditions may vary depending on the product and process.
+## 18. Frequently Asked Questions 
 
----
+**Does generating a serial number mean that a label has been printed?**
 
-## 17. Overall Serial Generation and Registration Flow
+No. Serial number generation  and label printing are separate activities. Printing must be performed through a supported workflow.
 
-The overall process is:
+**Does the existence of a serial number mean that the tag has been registered?**
 
-**Select Product**
+No. The existence of a serial number alone does not prove that the tag has been registered successfully.
 
-→ **Select Production Line**
+**Does successfully reading an RFID tag mean registration is complete?**
 
-→ **Select Work Shift**
+No. Reading only confirms that the identifier was received. The tag registration result must be checked.
 
-→ **Select Destination Warehouse**
+**Is the serial number generation method the same in every project?**
 
-→ **Select Document if Required**
+No. A project may use sequential numbering, an automatic identifier, a custom formula, or an existing serial number.
 
-→ **Specify Quantity**
+**Can an existing product serial number be used?**
 
-→ **Complete Dynamic Information**
+In some projects, yes. Whether the input number is used unchanged or modified depends on the rules of the specific project.
 
-→ **Generate Serial**
+**Can multiple serial numbers be generated for one product?**
 
-→ **Print Label**
+Yes, in forms and projects that support batch generation (صدور گروهی). The number that can be requested depends on form limitations and project configuration.
 
-→ **Attach RFID Tag to Product**
+**Are the number of serial numbers and the product quantity the same?**
 
-→ **Register Tag**
+No. The number of serial numbers specifies how many identity records will be created. The quantity per serial number specifies how much product each record represents.
 
-→ **Complete Product Registration**
+**What are dynamic fields used for?**
 
-→ **Place Product in Destination Warehouse**
+Dynamic fields collect information appropriate to a product, a specific serial number, or an operation. The required fields depend on the project configuration.
 
----
+**Does reprinting create a new serial number?**
 
-## 18. Web Version of the System
+Not necessarily. Reprinting may print the same existing serial number again.
 
-Some legacy capabilities, such as registration and gate operations, were previously provided as **Windows-based software**.
+**Why can't I enter the number of serial numbers manually in the Android form?**
 
-Some of these capabilities have been gradually transferred to the web version of the Silo system.
+In the “Registration by Product Code” form (ثبت با کد کالا), the number of tags read can determine the number of serial numbers required by the request.
 
-The web version provides centralized software management, allowing software changes to be applied through the server and made available to users without requiring separate updates on individual user computers.
+**Does Android offline have all the capabilities of the online version?**
+
+Not necessarily. Some features and controls depend on server connectivity or access to central data.
+
+**Why is the form not visible in my menu?**
+
+The menu structure or access permissions may prevent the form from appearing. To identify the cause, check the settings for the relevant user and project, and contact support if necessary.
+
+**Can a serial number always be edited after it has been generated?**
+
+No. Editing depends on the record's status, user permissions, and the project's operational rules.
+
+**Does the product always enter the warehouse after tag registration?**
+
+This depends on the project's workflow. In some workflows, recording product movement and the warehouse destination is also required. The results of the relevant steps must be checked to confirm completion.
+
+## 19. Rules for the Agent When Answering Users 
+
+When answering user questions about serial number generation, label printing, and tag registration, the agent must:
+
+1. Use clear, practical operational terminology.
+2. Avoid exposing internal database details in ordinary user-facing answers.
+3. Clearly distinguish serial number generation, label printing, RFID reading, and tag registration.
+4. Distinguish the number of serial numbers from the quantity per serial number.
+5. Correctly explain the differences between Android forms and Multi-tag and Single-tag modes.
+6. Never generalize a project-specific serial number formula to other projects.
+7. Never assume that online and offline versions behave identically without verification.
+8. Report successful completion only when supported by a valid operation result.
+9. If a feature or form behavior depends on the project and the exact information is unavailable, explicitly state this limitation.
+10. Avoid describing steps or capabilities that have not been confirmed to exist in the relevant project.
+
+## 20. Summary 
+
+The product identification workflow in Silo may include serial number generation , product information completion, label printing , RFID reading , tag registration , and recording warehouse information.
+
+These steps are related but are not interchangeable. The serial number generation method, number of identity records, quantity per serial number, dynamic fields, and execution platform also depend on project requirements and system configuration.
+
+To answer user questions accurately, the agent must consider the actual capabilities of the relevant form and project. It must not infer that printing, tag registration, or warehouse entry has been completed merely because a serial number exists or an RFID tag has been read.

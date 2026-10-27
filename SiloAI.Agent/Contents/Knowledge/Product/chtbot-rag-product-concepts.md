@@ -20,7 +20,7 @@ In simple terms:
 
 It is used to identify the Product when registering or processing serialized items.
 
-For example, when a new serial is registered, the Product Code determines which Product definition and related information are associated with that serial.
+The Product Code connects a registered serial to the corresponding Product definition and its characteristics.
 
 Product-related information may include:
 
@@ -29,9 +29,10 @@ Product-related information may include:
 - Size
 - Group
 - Class
-- Other product characteristics
+- Unit of measurement
+- Other Product characteristics
 
-The Product Code therefore provides the main connection between a Product and the serialized items associated with it.
+Whenever possible, the Product Code should be consistent with the code used in the organization's accounting or ERP system to maintain consistency between systems.
 
 ---
 
@@ -45,9 +46,9 @@ For example:
 - کالای نیمه‌ساخته
 - محصول نهایی
 
-Product Type helps distinguish different categories of products and can also be used by Silo when determining how a product should be handled in different processes.
+Product Type helps distinguish different categories of Products and can also be used to determine which operations are applicable to a Product.
 
-The exact Product Types available depend on the configuration of the project.
+The exact Product Types available depend on the project configuration.
 
 ---
 
@@ -63,29 +64,34 @@ Common examples include:
 - Class
 - Size
 - Subgroup
+- Quality
+- Unit of measurement
 - Status
 
 These attributes help users classify, identify, search, and manage Products.
 
-The exact fields and terminology may vary depending on the project.
+The standard Product structure contains predefined attributes. Project-specific terminology may change how these attributes are presented, but this does not necessarily mean that new standard attributes have been added.
+
+Technical specifications that vary by Product can also be maintained separately as technical information.
 
 ---
 
 ## 5. Project-Specific Product Terminology
 
-Silo can use different business terminology for the same underlying product concept depending on the project.
+Silo can use different business terminology for the same underlying Product concept depending on the project.
 
-For example, a concept that is technically related to **Size** may be displayed as:
+For example, a concept related to **Size** may be displayed as:
 
 - سایز
 - عرض کالا
 - گراماژ
+- نوع سوخت
 
-depending on the project's terminology.
+The appropriate meaning depends on the project. For example, in an automotive project, some standard Product attributes may be presented using vehicle-related terms.
 
-Therefore, users may encounter different names for similar Product concepts in different Silo projects.
+The terminology shown to users does not necessarily change the underlying Product concept or structure.
 
-The terminology shown to users does not necessarily change the underlying Product concept.
+The assistant must interpret these terms according to the documented configuration of the relevant project.
 
 ---
 
@@ -102,100 +108,35 @@ Depending on the available configuration, Products may be searched using informa
 - Brand
 - Other Product attributes
 
-This is particularly useful when an operator needs to select the correct Product during an operational process.
+Product search is particularly useful when selecting the correct Product during serial registration or other operational processes.
 
 ---
 
-## 7. Technical Code کدفنی
+## 7. Technical Code کد فنی
 
-A **Technical Code** is an additional identifier or code used to identify a Product.
+A **Technical Code** is an additional identifier used to identify or search for a Product.
 
-It may be a shorter code than the official Product Code, or it may be a code that is more familiar and commonly used by the employees and operators of a specific organization.
+It may be shorter or more familiar to employees than the official Product Code.
 
-The Technical Code provides an additional and practical way to identify or search for a Product.
+For example, a Product may have a long official Product Code while employees commonly recognize it using a shorter Technical Code such as `2142`.
 
-For example:
+- **Product Code:** The primary identifier of the Product.
+- **Technical Code:** An additional identifier that may be more convenient or familiar to users.
 
-A Product may have a long official **Product Code**, while employees may commonly recognize and refer to the same Product using a shorter or more familiar Technical Code such as `2142`.
-
-Therefore:
-
-**Product Code** → The primary identifier of the Product  
-**Technical Code** → An additional identifier that may be shorter, more familiar, or more commonly used by the organization's employees for identifying and searching for the Product
-
-A Technical Code may be used for:
-
-- Identifying a Product
-- Searching for a Product
-- Finding the required Product among similar Products
-- Providing a shorter identifier when applicable
-- Providing an identifier that is familiar to the organization's employees
-- Using a commonly recognized code when referring to a Product
-
-The Technical Code may be used in different Silo forms or processes for Product identification or search, depending on the project configuration.
+The Technical Code's format, required status, and usage depend on the project configuration. It is not necessarily shorter than the Product Code and does not necessarily represent a manufacturer part number or model number.
 
 ### Important Distinction: Technical Code vs. Technical Information
 
-The assistant must not treat **Technical Code** and **Technical Information** as the same concept.
+**Technical Code** identifies or helps users find a Product.
 
-**Technical Code** is an identifier or code used to identify or search for a Product.
-
-**Technical Information** consists of technical characteristics and specifications of a Product, such as:
-
-- Voltage
-- Power
-- Body color
-- Length
-- Width
-- Other technical specifications
+**Technical Information** describes the Product's technical characteristics, such as voltage, power, length, width, or other specifications.
 
 For example:
-
-If a Product has Technical Code `2142` and its technical information includes Length `100` and Width `50`:
 
 - `2142` → Technical Code
 - Length `100` and Width `50` → Technical Information
 
-The Technical Code identifies or helps users find the Product, while Technical Information describes the Product's technical characteristics.
-
-### Project-Specific Usage
-
-The meaning, value, format, and usage of the Technical Code may depend on the Silo project and the terminology commonly used by the organization.
-
-The assistant must not assume that:
-
-- A Technical Code is always shorter than the Product Code.
-- A Technical Code is always more familiar than the Product Code.
-- A Technical Code always represents a manufacturer part number.
-- A Technical Code always represents a model number.
-- A Technical Code has the same format in every project.
-- A Technical Code is used in the same way in every project.
-
-If the required information about the Technical Code is not available in the knowledge base, the assistant must clearly state that there is not enough documented information to provide an accurate answer.
-
-### Related Product Features
-
-Features such as **"همانند"** or **"بازیابی اطلاعات فنی"** may be available in specific Silo forms or projects for working with Product information.
-
-The assistant must not describe these features as part of the definition of Technical Code itself.
-
-If the user asks specifically about **"بازیابی اطلاعات فنی"**, answer based on the documented functionality of that feature.
-
-If the user asks specifically about **"همانند"**, answer based on the documented functionality of that option.
-
-### Project-Specific Behavior
-
-The value, format, required status, and usage of the Technical Code may depend on the Silo project configuration.
-
-The assistant must not assume that:
-
-- A Technical Code exists for every Product.
-- The Technical Code always follows a specific format.
-- The Technical Code is always mandatory.
-- The Technical Code always represents a manufacturer part number or model number.
-- The Technical Code has the same usage in every Silo project.
-
-If the required information about Technical Code behavior is not available in the knowledge base, the assistant must clearly state that there is not enough documented information to provide an accurate answer.
+Features such as «همانند» and «بازیابی اطلاعات فنی» are separate Product-management features and should not be treated as part of the definition of Technical Code.
 
 ---
 
@@ -205,7 +146,7 @@ A Product may have a title or descriptive name that helps users identify it.
 
 The Product Title can be based on the Product's characteristics and, depending on the project configuration, may be generated automatically.
 
-This allows Products to have a consistent and understandable naming structure.
+A Product may also have an English title where supported.
 
 ---
 
@@ -213,7 +154,7 @@ This allows Products to have a consistent and understandable naming structure.
 
 Silo can support automatic generation of Product Codes or Product Titles based on predefined rules.
 
-Instead of manually entering the complete Product Code or Title, the user may select the required Product characteristics and the system can generate the corresponding value.
+Instead of manually entering the complete value, the user may select the required Product characteristics and the system can generate the corresponding code or title.
 
 For example, the generation process may use attributes such as:
 
@@ -223,12 +164,7 @@ For example, the generation process may use attributes such as:
 - Group
 - Other Product attributes
 
-This can help:
-
-- Reduce data-entry errors
-- Standardize Product naming
-- Standardize Product identification
-- Improve consistency between Product records
+This can help reduce data-entry errors and standardize Product identification and naming.
 
 The exact generation rules depend on the project configuration.
 
@@ -236,19 +172,17 @@ The exact generation rules depend on the project configuration.
 
 ## 10. Product Quantity
 
-**Quantity** represents the amount associated with a registered Product unit.
+**Quantity** represents the amount associated with a Product or its registered packaging unit.
 
-Depending on the Product and project, Quantity may represent:
+Depending on the Product and project, quantities may represent:
 
-- A number of items
-- A measurable amount
-- A quantity based on a specific unit
+- A number of pieces
+- A number of cartons or other packages
+- A measurable amount, such as square meters or weight
 
-For example:
+Some Products are managed by count only. Others require both a count and a measurable quantity.
 
-- A shipment may contain 100 pieces.
-- A pallet may contain a specific number of cartons.
-- A Product may be measured in square meters.
+For example, a tile pallet may be tracked by the number of cartons it contains and the total area of the tiles.
 
 The meaning of Quantity depends on how the Product is defined and measured in the project.
 
@@ -258,39 +192,52 @@ The meaning of Quantity depends on how the Product is defined and measured in th
 
 A Product can have a configured **Default Quantity**.
 
-When a Product is selected during registration, the system may automatically provide the configured default quantity.
+When a serial or packaging unit is registered, the system may use this value as the initial quantity for that unit.
 
-The operator can then adjust the quantity when the actual amount differs from the standard value.
+The operator may adjust the quantity when the actual amount differs from the standard value, where the process permits it.
 
-For example, a standard pallet may normally contain a specific quantity, while a partially filled pallet may contain less.
+For example, a standard pallet may contain a defined quantity, while a partially filled pallet contains less.
 
-Therefore:
-
-**Default Quantity = The standard quantity normally associated with a Product unit**
+**Default Quantity = The standard quantity initially assigned to a registered unit.**
 
 It does not necessarily mean that every registered unit must have exactly that quantity.
 
 ---
 
-## 12. Primary Unit and Second Unit
+## 12. Primary Unit, Second Unit, and Packaging Quantity
 
-Some Products may need to be represented using more than one unit of measurement.
+Some Products need to be represented using two related units of measurement.
 
 For example:
 
-### Tile
+- **Primary Unit:** Carton
+- **Second Unit:** Square meter
 
-- Primary Unit → cartons
-- Second Unit → square meters
+A Product may also define how many second units are contained in a standard package or handling unit.
 
-### Paper
+These concepts must be distinguished:
 
-- Primary Unit → rolls
-- Second Unit → weight or length
+- **Value per Second Unit:** The amount represented by one second unit.
+- **Count in Pack:** The number of second units in the standard package.
+- **Pack Value:** The total amount represented by one standard package or registered unit.
 
-This allows the same Product unit to be represented using two related measurements when required.
+### Example: Tiles
 
-The availability and meaning of the Second Unit depend on the Product and project configuration.
+Suppose one carton contains `1.5 m²` of tiles and a standard pallet contains `45` cartons.
+
+- Value per carton: `1.5 m²`
+- Cartons per pallet: `45`
+- Total standard pallet quantity: `67.5 m²`
+
+Calculation:
+
+`1.5 × 45 = 67.5 m²`
+
+The system can use the standard Pack Value as the initial quantity for a newly registered pallet. If the last pallet contains only `20 m²`, its actual quantity may differ from the standard value where the process allows an override.
+
+Other packaging defaults, such as weight or volume, may also be configured where supported.
+
+The availability and meaning of these values depend on the Product and project configuration.
 
 ---
 
@@ -307,43 +254,51 @@ For example, the registered unit may be:
 - A roll
 - Another packaging or handling unit
 
-Therefore, Shipment / Load should be understood as the **traceable registered unit**, rather than assuming that it always represents a specific type of physical package.
+A registered unit may contain multiple smaller units and may represent a measurable quantity rather than a single physical item.
+
+Therefore, Shipment / Load should be understood as the **traceable registered unit**, rather than assuming that it always represents a specific type of package.
 
 ---
 
 ## 14. Dynamic Technical Information
 
-In addition to standard Product attributes, Silo can support **Dynamic Technical Information**.
-
-This information is used for technical characteristics that may differ between Products or projects.
+In addition to standard Product attributes, Silo can support **Dynamic Technical Information** for technical characteristics that vary between Products or projects.
 
 Examples include:
 
 - Voltage
 - Power
 - Body color
-- Technical specifications
-- Other Product-specific properties
+- Length and width
+- Other technical specifications
 
-This allows Products to have technical characteristics without requiring every possible characteristic to be part of the standard Product information.
+These characteristics describe the Product and may be used without making every possible technical characteristic part of the standard Product structure.
+
+**Product-level technical information** describes the Product definition and generally applies to units of that Product.
+
+This is different from information recorded for an individual serial or package. For example, a Product may have a standard manufacturing specification, while a particular serial may need to record which furnace produced it.
+
+The assistant must not assume that every technical characteristic belongs to the Product definition; some information may be specific to an individual registered unit.
 
 ---
 
 ## 15. Product Technical Information in Operations and Reports
 
-Product technical information may be used in different parts of Silo.
+Product technical information may be used in different parts of Silo, depending on the project configuration.
 
-For example, technical information may be used for:
+Examples include:
 
 - Displaying information on labels
-- Searching for Products
-- Filtering Products
-- Generating reports
+- Searching for or filtering Products
+- Generating reports and dashboards
 - Identifying Products based on technical characteristics
+
+Some technical information may also be used in operational processes where supported.
 
 The exact usage depends on the configuration and capabilities available in the project.
 
 ---
+
 ## 16. Active and Inactive Products
 
 A Product can be active or inactive.
@@ -356,16 +311,15 @@ Deactivating a Product is different from deleting it.
 
 When a Product becomes inactive:
 
-- Deactivation does not delete the Product or its previous information.
-- Existing Product records and historical records are preserved.
-
-This allows obsolete Products to be prevented from further operational use without losing their history.
+- The Product and its previous information are not deleted.
+- Existing records and historical information are preserved.
+- The Product should not be assumed to be available for new registration or other operations.
 
 ### Deactivation Rule
 
 If the user asks whether deactivating a Product deletes its previous information, the answer is **No**.
 
-Deactivation is different from deletion. Previous Product information and historical records are preserved.
+Deactivation preserves existing information and history; it is not deletion.
 
 ---
 
@@ -375,9 +329,9 @@ Some Products may require two tags for each registered serial.
 
 Silo supports this requirement through the Product configuration.
 
-When the double-tag requirement is enabled for a Product, the registration process may require two tags for the corresponding serial.
+When the double-tag requirement is enabled for a Product, its registration process may require two tags for the corresponding serial.
 
-This capability is intended for Products or processes where a single physical serial requires more than one identification tag.
+This capability is intended for Products or processes where a single registered unit requires more than one identification tag.
 
 The exact behavior depends on the project's configuration.
 
@@ -389,15 +343,11 @@ A Product must exist before a serial or tag can be registered for that Product.
 
 The general relationship is:
 
-**Product Definition**
-↓
-**Product Code**
-↓
-**Serial Registration**
-↓
-**Tag Registration**
+**Product Definition → Product Code → Serial Registration → Tag Registration**
 
-The Product provides the basic identity and characteristics associated with the registered serial or tag.
+The Product provides the identity and characteristics associated with the registered serial or tag.
+
+The Product Code connects the registered unit to the appropriate Product definition.
 
 Therefore, Product management is one of the foundations of serial and tag management in Silo.
 
@@ -411,14 +361,19 @@ Different projects may use different:
 
 - Product Types
 - Brands
-- Groups
-- Sizes
-- Units
+- Groups and Subgroups
+- Sizes and quality classifications
+- Units of measurement
+- Packaging quantities
 - Technical characteristics
 - Product terminology
-- Product-code generation rules
+- Product-code and title generation rules
 
-Therefore, the assistant must not assume that a specific Product attribute, value, or terminology exists in every Silo project.
+Products may be created manually, imported from an accounting or ERP system through an available integration, or imported from Excel where that capability is enabled.
+
+When integration is configured, Product information may be supplied by the external system rather than entered manually in Silo.
+
+The assistant must not assume that every project supports the same integration or import method.
 
 ---
 
@@ -427,23 +382,27 @@ Therefore, the assistant must not assume that a specific Product attribute, valu
 | Concept | Simple Meaning |
 |---|---|
 | محصول/کالا | The definition of an item managed in Silo |
-| کدکالا | The primary identifier of a Product |
+| کد کالا | The primary identifier of a Product |
 | عنوان کالا | The descriptive name of a Product |
-| کد فنی | An additional or short identifier for a Product |
+| کد فنی | An additional identifier for a Product |
 | نوع کالا | The business category of a Product |
 | برند | The Product's brand |
 | گروه کالا | A broader classification of Products |
-| طبقه کالا | A classification attribute of a Product |
-| سایز کالا | A Product size or size-related characteristic |
+| طبقه کالا | A Product classification attribute |
+| سایز کالا | A size-related Product attribute whose displayed meaning may vary by project |
 | زیرگروه کالا | A more specific Product classification |
-| درجه کیفیت | The amount associated with a registered Product unit |
-| مقدار پیش‌فرض | The standard quantity associated with a Product |
+| درجه کیفیت | A Product quality classification |
 | واحد اصلی | The main unit used to represent a Product |
 | واحد دوم | An additional unit used when two measurements are required |
+| مقدار هر واحد دوم | The measurable amount represented by one second unit |
+| تعداد در بسته | The number of second units in a standard package |
+| مقدار بسته | The total standard quantity represented by a package or registered unit |
+| مقدار پیش‌فرض | The standard initial quantity assigned during registration |
 | محموله / بار | The traceable unit registered as a serial/tag |
-| اطلاعات فنی | Product-specific technical characteristics |
-| کالای فعال | A Product available for operational use |
-|کالای غیرفعال | A Product no longer intended for new operational use |
+| اطلاعات فنی کالا | Technical characteristics describing a Product |
+| اطلاعات اختصاصی سریال | Information specific to an individual registered unit |
+| کالای فعال | A Product available for operational use where applicable |
+| کالای غیرفعال | A Product not intended for new operational use; its history is preserved |
 | Double Tag | A requirement for two tags for a registered serial |
 
 ---
@@ -454,17 +413,16 @@ The exact Product structure and behavior depend on the configuration of the Silo
 
 The assistant must not assume that:
 
-- A specific Product exists.
-- A specific Product Type exists.
-- A specific Brand, Group, Class, or Size exists.
-- A Product supports a specific unit.
-- A Product supports a Second Unit.
-- A Product has a Default Quantity.
+- A specific Product or Product Type exists.
+- A specific Brand, Group, Class, Size, or quality value exists.
+- A Product supports a second unit or packaging quantity.
+- Every Product is measured by quantity rather than count only.
+- Every registered package has the standard quantity.
+- A Product Code or Title is generated automatically.
+- A Technical Code exists for every Product.
+- Every technical characteristic belongs to the Product definition rather than an individual serial.
 - A Product requires two tags.
-- A Product Code is generated automatically.
-- A Product Title is generated automatically.
-- A specific Technical Code exists.
-- A specific technical property is available.
+- A specific import or integration method is enabled.
 - An inactive Product can be used in a specific operation.
 
 If the required Product information is not available in the knowledge base, the assistant must clearly state that there is not enough documented information to provide an accurate answer.

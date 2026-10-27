@@ -1,276 +1,340 @@
-﻿# Silo – نوع عملیات and انبار Business Concepts
+﻿# Silo — Core Concepts: نوع عملیات, انبار, نوع انبار, and نوع کالا
 
-## 1. What is an نوع عملیات?
+## 1. What Is Silo?
 
-*نوع عملیات** in Silo represents a specific type of operation performed on a serialized item.
+Silo is a system for identifying goods and recording changes and movements throughout different operational processes. It can provide unique identification and operational history tracking for different entities, including goods and machinery.
 
-It defines what kind of operation is being performed, where the item is moving from and to, and what rules or requirements may apply during that operation.
+Silo is not merely a system for manually recording the movement of one or more serial numbers. It uses identification tools and operational equipment to identify groups of goods and record operations through automated processes.
 
-In simple terms:
+Goods identification methods in Silo include:
 
-**نوع عملیات = The definition of an operation and its business rules**
+- Identifying tags using RFID technology
+- Identifying goods using barcode scanners
+- Using identification gates
+- Using a handheld device to read tags and perform operations
 
-For example, an operation may represent moving a product from «انبار محصول» to «انبار فروش‌رفته».
+These capabilities are intended to simplify the identification of goods and the recording of related operations across different processes.
 
-An نوع عملیات is therefore more than the name of an operation. It can also define the rules, validations, requirements, and expected behavior of that operation.
+## 2. What Is نوع عملیات?
 
----
+**نوع عملیات** describes a specific type of operation performed on goods.
 
-## 2. What Does an نوع عملیات Define?
-
-Depending on its configuration, an نوع عملیات may define:
-
-- The source نوع انبار
-- The target نوع انبار
-- The type of product allowed in the operation
-- Whether a document is required
-- Which controls must be applied during the operation
-- How the item's location should be handled
-- How item identification should be performed
-- Other process-specific requirements
-
-The exact behavior depends on the configuration of the نوع عملیات in Silo.
-
----
-
-## 3. Source and Target in an نوع عملیات
-
-An نوع عملیات represents an operation between a source and a target.
-
-The source and target are generally defined based on **نوع انبار**, rather than a specific physical انبار.
-
-For example:
-
-**انبار محصول → انبار فروش‌رفته**
-
-This means that the نوع عملیات represents an operation that moves or processes an item from a انبار of type «انبار محصول» to a انبار of type «انبار فروش‌رفته».
-
-This approach allows the same type of operation to be used across multiple destinations belonging to the same نوع انبار.
-
----
-
-## 4. What is a انبار?
-
-A **انبار** represents the current location or operational state of a serialized item in Silo.
-
-A انبار does not necessarily represent a physical location.
-
-It may represent:
-
-- A warehouse
-- A production line
-- A quarantine area
-- A scrap location
-- A process stage
-- An operational state
-
-Therefore, a انبار can represent either a **physical location** or an **operational/process position**.
-
----
-
-## 5. What is a نوع انبار?
-
-**نوع انبار** is used to classify Destinations into broader categories.
-
-For example, multiple انبارها may belong to the same نوع انبار:
-
-- انبار محصول
-- خط تولید
-- انبار ضایعات
-- قرنطینه
-
-### Difference Between انبار and نوع انبار
-
-- **انبار** → A specific انبار or location
-- **نوع انبار** → The category or type of that انبار
-
-For example:
-
-«انبار شماره ۱» may be a specific انبار, while «انبار محصول» may be its نوع انبار.
-
----
-
-## 6. Relationship Between نوع عملیات and انبار
-
-The relationship between these concepts can be understood as follows:
-
-**انبار**  
-The current location or operational state of the item
-
-↓
-
-**نوع انبار**  
-The category of that location or operational state
-
-↓
-
-**نوع عملیات**  
-The operation that moves or processes the item between نوع انبار
-
-For example:
-
-**انبار محصول**  
-↓  
-**نوع عملیات: ارسال کالا**  
-↓  
-**انبار فروش‌رفته**
-
-The نوع عملیات defines the operation between the source and target نوع انبار.
-
----
-
-## 7. نوع عملیات and Product Type
-
-An نوع عملیات may be applicable to a specific **Product Type**.
-
-Therefore, not every operation is necessarily applicable to every type of product.
-
-For example:
-
-- مواد اولیه → انتقال به خط تولید
-- کالای نیمه‌ساخته → انتقال به مرحله بعدی تولید
-- محصول نهایی → انتقال به انبار محصول
-
-The Product Type can therefore be one of the factors used to determine which operation is appropriate for an item.
-
-The exact applicability depends on the configuration of the نوع عملیات.
-
----
-
-## 8. Controls Applied During an Operation
-
-Some operations may require specific controls or validations when they are performed.
-
-These controls are used to ensure that the operation is performed correctly.
+In Silo, a suitable نوع عملیات is defined for each required operational movement so that the movement of goods can be identified and recorded.
 
 Examples include:
 
-### Location Control
+- Moving goods from the production line to the finished goods warehouse
+- Sending goods to sales
+- Returning goods to production
+- Moving raw materials to the production line
 
-The operation may require the item's location to be checked or location information to be provided.
-
-### Image Control
-
-The operation may require an image to be captured during the operation.
-
-### Document Matching
-
-The identified items may need to be checked against the information in the related document.
-
-### Source Control
-
-The operation may only allow items that are currently located at the expected source to be identified and processed.
-
-The type and activation of these controls depend on the configuration of the operation.
-
----
-
-## 9. Action Types and Documents
-
-Some operations may be associated with documents.
-
-In such cases:
-
-- The document may need to be in a specific status before the operation can be performed.
-- The document status may change after the operation is successfully completed.
-
-For example, a document may move through statuses such as:
-
-**تأیید نشده → تأیید شده → جمع‌آوری شده → ارسال شده**
-
-The document requirements and status changes depend on the configuration of the specific operation.
-
----
-
-## 10. Item Location Changes
-
-Some operations may change the recorded location of an item in Silo.
-
-For example, when an item is transferred from one location to another, its recorded location may be updated accordingly.
-
-However, not every نوع عملیات necessarily represents a physical movement.
-
-Therefore:
-
-**Performing an نوع عملیات does not necessarily mean that the item's physical location has changed.**
-
-The way the item's location is handled depends on the configuration of the specific operation.
-
----
-
-## 11. Item Traceability
-
-The relationship between an item, its انبار, and the Action Types performed on it helps Silo maintain operational traceability.
+Each نوع عملیات has a specific purpose and may have its own applicable conditions and controls.
 
 In simple terms:
 
-**Item is at a انبار → an operation is performed → its انبار or operational state may change → the operation history can be tracked.**
+**نوع عملیات = The definition of a specific operation and the conditions associated with performing it**
 
-This structure helps maintain **Traceability** of serialized items throughout different operational processes.
+### 2.1. The Relationship Between نوع عملیات, Source, and Destination
 
----
+A نوع عملیات is defined based on the type of the source warehouse and the type of the destination warehouse, rather than necessarily being limited to a specific physical warehouse.
 
-## 12. Destination-Level Permissions
+For example, the operation "برگشت کالا به تولید" represents a defined operational route between the relevant warehouse types.
 
-A انبار may have specific permissions that determine which operations or capabilities are allowed there.
+When the source and destination are identified, the appropriate نوع عملیات for that route can be determined.
 
-For example, depending on the configuration of a انبار:
+If multiple specific warehouses belong to the same warehouse type, the same نوع عملیات may be applicable to movements between them, provided that the other operational conditions are also satisfied.
 
-- Canceling a tag may be allowed.
-- Reprinting a tag may be allowed.
-- Editing item information may be allowed.
-- Editing the value or quantity associated with a tag may be allowed.
+### 2.2. Using نوع عملیات to Group Operations
 
-These capabilities depend on the configuration of the انبار.
+نوع عملیات also helps classify operations in addition to defining the type of movement.
 
-The assistant must not assume that these capabilities are enabled for every انبار.
+For example, operations that represent the return of goods may belong to a particular operational group, making them easier to identify and track.
 
----
+### 2.3. Conditions for Performing a نوع عملیات
 
-## 13. Simple Example
+Each نوع عملیات may have specific execution conditions. These conditions may relate to:
 
-Suppose an item is currently located in **انبار محصول** and needs to be transferred to **انبار فروش‌رفته**.
+- The state of the goods
+- Whether the goods are at the expected source
+- Whether the goods are registered
+- Quality control status
+- Whether the goods are frozen
+- Whether a related document exists
+- Whether the goods and their quantities match the document
+
+The conditions required for a particular operation depend on the actual configuration of that نوع عملیات. Do not assume that all operations have the same requirements.
+
+## 3. What Is Destination?
+
+**انبار** represents a specific destination in Silo where goods are located or to which they are assigned.
+
+An انبار does not necessarily mean a traditional physical warehouse. Depending on Silo's operational structure, a destination may represent a warehouse, a production line, or another position in a business process.
+
+Examples include:
+
+- انبار مواد اولیه ۱
+- انبار محصول
+- انبار فروش
+- خط تولید ۱
+- خط تولید ۲
+
+Each of these can represent a specific destination.
+
+During goods tracking, a good is assigned to a specific destination at a particular stage of the process, and its movements between destinations can be tracked.
+
+## 4. What Is نوع انبار?
+
+**نوع انبار** is used to classify different destinations into broader categories.
+
+For example, the following destinations may exist:
+
+- انبار مواد اولیه ۱
+- انبار مواد اولیه ۲
+
+Both destinations may belong to the نوع انبار "انبار مواد اولیه."
+
+In this example:
+
+- **نوع انبار:** Raw Materials Warehouse
+- **Specific destinations:** انبار مواد اولیه ۱ and انبار مواد اولیه ۲
+
+Other examples:
+
+| نوع انبار | Example Destinations |
+|---|---|
+| خط تولید | Production Line 1, Production Line 2 |
+| انبار محصول | Finished Goods Warehouse 1, Finished Goods Warehouse 2 |
+| انبار فروش | Specific destinations associated with the sales warehouse |
+
+These examples explain the concept of classification. Whether a particular destination actually exists in Silo must be verified against the system's real data.
+
+### 4.1. Difference Between Destination and Destination Type
+
+The distinction between these concepts is important:
+
+- **انبار:** A specific destination
+- **نوع انبار:** The category to which a destination belongs
+
+Therefore, Raw Materials Warehouse 1 is a specific destination, while Raw Materials Warehouse is its نوع انبار.
+
+نوع انبار helps the system recognize destinations at the category level, without necessarily limiting every operation to a particular physical warehouse.
+
+## 5. The Relationship Between Action Type, Source, Destination, and Destination Type
+
+The conceptual relationship between these components is as follows:
+
+**The goods' current destination**
+
+The destination to which the goods are currently assigned.
+
+↓
+
+**نوع انبار مبدأ**
+
+The category to which the current destination belongs.
+
+↓
+
+**نوع عملیات**
+
+The operation defined for moving goods from the source warehouse type to the destination warehouse type.
+
+↓
+
+** نوع انبار مقصد**
+
+The category to which the intended destination belongs.
+
+↓
+
+**مقصد مشخص**
+
+The warehouse or location to which the goods are moved.
+
+### Example: Moving Goods from خط تولید to انبار محصول
+
+Suppose there are two destinations named "Production Line 1" and "Production Line 2," both belonging to the نوع انبار "Production Line."
+
+There is also a destination named "Finished Goods Warehouse 1," which belongs to the نوع انبار "Finished Goods Warehouse."
+
+If a نوع عملیات for moving goods from a production line to a finished goods warehouse has been defined for this route, its applicability to the relevant destinations can be evaluated.
+
+However, the suitability of a نوع عملیات cannot be determined solely from the names of the source and destination. The نوع کالا and the conditions defined for that operation may also affect the result.
+
+## 6. What Is نوع کالا, and How Does It Relate to نوع عملیات?
+
+**نوع کالا** is one of the classification attributes used for goods in Silo.
+
+A نوع عملیات may be applicable to one or more specific types of goods. Therefore, not every operation is necessarily suitable for every نوع کالا.
+
+Examples:
+
+- Raw materials → Transfer to the production line
+- Semi-finished goods → Transfer to the next production stage
+- Finished products → Transfer to the finished goods warehouse
+
+In these examples, نوع کالا helps determine which operation may be suitable for the goods.
+
+### 6.1. Using Product Type to Identify a Suitable Operation
+
+In automated identification processes, different types of goods may pass through the same gate or identification area.
+
+To determine the appropriate operation, the system may consider the identified goods' نوع کالا and compare it with the types of goods permitted for the configured operations.
+
+For example:
+
+- The نوع کالا "Raw Materials" may be associated with an operation for transferring raw materials to the production line.
+- The نوع کالا "Finished Product" may be associated with an operation for transferring finished products to the finished goods warehouse.
+
+نوع کالا is one factor in selecting a suitable operation. The final selection must be based on Silo's actual configuration and the conditions of the relevant operation.
+
+## 7. Active Controls for نوع عملیات
+
+Each نوع عملیات may have a set of controls that define the conditions required for its execution.
+
+These controls may determine whether the goods satisfy the requirements for performing the operation.
+
+**An active control does not, by itself, mean that the goods in question have violated its condition.** To determine the outcome, the actual goods data and the conditions associated with the specific operation must be examined.
+
+### 7.1. Controls for Goods Being at the Source
+
+These controls define how to handle tags that are not at the expected source.
+
+- **Ignore tags outside the source (`NotInSourceIgnore`):** Tags that are not at the expected source are ignored so that they do not prevent the operation from continuing.
+- **Raise an error for tags outside the source (`NotInSourceError`):** An error is raised if a tag is not at the expected source.
+
+These controls have different behaviors and must not be confused with each other.
+
+For example, a handheld device may identify multiple tags, but not all detected tags necessarily belong to the source expected for the operation.
+
+Depending on the active control, a tag outside the expected source may be ignored or may cause an error.
+
+### 7.2. Controls for Goods Registration
+
+These controls define how to handle tags or serial numbers that have not been registered.
+
+- **Ignore unregistered tags (`NotRegisterIgnore`):** Unregistered tags or serial numbers are ignored.
+- **Raise an error for unregistered tags (`NotRegisterError`):** Registration is required. If a tag or serial number is not registered, an error is raised.
+
+An unregistered item is not the same as an item that is not at the expected source. These conditions must be interpreted separately.
+
+### 7.3. Control for Frozen Goods
+
+The `Freezed` control relates to the frozen state of goods when an operation is performed.
+
+If this control is active for a نوع عملیات, the frozen state of the goods must be evaluated according to the rules of that operation.
+
+For example, if the documented rules of an operation prohibit processing frozen goods, that operation must not be considered permissible for such goods.
+
+However, observing that goods are frozen is not sufficient to conclude that all operations are prohibited. The relevant rules for the specific operation must also be checked.
+
+### 7.4. Quality Control Result Controls
+
+Two controls are related to quality control:
+
+- **Goods that failed quality control (`FailedQC`):** Relates to restrictions on operations involving goods that failed quality control.
+- **Goods without a quality control result (`NotQc`):** Relates to restrictions on operations involving goods that have no quality control result.
+
+Failing quality control and having no quality control result are different conditions. They must be evaluated according to the rules of the relevant نوع عملیات.
+
+### 7.5. Tag Lifetime Control
+
+The `TagLifeLessThanIgnore` control relates to ignoring tags whose lifetime is below the configured minimum value.
+
+This control differs from controls related to the source, registration, or quality control. Its meaning must not be extended to other conditions.
+
+### 7.6. Document-Related Controls
+
+Some operations may depend on a reference document. In such cases, the document may specify the expected items and quantities.
+
+The documented document-related controls include:
+
+- **Require a document code (`DocCodeSet`):** A document number or code must be provided.
+- **Check document items exactly (`DocItemsCheck1`):** The identified items must match the items listed in the document exactly.
+- **Check the product and document quantity (`DocItemsCheck2`):** The product code must exist in the document, and the cumulative processed quantity must not exceed the total quantity specified for that product in the document.
+
+The existence of a document does not, by itself, mean that an operation is valid. Document requirements and item matching must be evaluated according to the actual controls enabled for the relevant نوع عملیات.
+
+The exact meaning of `DocItemsCheck3` has not yet been verified. Do not guess its behavior or assign it an unverified meaning.
+
+### 7.7. Principles for Interpreting Controls
+
+Apply the following principles when interpreting controls for a نوع عملیات:
+
+- Interpret each control only according to its documented meaning.
+- Do not confuse an active control with a condition that has actually been violated by a particular item.
+- Keep controls related to source, registration, frozen status, quality control, and documents distinct.
+- Do not attribute unverified behavior to any control.
+- If the available information is insufficient to determine the outcome, clearly state the limitation.
+
+## 8. The Relationship Between نوع عملیات and Documents
+
+Some operations are associated with documents. A document may specify which goods and what quantities must be processed during the relevant operation.
+
+For example, when performing a dispatch operation, the identified items may need to be compared with the items listed in the reference document.
+
+In such cases, document-related controls may check whether a document exists, whether an item is included in the document, whether the items match, or whether the permitted quantity has been respected.
+
+These requirements are not the same for every operation. The type and scope of document validation depend on the conditions and controls defined for the specific operation.
+
+## 9. The Relationship Between نوع عملیات and Goods Movement
+
+Performing a نوع عملیات may involve changing the destination assigned to goods. However, performing an operation does not necessarily mean that the goods have physically moved.
+
+For example, an operation may change the status or processing stage of goods without necessarily involving a physical movement.
+
+Therefore, the following concepts must be distinguished:
+
+- Performing an operation
+- Changing the recorded destination of goods
+- Changing the actual physical location of goods
+
+These concepts are related, but they do not always mean the same thing.
+
+## 10. Integrated Example
+
+Suppose goods classified as "Raw Materials" are located at the destination "Raw Materials Warehouse 1" and need to be transferred to a production line.
 
 In this scenario:
 
-- Current Destination → The item's current location
-- Source Destination Type → انبار محصول
-- نوع عملیات → The operation used to transfer or send the item
-- Target Destination Type → انبار فروش‌رفته
+- **Current destination:** Raw Materials Warehouse 1
+- **Source نوع انبار:** Raw Materials Warehouse
+- **نوع کالا:** Raw Materials
+- **نوع عملیات:** The operation defined for transferring raw materials to a production line
+- **Destination نوع انبار:** Production Line
+- **Final destination:** One of the specific destinations belonging to the Production Line type
 
-During the operation, Silo may apply additional requirements depending on the نوع عملیات configuration, such as document validation, location checks, image capture, or other controls.
+To determine whether the operation is suitable, the defined نوع عملیات and its associated conditions must be checked.
 
----
+For example, the goods may need to be at the expected source, be registered, or satisfy document and quality control requirements. Whether any of these conditions apply depends on the actual controls configured for that نوع عملیات.
 
-## 14. Concepts at a Glance
+This example explains the relationships between the concepts. The existence of such a route or operation in Silo's actual configuration must be verified separately.
 
-| Concept | Simple Meaning |
+## 11. Concept Glossary
+
+| Concept | Definition |
 |---|---|
-| نوع عملیات | The type of operation performed on an item |
-| انبار | The item's current location or operational state |
-| نوع انبار | The category or type of a انبار |
-| Product Type | The type or category of the product |
-| Active Controls | Controls and validations applied during an operation |
-| Document | A document associated with an operation |
-| Traceability | The ability to track an item's operational path and history |
+| نوع عملیات | A specific type of operation defined for moving or processing goods |
+| انبار or destination | A specific destination to which goods are assigned |
+| نوع انبار | The category to which one or more specific destinations belong |
+| نوع کالا | A goods classification that may affect the selection of a suitable operation |
+| Source | The warehouse type or destination from which an operation begins |
+| Final destination | The warehouse type or destination at which an operation ends |
+| Active control | A condition or validation configured for a نوع عملیات |
+| Reference document | A document that may specify the items, quantities, or other information required for an operation |
+| Traceability | The ability to track the operational path and history of goods |
 
----
+## 12. Accuracy Rules for Answering Questions About These Concepts
 
-## 15. Important Accuracy Rules
+When answering questions about نوع عملیات, انبار, نوع انبار, نوع کالا, and controls:
 
-The exact behavior of an نوع عملیات or انبار depends on its configuration in Silo.
+- Distinguish a specific warehouse or destination from its warehouse type.
+- Do not assume that every نوع عملیات is applicable to all types of goods.
+- Do not assume that every نوع عملیات necessarily requires a document.
+- Do not assume that every نوع عملیات necessarily causes physical movement of goods.
+- Explain active controls only according to the actual configuration and documented meanings.
+- Do not treat an active control alone as proof that an operation has been rejected.
+- Do not guess the names, behaviors, or activation conditions of unverified controls.
+- If the available information is insufficient for an accurate answer, explicitly state that sufficient documented information is not available.
 
-The assistant must not assume that:
-
-- A specific نوع عملیات exists.
-- A specific operation is available for a specific product.
-- A specific انبار exists.
-- A specific نوع انبار exists.
-- A specific control is enabled.
-- An operation necessarily requires a document.
-- An operation necessarily changes the item's location.
-- A specific operation is available between two destinations.
-
-If the required configuration or business information is not available in the knowledge base, the assistant must clearly state that there is not enough documented information to provide an accurate answer.
-
-The assistant must not provide speculative answers.
+**Final Principle:** The concepts of نوع عملیات, انبار, نوع انبار, and نوع کالا form the conceptual framework for understanding operations in Silo. The controls associated with each نوع عملیات define the conditions used to evaluate whether that operation can be performed. Every answer must be based on documented concepts and the actual information relevant to the specific case.
