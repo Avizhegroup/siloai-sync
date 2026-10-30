@@ -34,6 +34,11 @@ public partial class RagInstructions
     {
         Code = RagDocType.PageAgent,
         Title = "عامل صفحه محور"
+    },
+    new()
+    {
+        Code = RagDocType.Support,
+        Title = "پشتیبان"
     }
 ];
 

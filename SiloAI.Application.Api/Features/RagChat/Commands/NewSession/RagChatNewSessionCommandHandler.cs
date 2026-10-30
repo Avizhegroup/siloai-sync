@@ -18,7 +18,8 @@ public class RagChatNewSessionCommandHandler(
                 .Select(p => new CachedRagInstruction(p.Content, p.IsSystematic, p.CreateDateTime))
                 .ToListAsync(cancellationToken));
 
-        var agentInstructions = RagChatSendHandler.BuildAgentInstructions(instructions);
+        var agentInstructions = RagChatSendHandler.BuildAgentInstructions(
+            instructions, includeSystematic: request.UseRag);
 
         var resolvedModel = await modelResolver.ResolveAsync(request.CustomerId, UsageFeature.SupportChat, cancellationToken);
 
@@ -29,10 +30,14 @@ public class RagChatNewSessionCommandHandler(
         // InitChatAgentWithInstructions resolves (and may cache) a specific AIAgent instance per
         // call, and the same AgentSession created here is later reused by Send — an agent built
         // with different tool/context configuration than the one that created a session is not a
-        // reliable combination (see the ChatAgentCache docs).
+        // reliable combination (see the ChatAgentCache docs). The same holds for UseRag: without
+        // RAG there is no search tool and no DocType scope, exactly as in RagChatSendHandler, and
+        // the mode is recorded in the session's ChatType so Send keeps using it.
         agentService.InitChatAgentWithInstructions(
             agentInstructions, resolvedModel, includeAutoRagContext: false,
-            ragDocType: request.DocType, ragKey: null, includeSearchTool: true);
+            ragDocType: request.UseRag ? request.DocType : null,
+            ragKey: null,
+            includeSearchTool: request.UseRag);
 
         var session = await agentService.CreateNewSessionAsync();
 
@@ -43,7 +48,7 @@ public class RagChatNewSessionCommandHandler(
         {
             Id = Guid.NewGuid(),
             OwnerKey = ChatSessionOwnerKey.ForOwnerId(request.OwnerId),
-            ChatType = "Rag",
+            ChatType = request.UseRag ? RagChatSendHandler.RagChatType : RagChatSendHandler.PlainChatType,
             SessionState = sessionJson,
             CreatedAt = now,
             UpdatedAt = now

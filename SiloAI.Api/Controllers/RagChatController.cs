@@ -52,6 +52,7 @@ public class RagChatController(IMediator mediator) : ControllerBase
                 DocType = form.DocType,
                 Key = form.Key,
                 IsMainChat = form.IsMainChat,
+                UseRag = form.UseRag,
                 Username = User?.Identity?.Name ?? string.Empty,
                 OwnerId = User.GetOwnerId(),
                 CustomerId = int.TryParse(User.GetCustomerId(), out var customerId) ? customerId : null
@@ -87,6 +88,7 @@ public class RagChatController(IMediator mediator) : ControllerBase
                 IsMainChat = request.IsMainChat,
                 DocType = request.DocType,
                 Key = request.Key,
+                UseRag = request.UseRag,
                 Username = User?.Identity?.Name ?? string.Empty,
                 OwnerId = User.GetOwnerId(),
                 CustomerId = int.Parse(User.GetCustomerId())
@@ -108,6 +110,7 @@ public class RagVoiceChatForm
     public RagDocType DocType { get; set; } = RagDocType.GeneralChat;
     public string? Key { get; set; }
     public bool IsMainChat { get; set; }
+    public bool UseRag { get; set; } = true;
     public string? Language { get; set; }
     public string? Voice { get; set; }
 }

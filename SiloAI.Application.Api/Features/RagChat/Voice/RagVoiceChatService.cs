@@ -24,6 +24,7 @@ public sealed class RagVoiceChatRequest
     public RagDocType DocType { get; init; } = RagDocType.GeneralChat;
     public string? Key { get; init; }
     public bool IsMainChat { get; init; }
+    public bool UseRag { get; init; } = true;
     public required string Username { get; init; }
     public required string OwnerId { get; init; }
     public int? CustomerId { get; init; }
@@ -67,6 +68,7 @@ public sealed class RagVoiceChatService(
             IsMainChat = request.IsMainChat,
             DocType = request.DocType,
             Key = request.Key,
+            UseRag = request.UseRag,
             Username = request.Username,
             OwnerId = request.OwnerId,
             CustomerId = request.CustomerId

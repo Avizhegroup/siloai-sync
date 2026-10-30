@@ -14,6 +14,15 @@ public class RagChatSendHandler(
     ICreditLedgerService ledgerService,
     IAiModelResolver modelResolver) : IRequestHandler<RagChatSendCommand, RagChatResponse>
 {
+    /// <summary>AiChatSession.ChatType of a conversation that uses the knowledge base (RAG).</summary>
+    internal const string RagChatType = "Rag";
+
+    /// <summary>
+    /// AiChatSession.ChatType of a conversation that runs on instructions alone — no retrieval,
+    /// no search tool. Same value the legacy plain-chat handlers already use for "no RAG".
+    /// </summary>
+    internal const string PlainChatType = "Chat";
+
     public async Task<RagChatResponse> Handle(RagChatSendCommand request, CancellationToken cancellationToken)
     {
         //if (!await HasCreditAsync(request.CustomerId, cancellationToken))
@@ -37,6 +46,15 @@ public class RagChatSendHandler(
             existingSessionJson = chatSession.SessionState;
         }
 
+        // A conversation's mode is fixed when it is created: an existing conversation keeps the
+        // mode it started with (read from its stored ChatType), and request.UseRag only decides
+        // for a brand-new one. Reusing one AgentSession across agents configured differently
+        // (with vs. without the search tool, whose calls end up in the session history) is not a
+        // reliable combination, so a client can't flip a live conversation between modes — and
+        // doesn't have to repeat UseRag on every Send.
+        var useRag = chatSession is not null
+            ? !string.Equals(chatSession.ChatType, PlainChatType, StringComparison.Ordinal)
+            : request.UseRag;
 
         var instructions = await agentCache.GetOrCreateInstructionsAsync((int)request.DocType, async () =>
             (IReadOnlyList<CachedRagInstruction>)await dbContext.RagInstructions
@@ -45,7 +63,7 @@ public class RagChatSendHandler(
                 .Select(p => new CachedRagInstruction(p.Content, p.IsSystematic, p.CreateDateTime))
                 .ToListAsync(cancellationToken));
 
-        var agentInstructions = BuildAgentInstructions(instructions);
+        var agentInstructions = BuildAgentInstructions(instructions, includeSystematic: useRag);
 
         // Resolved once up front: needed both to run the chat call itself and (below) to price
         // it correctly — a customer's own model assignment for SupportChat if one exists,
@@ -62,29 +80,47 @@ public class RagChatSendHandler(
         // DocType/Key, so it can search again with a refined query if the chunks already
         // augmented into the message don't answer the question (e.g. the conversation has moved
         // on since the turn where retrieval last ran).
+        //
+        // Without RAG (useRag == false) the agent gets no search tool and no DocType/Key scope
+        // (there is nothing to scope), so it runs on the instructions alone.
         agentService.InitChatAgentWithInstructions(
             agentInstructions, resolvedModel, includeAutoRagContext: false,
-            ragDocType: request.DocType, ragKey: request.Key, includeSearchTool: true);
+            ragDocType: useRag ? request.DocType : null,
+            ragKey: useRag ? request.Key : null,
+            includeSearchTool: useRag);
 
-        var topK = 20; 
+        IReadOnlyList<RagSearchHit> hits = [];
+        string messageText;
 
-        var hits = await search.SearchAsync(
-            request.Message, topK, request.DocType, request.Key, cancellationToken);
-
-        // Materialized above — no extra DB round-trip here.
-        var systematicInstructions = instructions.FirstOrDefault(p => p.IsSystematic);
-
-        if (systematicInstructions is null)
+        if (useRag)
         {
-            throw new ConversationNotFoundException();
-        }
+            var topK = 20;
 
-        var augmentedMessage = BuildAugmentedMessage(
-            request.Message, hits, request.IsMainChat, systematicInstructions.Content);
+            hits = await search.SearchAsync(
+                request.Message, topK, request.DocType, request.Key, cancellationToken);
+
+            // Materialized above — no extra DB round-trip here.
+            var systematicInstructions = instructions.FirstOrDefault(p => p.IsSystematic);
+
+            if (systematicInstructions is null)
+            {
+                throw new ConversationNotFoundException();
+            }
+
+            messageText = BuildAugmentedMessage(
+                request.Message, hits, request.IsMainChat, systematicInstructions.Content);
+        }
+        else
+        {
+            // Instructions-only chat: the user's message goes to the model as written. There is
+            // no retrieval to splice in, so the systematic message template (which exists to
+            // carry {CHUNKS}/{QUESTION}) isn't needed — and isn't required to exist.
+            messageText = request.Message;
+        }
 
         var query = new CopilotMessageRequest
         {
-            Text = augmentedMessage,
+            Text = messageText,
             Username = request.Username,
             SiloChatId = Guid.NewGuid().ToString(),
             IsUser = true,
@@ -101,7 +137,7 @@ public class RagChatSendHandler(
             {
                 Id = Guid.NewGuid(),
                 OwnerKey = ownerKey,
-                ChatType = "Rag",
+                ChatType = useRag ? RagChatType : PlainChatType,
                 CreatedAt = now
             };
             dbContext.AiChatSessions.Add(chatSession);
@@ -196,9 +232,17 @@ public class RagChatSendHandler(
         };
     }
 
-    internal static string BuildAgentInstructions(IReadOnlyList<CachedRagInstruction> instructions)
+    /// <param name="includeSystematic">
+    /// true (default, RAG chat): every active instruction is included, exactly as before.
+    /// false (instructions-only chat): instructions flagged IsSystematic are left out — those are
+    /// the RAG message template (with {CHUNKS}/{QUESTION} placeholders), which would only put
+    /// literal placeholder text into the system prompt when there is no retrieval to fill it.
+    /// </param>
+    internal static string BuildAgentInstructions(
+        IReadOnlyList<CachedRagInstruction> instructions, bool includeSystematic = true)
     {
         var docTypeInstructionsText = string.Join("\n---\n", instructions
+            .Where(i => includeSystematic || !i.IsSystematic)
             .OrderBy(i => i.CreateDateTime)
             .Select(i => i.Content));
 
