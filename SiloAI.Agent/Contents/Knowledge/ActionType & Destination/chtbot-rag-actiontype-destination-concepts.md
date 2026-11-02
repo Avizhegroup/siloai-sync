@@ -30,6 +30,21 @@ Examples include:
 
 Each نوع عملیات has a specific purpose and may have its own applicable conditions and controls.
 
+A نوع عملیات defines the operational movement and specifies:
+
+- From which source the movement starts.
+- To which destination the movement goes.
+- Under what conditions the movement takes place.
+- What controls are applied during the operation.
+- Which conditions or statuses are allowed for the operation.
+
+Examples include:
+
+- Moving raw materials from the raw material warehouse to the production line.
+- Moving products from the production line to the finished product warehouse.
+- Moving products between warehouses.
+- Moving products from one location to a specified destination.
+
 In simple terms:
 
 **نوع عملیات = The definition of a specific operation and the conditions associated with performing it**
@@ -61,6 +76,13 @@ Each نوع عملیات may have specific execution conditions. These condition
 - Whether the goods are frozen
 - Whether a related document exists
 - Whether the goods and their quantities match the document
+- RFID power settings related to the operation.
+
+RFID power is an operational setting and must not be considered a general product characteristic.
+
+قدرت RFID ≠ Product Characteristic
+
+It is related to the conditions under which the RFID operation is performed.
 
 The conditions required for a particular operation depend on the actual configuration of that نوع عملیات. Do not assume that all operations have the same requirements.
 
@@ -233,13 +255,15 @@ However, observing that goods are frozen is not sufficient to conclude that all 
 Two controls are related to quality control:
 
 - **Goods that failed quality control (`FailedQC`):** Relates to restrictions on operations involving goods that failed quality control.
-- **Goods without a quality control result (`NotQc`):** Relates to restrictions on operations involving goods that have no quality control result.
+- **Goods without a quality control result (`NotQc`):** Relates to restrictions on operations involving goods that have no quality control result.This control determines whether products without a completed quality control result are subject to restrictions during the operation.
 
 Failing quality control and having no quality control result are different conditions. They must be evaluated according to the rules of the relevant نوع عملیات.
 
 ### 7.5. Tag Lifetime Control
 
-The `TagLifeLessThanIgnore` control relates to ignoring tags whose lifetime is below the configured minimum value.
+The `TagLifeLessThanIgnore` control determines whether a tag whose lifetime is below the configured minimum value should be ignored.
+
+It is used when an operation has a minimum required tag lifetime and the system needs to determine whether tags below that threshold should be disregarded.
 
 This control differs from controls related to the source, registration, or quality control. Its meaning must not be extended to other conditions.
 
@@ -249,9 +273,29 @@ Some operations may depend on a reference document. In such cases, the document 
 
 The documented document-related controls include:
 
-- **Require a document code (`DocCodeSet`):** A document number or code must be provided.
+- **Require a document code (`DocCodeSet`):** A document number or code must be provided.When this control is active, the required document number or code must be provided before the operation can be performed.
+- 
 - **Check document items exactly (`DocItemsCheck1`):** The identified items must match the items listed in the document exactly.
+- 
 - **Check the product and document quantity (`DocItemsCheck2`):** The product code must exist in the document, and the cumulative processed quantity must not exceed the total quantity specified for that product in the document.
+Example:
+
+Suppose a document allows processing 1,000 kilograms of a specific product.
+
+The operation may be performed in multiple steps:
+
+- First operation: 300 kilograms.
+- Second operation: 400 kilograms.
+- Third operation: 300 kilograms.
+
+The cumulative processed quantity is 1,000 kilograms, which is within the allowed document quantity.
+
+If the cumulative processed quantity exceeds 1,000 kilograms, the operation is not allowed to continue.
+
+Therefore, this control checks both:
+
+- Whether the product belongs to the document.
+- Whether the cumulative processed quantity exceeds the total quantity allowed by the document.
 
 The existence of a document does not, by itself, mean that an operation is valid. Document requirements and item matching must be evaluated according to the actual controls enabled for the relevant نوع عملیات.
 
@@ -276,6 +320,17 @@ For example, when performing a dispatch operation, the identified items may need
 In such cases, document-related controls may check whether a document exists, whether an item is included in the document, whether the items match, or whether the permitted quantity has been respected.
 
 These requirements are not the same for every operation. The type and scope of document validation depend on the conditions and controls defined for the specific operation.
+
+### Document Status and Document Changes
+
+When defining a نوع عملیات, conditions related to the relevant document may also be specified.
+
+These conditions determine:
+
+- Which document statuses allow the operation to be performed.
+- Which document status changes are allowed, where applicable.
+
+The purpose is to coordinate the execution of the operation with the status of the relevant documents.
 
 ## 9. The Relationship Between نوع عملیات and Goods Movement
 
@@ -309,6 +364,28 @@ To determine whether the operation is suitable, the defined نوع عملیات 
 For example, the goods may need to be at the expected source, be registered, or satisfy document and quality control requirements. Whether any of these conditions apply depends on the actual controls configured for that نوع عملیات.
 
 This example explains the relationships between the concepts. The existence of such a route or operation in Silo's actual configuration must be verified separately.
+
+### Example Factory Flow
+
+A typical factory flow may be:
+
+مواد اولیه → انبار مواد اولیه → خط تولید → انبار محصول نهایی
+
+Each stage may have its own defined operation.
+
+Stage One:
+
+Raw materials are moved from the raw material warehouse to the production line.
+
+Stage Two:
+
+The production process takes place.
+
+Stage Three:
+
+The produced products are moved from the production line to the finished goods warehouse.
+
+The نوع عملیات defined for each movement specifies how and under what conditions that movement is performed.
 
 ## 11. Concept Glossary
 

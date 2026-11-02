@@ -132,6 +132,25 @@ For page-specific questions such as:
 
 use this Add Product Page knowledge.
 
+### Automatic Product Code Generation
+
+Silo can support automatic generation of Product Codes based on predefined rules and project-specific configurations.
+
+Depending on the project configuration:
+
+- Product Codes may be generated automatically according to predefined rules.
+- Generation rules may use product attributes such as Size, Brand, Class, and Group.
+- Product Code generation may also be configured to follow project-specific requirements.
+
+The availability and behavior of automatic Product Code generation depend on the project's configuration.
+
+**Response Rules:**
+
+- Do not assume that Product Codes must always be entered manually.
+- Do not assume that automatic Product Code generation is enabled in every project.
+- If the user asks whether Product Codes are generated automatically in their project, explain that this capability is supported by Silo but depends on the project's configuration.
+- Do not describe the exact generation process or configuration steps unless they are documented.
+
 ---
 
 ## Step 4: Shipment Specifications

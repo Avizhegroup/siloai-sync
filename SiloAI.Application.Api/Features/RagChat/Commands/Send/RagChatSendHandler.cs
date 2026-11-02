@@ -68,7 +68,7 @@ public class RagChatSendHandler(
 
         var topK = 20; 
 
-        var hits = await search.SearchAsync(
+          var hits = await search.SearchAsync(
             request.Message, topK, request.DocType, request.Key, cancellationToken);
 
         // Materialized above — no extra DB round-trip here.

@@ -43,16 +43,29 @@ Examples of نوع کالا include:
 * قطعات یدکی
 * اقلام مصرفی
 
-In the نوع کالا section, the user can view and manage the defined product types.
+In نوع کالا form, the user can view and manage the defined product types.
 
-Available operations include:
+Information related to نوع کالا form includes items such as:
+
+* کد
+* عنوان
+
+Available operations in نوع کالا form include:
 
 * Viewing the list of product types
 * Creating a new نوع کالا
 * Editing نوع کالا
-* Deleting نوع کالا
 
 نوع کالا is a general classification used to identify the primary nature of a product.
+
+**Excel Import and Export Limitations:** Silo currently does not support importing نوع کالا records from Excel files or exporting existing نوع کالا records to Excel or other file formats.
+If the user asks whether this is possible or how to perform it (e.g., "How can I export نوع کالا records to Excel?"), clearly state that this functionality is currently not supported.
+Do not list sample records, provide alternative data as an export, or imply that the functionality exists.
+
+1. View and Select Existing Records (دکمه طوسی - آیکون لیست): Click this button to display the list of registered نوع کالا records. The user can browse the list and select the desired record.
+2. This form does not have a delete option.
+3. Reset Form (دکمه زرد - آیکون رفرش): Click this button to clear the entered information and reset the form, allowing the user to start entering new information.
+4. Save Information (دکمه سرمه ای - آیکون save): Click this button to save the entered information and register the new نوع کالا record.
 
 ---
 
@@ -62,14 +75,14 @@ Available operations include:
 
 Users can define and manage different product classifications.
 
-Information related to طبقه کالا includes items such as:
+Information related to طبقه کالا form includes items such as:
 
-* Code
-* Title
-* Subtitle
-* Description
+* کد
+* عنوان
+* عنوان فرعی
+* توضیحات
 
-In this section, the user can:
+In طبقه کالا form, the user can:
 
 * View طبقه کالا records.
 * Create a new طبقه کالا.
@@ -79,6 +92,15 @@ In this section, the user can:
 طبقه کالا is not the same as نوع کالا.
 
 For example, «مواد اولیه» may be a **نوع کالا**, while the specialized classification of different products within an organization may be managed through **طبقه کالا**.
+
+**Excel Import and Export Limitations:** Silo currently does not support importing طبقه کالا records from Excel files or exporting existing طبقه کالا records to Excel or other file formats.
+If the user asks whether this is possible or how to perform it (e.g., "How can I export طبقه کالا records to Excel?"), clearly state that this functionality is currently not supported.
+Do not list sample records, provide alternative data as an export, or imply that the functionality exists.
+
+1. View and Select Existing Records (دکمه طوسی - آیکون لیست): Click this button to display the list of registered طبقه کالا records. The user can browse the list and select the desired record.
+2. Delete Record (دکمه قرمز - آیکون زباله): Click this button to delete the selected طبقه کالا record.
+3. Reset Form (دکمه زرد - آیکون رفرش): Click this button to clear the entered information and reset the form, allowing the user to start entering new information.
+4. Save Information (دکمه سرمه ای - آیکون save): Click this button to save the entered information and register the new طبقه کالا record.
 
 ---
 
@@ -95,7 +117,12 @@ Examples include:
 * محصولات تولیدی
 * قطعات صنعتی
 
-The user can:
+Information related to گروه کالا form includes items such as:
+
+* کد
+* عنوان
+
+In گروه کالا form, the user can:
 
 * View groups.
 * Create a new گروه کالا.
@@ -103,6 +130,15 @@ The user can:
 * Delete a group.
 
 گروه کالا is a classification concept and is different from نوع کالا.
+
+**Excel Import and Export Limitations:** Silo currently does not support importing گروه کالا records from Excel files or exporting existing گروه کالا records to Excel or other file formats.
+If the user asks whether this is possible or how to perform it (e.g., "How can I export گروه کالا records to Excel?"), clearly state that this functionality is currently not supported.
+Do not list sample records, provide alternative data as an export, or imply that the functionality exists.
+
+1. View and Select Existing Records (دکمه طوسی - آیکون لیست): Click this button to display the list of registered گروه کالا records. The user can browse the list and select the desired record.
+2. Delete Record (دکمه قرمز - آیکون زباله): Click this button to delete the selected گروه کالا record.
+3. Reset Form (دکمه زرد - آیکون رفرش): Click this button to clear the entered information and reset the form, allowing the user to start entering new information.
+4. Save Information (دکمه سرمه ای - آیکون save): Click this button to save the entered information and register the new گروه کالا record.
 
 ---
 
@@ -122,7 +158,15 @@ For example:
 * مواد تصفیه
 * مواد افزودنی
 
-In the زیرگروه کالا section, the user can:
+Information related to زیرگروه کالا form includes items such as:
+
+* کد
+* عنوان
+* عنوان فرعی
+* توضیحات
+* انتخاب گروه کالا
+
+In the زیرگروه کالا form, the user can:
 
 * View existing subgroups.
 * Create a new زیرگروه کالا.
@@ -133,6 +177,15 @@ In the زیرگروه کالا section, the user can:
 The conceptual relationship is:
 
 **گروه کالا → زیرگروه کالا**
+
+**Excel Import and Export Limitations:** Silo currently does not support importing زیرگروه کالا records from Excel files or exporting existing زیرگروه کالا records to Excel or other file formats.
+If the user asks whether this is possible or how to perform it (e.g., "How can I export زیرگروه کالا records to Excel?"), clearly state that this functionality is currently not supported.
+Do not list sample records, provide alternative data as an export, or imply that the functionality exists.
+
+1. View and Select Existing Records (دکمه طوسی - آیکون لیست): Click this button to display the list of registered زیرگروه کالا records. The user can browse the list and select the desired record.
+2. Delete Record (دکمه قرمز - آیکون زباله): Click this button to delete the selected زیرگروه کالا record.
+3. Reset Form (دکمه زرد - آیکون رفرش): Click this button to clear the entered information and reset the form, allowing the user to start entering new information.
+4. Save Information (دکمه سرمه ای - آیکون save): Click this button to save the entered information and register the new زیرگروه کالا record.
 
 ---
 
@@ -160,7 +213,7 @@ Therefore, a subgroup represents a more detailed category within its correspondi
 
 Multiple different products may belong to the same برند.
 
-In the برند section, the user can:
+In the برند form, the user can:
 
 * View the list of brands.
 * Create a new برند.
@@ -182,9 +235,18 @@ For example:
 
 These concepts may all be used together to describe a product, but each represents a different aspect of the product.
 
+**Excel Import and Export Limitations:** Silo currently does not support importing برند کالا records from Excel files or exporting existing برند کالا records to Excel or other file formats.
+If the user asks whether this is possible or how to perform it (e.g., "How can I export برند کالا records to Excel?"), clearly state that this functionality is currently not supported.
+Do not list sample records, provide alternative data as an export, or imply that the functionality exists.
+
+1. View and Select Existing Records (دکمه طوسی - آیکون لیست): Click this button to display the list of registered برند کالا records. The user can browse the list and select the desired record.
+2. Delete Record (دکمه قرمز - آیکون زباله): Click this button to delete the selected برند کالا record.
+3. Reset Form (دکمه زرد - آیکون رفرش): Click this button to clear the entered information and reset the form, allowing the user to start entering new information.
+4. Save Information (دکمه سرمه ای - آیکون save): Click this button to save the entered information and register the new برند کالا record.
+
 ## Brand Management Operations
 
-The برند section supports full management of brand records. Users can:
+The برند form supports full management of brand records. Users can:
 
 * View the list of existing brands.
 * Select an existing برند to view or edit its information.
@@ -201,19 +263,19 @@ These operations are part of the standard management capabilities available for 
 
 **سایز** is used to manage information related to product dimensions, measurements, and physical characteristics.
 
-This section can include information such as:
+In سایز form can include information such as:
 
-* Code
-* Title
-* Description
+* کد
+* عنوان
+* توضیحات
 * واحد کالا
-* واحد دوم
+* مقدار واحد دوم
 * مقدار واحد دوم در محموله
 * مقدار محموله
-* Weight
-* Volume
+* وزن محموله
+* حجم محموله
 
-The user can:
+In the سایز کالا form, the user can:
 
 * View سایز records.
 * Create a new سایز.
@@ -221,6 +283,15 @@ The user can:
 * Manage سایز information.
 
 سایز is not limited to a simple numerical measurement and can also contain information related to physical characteristics and product packaging.
+
+**Excel Import and Export Limitations:** Silo currently does not support importing سایز کالا records from Excel files or exporting existing سایز کالا records to Excel or other file formats.
+If the user asks whether this is possible or how to perform it (e.g., "How can I export سایز کالا records to Excel?"), clearly state that this functionality is currently not supported.
+Do not list sample records, provide alternative data as an export, or imply that the functionality exists.
+
+1. View and Select Existing Records (دکمه طوسی - آیکون لیست): Click this button to display the list of registered سایز کالا records. The user can browse the list and select the desired record.
+2. Delete Record (دکمه قرمز - آیکون زباله): Click this button to delete the selected سایز کالا record.
+3. Reset Form (دکمه زرد - آیکون رفرش): Click this button to clear the entered information and reset the form, allowing the user to start entering new information.
+4. Save Information (دکمه سرمه ای - آیکون save): Click this button to save the entered information and register the new سایز کالا record.
 
 ---
 
@@ -294,22 +365,31 @@ Examples include:
 * معیوب
 * ضایعات
 
-In the درجه کیفیت section, the user can:
+In the درجه کیفیت form, the user can:
 
 * View quality grades.
 * Create a new درجه کیفیت.
 * Edit quality grade information.
 * Delete a quality grade.
 
-The main information includes:
+The main information in درجه کیفیت form includes:
 
-* Code
-* Title
+* کد
+* عنوان
 * Description related to the quality standard or quality status
 
 درجه کیفیت is different from نوع کالا.
 
 For example, a product can have نوع کالا = «محصول نهایی» while its درجه کیفیت is «درجه ۱» or «معیوب».
+
+**Excel Import and Export Limitations:** Silo currently does not support importing درجه کیفیت کالا records from Excel files or exporting existing درجه کیفیت کالا records to Excel or other file formats.
+If the user asks whether this is possible or how to perform it (e.g., "How can I export درجه کیفیت کالا records to Excel?"), clearly state that this functionality is currently not supported.
+Do not list sample records, provide alternative data as an export, or imply that the functionality exists.
+
+1. View and Select Existing Records (دکمه طوسی - آیکون لیست): Click this button to display the list of registered درجه کیفیت کالا records. The user can browse the list and select the desired record.
+2. Delete Record (دکمه قرمز - آیکون زباله): Click this button to delete the selected درجه کیفیت کالا record.
+3. Reset Form (دکمه زرد - آیکون رفرش): Click this button to clear the entered information and reset the form, allowing the user to start entering new information.
+4. Save Information (دکمه سرمه ای - آیکون save): Click this button to save the entered information and register the new درجه کیفیت کالا record.
 
 ---
 
@@ -361,264 +441,7 @@ Examples of master-data types include:
 
 ---
 
-# 16. نوع عملیات
-
-**نوع عملیات** is used to define how products are moved and handled within warehouses and factory environments.
-
-نوع عملیات is not simply the name of an operation. It specifies:
-
-* From which source the movement starts.
-* To which destination the movement goes.
-* Under what conditions the movement takes place.
-* What controls exist during the operation.
-* Which conditions or statuses are allowed for the operation.
-
-Examples of operations in a factory environment include:
-
-* Moving raw materials from the raw material warehouse to the production line
-* Moving products from the production line to the finished product warehouse
-* Moving products between warehouses
-* Moving products from one location to a specified destination
-
----
-
-# 17. Source and Destination in نوع عملیات
-
-Every product movement has a **source** and a **destination**.
-
-For example:
-
-**انبار مواد اولیه → خط تولید**
-
-In this example:
-
-* Source: انبار مواد اولیه
-* Destination: خط تولید
-
-Another example:
-
-**خط تولید → انبار محصول نهایی**
-
-In this example:
-
-* Source: خط تولید
-* Destination: انبار محصول نهایی
-
-The source and destination specify where the product is moved from and where it is moved to.
-
----
-
-# 18. Source and Destination Warehouse Type
-
-When defining نوع عملیات, the user can specify the type of location or warehouse from which the operation starts and the type of location or warehouse where it ends.
-
-For example, one operation may be intended for:
-
-**انبار مواد اولیه → خط تولید**
-
-while another operation may be intended for:
-
-**خط تولید → انبار محصول نهایی**
-
-Therefore, نوع عملیات should be defined according to the actual product flow within the working environment.
-
----
-
-# 19. قدرت RFID
-
-Some operations may also include settings related to **قدرت RFID**.
-
-This value relates to how the RFID operation is performed and should not be considered a general product characteristic.
-
-Therefore:
-
-**قدرت RFID ≠ Product Characteristic**
-
-قدرت RFID is related to the conditions of the operation.
-
----
-
-# 20. Document Status and Document Changes
-
-When defining نوع عملیات, conditions related to the relevant document may also be specified.
-
-These conditions determine which document statuses allow the operation to be performed and, where applicable, which document status changes are allowed.
-
-The purpose is to coordinate the execution of the operation with the status of the relevant documents.
-
----
-
-# 21. Operational Controls
-
-Each **نوع عملیات** can have a set of **کنترل‌های عملیاتی** that determine the conditions under which the operation can be performed.
-
-These controls are used to check the status of the identified products or tags, their presence at the source, registration status, quality status, document requirements, and other conditions related to the operation.
-
-The following **کنترل‌های عملیاتی** are available:
-
-### 1. نادیده گرفتن تگ خارج از منبع
-
-**Ignore Tag Not in Source**
-
-This control determines whether a tag that is not currently present at the expected source location or warehouse should be ignored.
-
-When enabled, a tag that is outside the expected source does not cause the operation to stop or generate an error.
-
----
-
-### 2. خطا در صورت نبودن تگ در منبع
-
-**Error if Tag Is Not in Source**
-
-This control determines whether the operation should generate an error when a tag is not present at the source location or warehouse.
-
-When enabled, a tag that is not available at the source prevents the operation from continuing.
-
----
-
-### 3. کنترل کالای فریز
-
-**Frozen Product Control**
-
-This control determines whether the frozen or blocked status of a product should be checked before performing the operation.
-
-When this control is enabled, products that are in a frozen or blocked state are subject to this check during the operation.
-
----
-
-### 4. کنترل کالای مردود در کنترل کیفیت
-
-**Failed Quality Control Check**
-
-This control determines whether products that have failed quality control are subject to a restriction during the operation.
-
-When enabled, the quality control status of the product is checked before the operation is performed.
-
----
-
-### 5. کنترل کالای بدون کنترل کیفیت
-
-**Product Without Quality Control Check**
-
-This control determines whether products that do not yet have a quality control result are subject to a restriction during the operation.
-
-It is used to control whether a product without a completed quality control result can participate in the operation.
-
----
-
-### 6. نادیده گرفتن تگ ثبت‌نشده
-
-**Ignore Unregistered Tag**
-
-This control determines whether a tag or serial that has not yet been registered in the system should be ignored.
-
-When enabled, the unregistered status of the tag does not prevent the operation from continuing.
-
----
-
-### 7. خطا در صورت ثبت‌نشده بودن تگ
-
-**Error if Tag Is Not Registered**
-
-This control determines whether the operation should generate an error when a tag or serial has not yet been registered.
-
-When enabled, an unregistered tag cannot continue through the operation.
-
----
-
-### 8. نادیده گرفتن عمر کمتر از حد مجاز تگ
-
-**Ignore Tag Below Minimum Age**
-
-This control determines whether a tag whose age is below the required minimum should be ignored.
-
-It is used when the operation has a minimum required tag age and the system needs to determine whether a tag below that threshold should be disregarded.
-
----
-
-### 9. اجباری بودن شماره سند
-
-**Require Document Number**
-
-This control determines whether entering the required document information is mandatory for performing the operation.
-
-When enabled, the operation cannot be performed without the required document information.
-
----
-
-### 10. تطابق دقیق اقلام با سند
-
-**Exact Document Items Match**
-
-This control determines whether the identified items must exactly match the items specified in the document.
-
-When enabled:
-
-* The identified items are compared with the items in the document.
-* The identified items must exactly correspond to the document items.
-* If the identified items do not exactly match the document items, the operation cannot be performed.
-
-This control is appropriate when the operation must be performed exactly according to the items specified in a particular document.
-
----
-
-### 11. کنترل کد کالا و مقدار کل سند
-
-**Document Product and Cumulative Quantity Check**
-
-This control is used when there is a **general document** and the related product operations are performed gradually in multiple steps.
-
-When enabled:
-
-* The product code of the identified product must exist among the items of the document.
-* A product that is not included in the document is not allowed.
-* The quantity processed through multiple operations is accumulated and compared with the total quantity allowed by the document.
-* The cumulative processed quantity must not exceed the total quantity specified in the document.
-
-For example, if a document allows **1,000 kilograms** of a specific product, the operation can be performed in multiple steps:
-
-* First operation: 300 kilograms
-* Second operation: 400 kilograms
-* Third operation: 300 kilograms
-
-The total processed quantity is 1,000 kilograms, so the operation remains within the allowed document quantity.
-
-If the cumulative quantity exceeds **1,000 kilograms**, the operation is not allowed to continue.
-
-Therefore, this control checks both:
-
-* Whether the product belongs to the document.
-* Whether the cumulative processed quantity exceeds the total quantity allowed by the document.
-
----
-
-# 22. Example Factory Flow
-
-A typical factory flow may be:
-
-**مواد اولیه → انبار مواد اولیه → خط تولید → انبار محصول نهایی**
-
-Each stage may have its own defined operation.
-
-For example:
-
-### Stage One
-
-Raw materials are moved from the raw material warehouse to the production line.
-
-### Stage Two
-
-The production process takes place.
-
-### Stage Three
-
-The produced product is moved from the production line to the finished product warehouse.
-
-The نوع عملیات for each movement specifies how and under what conditions that movement is performed.
-
----
-
-# 23. Conceptual Relationship Between Product Information and Operations
+# 16. Conceptual Relationship Between Product Information and Operations
 
 For effective product management, master information and نوع عملیات have different roles.
 
@@ -650,7 +473,7 @@ These concepts complement each other but are not the same.
 
 ---
 
-# 24. Complete Example
+# 17. Complete Example
 
 Suppose a finished product is defined in the system.
 
@@ -676,7 +499,7 @@ In this case, the product information specifies **what the product is**, while �
 
 ---
 
-# 25. Relationship Between گروه کالا and زیرگروه کالا
+# 18. Relationship Between گروه کالا and زیرگروه کالا
 
 گروه کالا and زیرگروه کالا are used to classify products.
 
@@ -704,7 +527,7 @@ This structure makes finding and managing products more organized and easier.
 
 ---
 
-# 26. Relationship Between نوع کالا and Other Information
+# 19. Relationship Between نوع کالا and Other Information
 
 نوع کالا is a general classification and can be used together with other information to provide a more complete description of a product.
 
@@ -720,7 +543,7 @@ Each of these pieces of information describes a different aspect of the product.
 
 ---
 
-# 27. Important Conceptual Differences
+# 20. Important Conceptual Differences
 
 To avoid confusion, the following concepts must be treated separately:
 
@@ -737,7 +560,7 @@ To avoid confusion, the following concepts must be treated separately:
 
 ---
 
-# 28. Overall Functionality of the Master Information Section
+# 21. Overall Functionality of the Master Information Section
 
 The user can create and manage the information required for product management and factory operations.
 
@@ -757,7 +580,7 @@ The purpose of this structure is to provide organized and usable information for
 
 ---
 
-# 29. Response Rules for This Knowledge Area
+# 22. Response Rules for This Knowledge Area
 
 When answering questions related to master information and warehouse flows:
 
@@ -773,7 +596,7 @@ When answering questions related to master information and warehouse flows:
 
 ---
 
-# 30. Core Principle of This Knowledge Base
+# 23. Core Principle of This Knowledge Base
 
 This knowledge base is designed to understand the **user-facing functionality of the Silo system**.
 
@@ -784,12 +607,11 @@ Its primary focus is:
 * What operations can be performed in each section.
 * How different concepts differ from one another.
 * How product information is used in business processes.
-* How product movement operations are defined and managed.
 * How the overall product flow works within warehouses and the factory environment.
 
 Therefore, this knowledge base must be interpreted from a **user-facing and operational perspective**, not from the perspective of technical or internal system structure.
 
-# 31. Synonyms and Semantic Mapping
+# 24. Synonyms and Semantic Mapping
 
 ## Rules
 - Map synonyms, alternative names, English terms, and common phrases to the correct canonical concept.

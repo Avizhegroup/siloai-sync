@@ -280,8 +280,10 @@ When analyzing an operation, keep the actual tag state separate from action type
 
 The following two states are different:
 
-- `Lock = true`: A locked state associated with the quality control rejection process.
-- `Freeze = true`: A frozen state.
+- `Lock = true`: The tag or serial is marked as blocked when goods inspection results in rejection. This status may affect operations that are sensitive to inspection status. Do not infer that it independently prohibits exit, cancellation, or every other operation. Do not infer the specific control or technical mechanism responsible for an operation rejection unless it is documented.
+- `Freeze = true`: The tag or serial is frozen. Apply only the documented restrictions associated with this state.
+
+These are internal database states. In user-facing answers, use business language such as «سریال مسدود است» or «سریال فریز شده است». Never expose the field names or their raw values unless the user explicitly requests technical database details and the response mode permits them.
 
 Neither state alone proves that all actions are prohibited. Their effects must be evaluated against the relevant active control and the actual conditions of the operation.
 

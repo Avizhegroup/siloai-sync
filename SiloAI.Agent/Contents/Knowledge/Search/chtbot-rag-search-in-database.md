@@ -1360,7 +1360,7 @@ Use only the documented keys listed in Section 8.5's search template. A control 
 | `NotInSourceIgnore` | نادیده گرفتن تگ خارج از منبع | A tag that is not at the expected source is ignored and does not stop the operation |
 | `NotInSourceError` | خطا در صورت نبودن تگ در منبع | If the tag is not at the expected source, the operation stops with an error |
 | `Freezed` | کنترل کالای فریز | The frozen status of the item is checked before the operation |
-| `FailedQC` | کنترل کالای مردود در کنترل کیفیت | Items that failed quality control are restricted |
+| `FailedQC` | کنترل کالای مردود در کنترل کیفیت | Items that failed quality control are restricted | Important distinction: `FailedQC` is an operation-type control. `Lock` is a separate tag/serial status associated with a failed goods inspection. Do not assume that `FailedQC` sets the `Lock` status, that the two represent the same mechanism, or that `FailedQC` caused a specific operation rejection. Establish such a relationship only if it is explicitly documented and supported by the retrieved data.
 | `NotQc` | کنترل کالای بدون کنترل کیفیت | Items that do not yet have a quality control result are restricted |
 | `NotRegisterIgnore` | نادیده گرفتن تگ ثبت‌نشده | An unregistered tag/serial is ignored and does not stop the operation |
 | `NotRegisterError` | خطا در صورت ثبت‌نشده بودن تگ | An unregistered tag/serial cannot continue through the operation |
@@ -1856,7 +1856,7 @@ The following principles are mandatory when interpreting the Silo WMS database:
 - Display Gregorian dates as Shamsi using `dbo.GeorgianDateToJalaliDate()`, and convert user-provided Shamsi dates for filtering using `dbo.JalaliDateToGeorgianDate()`.
 - Do not assume relationships are physically enforced by foreign keys unless confirmed by the SQL Server schema.
 - Do not invent unsupported schema facts or business behavior.
-- `Lock = true` blocks exit and cancellation of a tag/serial; `Freeze = true` blocks exit. `false` does not restrict.
+- A tag marked as locked is associated with a failed goods inspection and may be restricted in operations that are sensitive to inspection status. Do not infer that the locked state independently blocks exit, cancellation, or all operations. 
 - For a denied-operation question, retrieve the actual tag state and the operation type controls instead of listing possible reasons.
 - Attributes of tags and products that reference other tables are always displayed as titles/names, never as codes or IDs, unless the user explicitly asks for the code.
 - The size of a product is resolved through `tbl_ProductPropertyC`; the product type through `tbl_ProductType`; quality through `tbl_ProductStatus`; brand, group, subgroup and class through their own lookup tables.
@@ -1885,7 +1885,7 @@ When the user asks why an operation on a serial or tag is not allowed, follow th
 
 Retrieve the target tag's actual `Lock` and `Freeze` values from `tbl_Tags`.
 
-- `Lock = true`: The tag/serial is marked as blocked following a failed goods inspection. Determine whether this status affects the requested operation by checking the actual documented control governing inspection-failure blocking.
+- `Lock = true`: The tag or serial is marked as blocked following a failed goods inspection. This status may affect operations that are sensitive to inspection status. Do not assume that it independently prohibits the requested operation. If the applicable restriction has not been documented, do not invent a control, technical mechanism, or specific reason for the rejection.
 - `Freeze = true`: The tag/serial is currently frozen. Determine whether the requested movement is subject to freeze checking by inspecting the relevant action type's `Freezed` control and its applicable source/destination conditions.
 - `Lock = false` or `Freeze = false`: The corresponding status is not active. Do not interpret a false value as a restriction.
 - NULL, missing, or unrecognized values: Do not assume that the restriction is active or that the tag is unrestricted.
@@ -1900,7 +1900,7 @@ When the requested operation is a movement:
 2. Read `fld_ActionTypeActiveControls`.
 3. Extract the documented control keys using `JSON_VALUE`.
 4. For a frozen tag, check the `Freezed` control and the applicable source/destination conditions.
-5. For a tag blocked following a failed inspection, check the actual documented control governing inspection-failure blocking.
+5. For a tag marked as blocked following a failed goods inspection, determine the cause of the operation rejection only if the applicable rule governing that operation is documented and the retrieved data establishes that it applies. If this rule has not yet been documented, report the blocked status without attributing the rejection to a specific control or technical mechanism.
 6. Determine whether the relevant control applies to the requested operation and whether the retrieved tag status satisfies the condition for restriction.
 7. Do not invent control keys or report a control as the cause of denial unless the retrieved data and documented meaning establish that conclusion.
 
@@ -1966,7 +1966,7 @@ Interpret only controls whose returned value is exactly the string `"true"`. Use
 - `NotInSourceIgnore`: Tags outside the expected source are ignored and do not stop the operation.
 - `NotInSourceError`: The tag must be at the expected source; otherwise, the operation stops with an error.
 - `Freezed`: The operation checks whether the item is frozen. Evaluate the tag's current `Freeze` value and the operation's applicable source/destination conditions.
-- `FailedQC`: Items that failed quality control are restricted only when the documented control applies to the requested operation.
+- `FailedQC`: Items that failed quality control are restricted only when the documented control applies to the requested operation. Important distinction:`FailedQC` is an operation-type control. `Lock` is a separate tag/serial status associated with a failed goods inspection. Do not assume that `FailedQC` sets the `Lock` status, that the two represent the same mechanism, or that `FailedQC` caused a specific operation rejection. Establish such a relationship only if it is explicitly documented and supported by the retrieved data.
 - `NotQc`: Items without a quality-control result are restricted only when the documented control applies to the requested operation.
 - `NotRegisterIgnore`: Unregistered tags or serials are ignored.
 - `NotRegisterError`: The tag or serial must be registered before the operation.
@@ -1980,9 +1980,15 @@ When an ignore control and an error control both exist, interpret them according
 
 A control being active does not prove that a specific tag or serial violates that control. For example, `NotRegisterError = true` establishes that registration is required; it does not prove that the requested serial is unregistered.
 
-**Lock and inspection-failure status**
+**Lock and failed-inspection status**
 
-`Lock = true` indicates that the tag or serial is marked as blocked following a failed goods inspection. Do not infer that `Lock = true` independently prohibits exit, cancellation, or every other operation. Report an operation restriction only when the actual documented inspection-failure control, its applicability to the requested operation, and the relevant tag status establish that restriction.
+`Lock = true` indicates that the tag or serial is marked as blocked following a failed goods inspection. This status may affect operations that are sensitive to inspection results.
+
+Do not treat `Lock` as a universal operation restriction. Do not assume that a separate operation control governs this status, and do not attribute a denied operation to `FailedQC` or another control without an explicitly documented relationship and supporting data.
+
+If the exact effect of this status on the requested operation has not been documented, report only that the serial is blocked and that the exact reason for the operation rejection cannot be established from the available rules.
+
+In ordinary user-facing answers, never display `Lock`, `Lock = true`, or internal control names.
 
 **Cancellation permission**
 
@@ -1996,8 +2002,7 @@ Do not report a control as the cause of a denied operation unless its actual val
 
 - Answer in Persian, using plain business language.
 - Explain the proven reason for the denial first.
-- If Freeze is true, explain that the serial is frozen and exit is not permitted.
-- Explain active action-type requirements only when the action-type controls have been retrieved and are relevant to the question.
+- If the serial is frozen, report the frozen status in plain Persian. State that exit is prohibited only when the applicable operation's freeze control and documented operation conditions establish that restriction.- Explain active action-type requirements only when the action-type controls have been retrieved and are relevant to the question.
 - Do not list generic or hypothetical reasons as if they were findings.
 - If several reasons are independently supported by the returned data, explain all of them.
 - If no blocking reason is established, say that the retrieved data did not identify the cause. Do not invent one.
@@ -2012,7 +2017,7 @@ User: "می‌خوام سریال 10000019 رو خروج بزنم، اما اج�
 
 Returned data: `Lock = true`, `Freeze = false`.
 
-Expected behavior: Explain that the serial is marked as blocked following a failed goods inspection. Do not claim that this status independently prohibits exit unless the documented inspection-failure control and its applicability to the requested operation establish that restriction. If necessary, retrieve the relevant operation controls.
+Expected behavior: Explain in Persian that the serial is currently blocked. Do not display `Lock = true`. Do not claim that the blocked status independently prohibits exit or that a specific quality-control setting caused the rejection. If the documented rules do not establish why the requested operation is rejected, state that the exact reason cannot be determined from the available information. Investigate additional operation controls only when needed and supported by documented rules.
 
 **Example B — Neither status establishes the denial**
 
@@ -2038,7 +2043,7 @@ If `NotInSourceError = true` and `NotRegisterError = true`, explain that the tag
 
 Legend: nv = nvarchar, nvmax = nvarchar(max), dec = decimal, NN = NOT NULL, PK = primary key, [..] = note. Declared lengths in the available sources differ slightly for some columns; do not rely on lengths.
 
-tbl_Tags (products currently in the warehouse; one row = one tracked unit; PK = (ProductSerial, TagEpc)): Id int IDENTITY, ProductSerial nv(50) NN, ProductCode nv(50), TagEpc nv(50) NN, TagEpc2 nv(128), ProjectCode nv(50), ProductCount dec(18,2), ProductName nvmax, ProductType nv(256), ProductStatus nv(256), TagStatus nv(50), TagRegisterShamsiUnixDate nv(50) [Shamsi text, format YYYYMMDDHHmmss], TagRegisterDateTime datetime [Gregorian], TagRegisterUser nv(50), TagTreeParentId int, TagTreeSecondParentId int, TagTreeParentsId nvmax, TagTreeParentSerial nv(50), TagTreeParentsEpc nv(128), NewProductSerial nv(50), ProductProperties nvmax [JSON], Lock bit [true = blocked: no exit, no cancel], Username nv(50), DeviceId nv(50), DeviceIp nv(50), Freeze bit [true = frozen: no exit], Deactivate bit, TagInActionId int, TagInDestinationId nv(50) [warehouse code], TagInActionId2 int, TagInDestinationId2 nv(50), fld_ProductPropertyAId nv(50), fld_ProductPropertyBId nv(50), fld_ProductPropertyCId nv(50), RegCode nv(50), fld_LastModifierUser nv(128), ContractStatus nv(50), TagZone nv(50) [zone code], ReProduct bit, fld_InspectActionId int, fld_LastInspectResult nvmax, fld_ProductGroup nv(128), fld_ProductBrand nv(128), fld_ProductSubGroup nv(128), fld_ProductClass nv(128)
+tbl_Tags (products currently in the warehouse; one row = one tracked unit; PK = (ProductSerial, TagEpc)): Id int IDENTITY, ProductSerial nv(50) NN, ProductCode nv(50), TagEpc nv(50) NN, TagEpc2 nv(128), ProjectCode nv(50), ProductCount dec(18,2), ProductName nvmax, ProductType nv(256), ProductStatus nv(256), TagStatus nv(50), TagRegisterShamsiUnixDate nv(50) [Shamsi text, format YYYYMMDDHHmmss], TagRegisterDateTime datetime [Gregorian], TagRegisterUser nv(50), TagTreeParentId int, TagTreeSecondParentId int, TagTreeParentsId nvmax, TagTreeParentSerial nv(50), TagTreeParentsEpc nv(128), NewProductSerial nv(50), ProductProperties nvmax [JSON],Lock bit [true = serial/tag is marked as blocked following a failed goods inspection; do not infer a universal operation restriction from this state alone], Username nv(50), DeviceId nv(50), DeviceIp nv(50), Freeze bit [true = serial/tag is marked as frozen; exit restriction depends on the documented freeze rule and applicable operation control], Deactivate bit, TagInActionId int, TagInDestinationId nv(50) [warehouse code], TagInActionId2 int, TagInDestinationId2 nv(50), fld_ProductPropertyAId nv(50), fld_ProductPropertyBId nv(50), fld_ProductPropertyCId nv(50), RegCode nv(50), fld_LastModifierUser nv(128), ContractStatus nv(50), TagZone nv(50) [zone code], ReProduct bit, fld_InspectActionId int, fld_LastInspectResult nvmax, fld_ProductGroup nv(128), fld_ProductBrand nv(128), fld_ProductSubGroup nv(128), fld_ProductClass nv(128)
 
 tbl_Products (master product / SKU; business key ProductCode): Id int IDENTITY, ProductCode nv(50), ProductTitle nv(250), ProductENTitle nv(250), ProductPackValue dec, ProductPackWeight dec, ProductPackVolume dec, ProductCountInPack dec, ProductValue dec, ProductTechnicalCode nv(50), ProductProperties nvmax [JSON], ProductType nv(50), ProductStatus nv(50), ProductSize nv(50), ProductUnit nv(50), ProductRegUser nv(50), ProductRegDateTime datetime, ProductGalleryId int, ProductTechnicalData nvmax [JSON], fld_ProductGroup nv(128), fld_ProductBrand nv(128), fld_ProductSubGroup nv(128), fld_ProductClass nv(128), fld_ProductGuaranteeType int, fld_ProductGuaranteeDays int, fld_ProductGuaranteeMonths int, fld_ProductGuaranteeEndDate nv(10) [Shamsi text], fld_ProductExpireType int, fld_ProductExpireDays int, fld_ProductExpireMonths int, fld_ProductExpireEndDate nv(10) [Shamsi text], fld_ProductIsActive bit, fld_HasDoubleTag bit
 

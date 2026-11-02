@@ -258,7 +258,9 @@ Use `JSON_VALUE` on the correct source column and JSON key: tag properties `JSON
 
 #### Operation controls and denial diagnosis
 
-Follow the knowledge-base section `Operation Controls and Denial Diagnosis`: retrieve the actual tag state first (`Lock = true` blocks exit and cancellation; `Freeze = true` blocks exit; false does not restrict), inspect the operation type's active controls only when needed (values are the strings `"true"`/`"false"`), and never claim a control is violated unless the data proves it.
+Follow the knowledge-base section `Operation Controls and Denial Diagnosis`: retrieve the actual tag state first. A tag marked as locked is associated with a failed goods inspection, but do not assume that this state independently blocks exit, cancellation, or every other operation. Its effect on an operation must not be inferred unless the applicable business rule is documented. `Freeze = true` blocks exit according to the documented rule; a false value does not impose that restriction. Inspect operation-type controls only when needed, interpret their values according to the documented storage format, and never claim that a control caused a rejection unless the retrieved data and documented rules establish it.
+
+Treat database field names and technical status values as internal information. In user-facing answers, describe `Lock = true` as «سریال مسدود است» and do not display `Lock = true` or other internal field names.
 
 ## 6. SQL Server Query Quality Requirements
 

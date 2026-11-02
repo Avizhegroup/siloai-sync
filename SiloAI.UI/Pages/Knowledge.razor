@@ -49,8 +49,10 @@
                                 Placeholder="مثلاً: auth,security"
                                 Width="100%" />
             </div>
+
             <div class="col-12">
                 <label class="form-label">فایل</label>
+
                 <div class="file-drop @(_selectedFile is null ? "" : "has-file")">
 
                     @if (_selectedFile is null)
@@ -58,13 +60,6 @@
                         <div class="py-3 text-center">
                             <i class="bi bi-cloud-arrow-up text-primary fs-1 mb-2 d-block"></i>
                             <p class="mb-2 fw-medium">فایل متنی را انتخاب کنید</p>
-                            <label class="btn btn-outline-primary btn-sm px-4">
-                                <i class="bi bi-folder2-open me-1"></i>
-                                انتخاب فایل
-                                <InputFile OnChange="OnFileSelected"
-                                           class="d-none"
-                                           accept=".txt,.md,.markdown" />
-                            </label>
                         </div>
                     }
                     else
@@ -73,25 +68,46 @@
                             <div class="file-chip-icon">
                                 <i class="bi bi-file-earmark-text"></i>
                             </div>
+
                             <div class="file-chip-info">
                                 <div class="file-chip-name" title="@_selectedFile.Name">
                                     @_selectedFile.Name
                                 </div>
+
                                 <div class="file-chip-meta">
                                     <span class="file-chip-ext">
-                                        @(System.IO.Path.GetExtension(_selectedFile.Name).TrimStart('.').ToUpperInvariant())
+                                        @(System.IO.Path.GetExtension(_selectedFile.Name)
+                                            .TrimStart('.').ToUpperInvariant())
                                     </span>
-                                    <span class="mono" dir="ltr">@FormatBytes(_selectedFile.Size)</span>
+
+                                    <span class="mono" dir="ltr">
+                                        @FormatBytes(_selectedFile.Size)
+                                    </span>
                                 </div>
                             </div>
+
                             <button type="button"
                                     class="file-chip-remove"
                                     @onclick="() => _selectedFile = null"
+                                    disabled="@_isUploading"
                                     title="حذف فایل">
                                 <i class="bi bi-x-lg"></i>
                             </button>
                         </div>
                     }
+
+                    <div class="text-center pb-3">
+                        <label class="btn btn-outline-primary btn-sm px-4">
+                            <i class="bi bi-folder2-open me-1"></i>
+                            @(_selectedFile is null ? "انتخاب فایل" : "تغییر فایل")
+
+                            <InputFile OnChange="OnFileSelected"
+                                       class="d-none"
+                                       accept=".txt,.md,.markdown"
+                                       disabled="@_isUploading" />
+                        </label>
+                    </div>
+
                 </div>
             </div>
         </div>
