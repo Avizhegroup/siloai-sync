@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SiloAI.Agent.ImageGeneration;
 using SiloAI.Api.Auth;
 using SiloAI.Application.Api;
 using SiloAI.Shared;
@@ -28,8 +29,6 @@ public class ImageGenerationController(IMediator mediator) : ControllerBase
     public const int MaxImages = 1;
     public const long MaxImageBytes = 10 * 1024 * 1024;
 
-    private static readonly string[] AllowedTypes = ["image/png", "image/jpeg", "image/webp", "image/gif"];
-
     [HttpPost]
     [RequestSizeLimit(MaxImages * MaxImageBytes + 1024 * 1024)]
     public async Task<IActionResult> Generate([FromForm] ImageGenerationForm form, CancellationToken cancellationToken)
@@ -47,12 +46,16 @@ public class ImageGenerationController(IMediator mediator) : ControllerBase
             if (file.Length == 0 || file.Length > MaxImageBytes)
                 return BadRequest(new { message = $"Each image must be between 1 byte and {MaxImageBytes / 1024 / 1024} MB." });
 
-            if (!AllowedTypes.Contains(file.ContentType, StringComparer.OrdinalIgnoreCase))
-                return BadRequest(new { message = "Unsupported image type. Use PNG, JPEG, WebP or GIF." });
-
             using var ms = new MemoryStream();
             await file.CopyToAsync(ms, cancellationToken);
-            images.Add(new ImageGenerationInputImage { Data = ms.ToArray(), MediaType = file.ContentType.ToLowerInvariant() });
+            var data = ms.ToArray();
+
+            // Trust the bytes, not the declared content type (browsers send "" / wrong types).
+            var mediaType = ImageFormat.Detect(data);
+            if (mediaType is null)
+                return BadRequest(new { message = "Unsupported image type. Use PNG, JPEG or WebP." });
+
+            images.Add(new ImageGenerationInputImage { Data = data, MediaType = mediaType });
         }
 
         try

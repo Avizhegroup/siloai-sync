@@ -32,11 +32,15 @@ public sealed class OpenAiImageBackend(IOptions<OpenAIOptions> options) : IImage
     public async Task<GeneratedImageDto> EditAsync(
         string model, ImageGenerationInputImage image, string prompt, CancellationToken cancellationToken)
     {
+        // Name the file by what it really is: the endpoint rejects anything but jpg/png/webp.
+        var mediaType = ImageFormat.Detect(image.Data)
+            ?? throw new InvalidOperationException("The input image must be a PNG, JPEG or WebP file.");
+
         using var stream = new MemoryStream(image.Data, writable: false);
 
         var result = await CreateClient(model).GenerateImageEditAsync(
             image: stream,
-            imageFilename: "image" + ExtensionFor(image.MediaType),
+            imageFilename: "image" + ImageFormat.Extension(mediaType),
             prompt: prompt,
             cancellationToken: cancellationToken);
 
@@ -65,19 +69,10 @@ public sealed class OpenAiImageBackend(IOptions<OpenAIOptions> options) : IImage
 
         var bytes = image.ImageBytes.ToArray();
 
-        return new GeneratedImageDto { DataBase64 = Convert.ToBase64String(bytes), MediaType = DetectMediaType(bytes) };
+        return new GeneratedImageDto
+        {
+            DataBase64 = Convert.ToBase64String(bytes),
+            MediaType = ImageFormat.Detect(bytes) ?? "image/png"
+        };
     }
-
-    internal static string DetectMediaType(byte[] b) =>
-        b.Length > 3 && b[0] == 0xFF && b[1] == 0xD8 ? "image/jpeg"
-        : b.Length > 11 && b[0] == 'R' && b[1] == 'I' && b[2] == 'F' && b[3] == 'F' && b[8] == 'W' ? "image/webp"
-        : "image/png";
-
-    internal static string ExtensionFor(string mediaType) => mediaType switch
-    {
-        "image/jpeg" => ".jpg",
-        "image/webp" => ".webp",
-        "image/gif" => ".gif",
-        _ => ".png"
-    };
 }
