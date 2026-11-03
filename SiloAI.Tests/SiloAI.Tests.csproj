@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\SiloAI.Agent\SiloAI.Agent.csproj" />
+    <ProjectReference Include="..\SiloAI.Application.Api\SiloAI.Application.Api.csproj" />
+    <ProjectReference Include="..\SiloAI.Application.Shared\SiloAI.Application.Shared.csproj" />
+    <ProjectReference Include="..\SiloAI.Domains\SiloAI.Domains.csproj" />
+  </ItemGroup>
+
+</Project>

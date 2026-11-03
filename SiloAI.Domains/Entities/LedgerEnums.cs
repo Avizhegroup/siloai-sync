@@ -13,5 +13,6 @@ public enum UsageFeature
     SupportChat = 1,
     Report = 2,
     PageAgent = 3,
-    Ocr = 4
+    Ocr = 4,
+    ImageGeneration = 5
 }

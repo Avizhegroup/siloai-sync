@@ -57,6 +57,11 @@
                         <NavLink class="nav-item-ai" href="/chat">
                             <i class="bi bi-chat-dots"></i> گفتگو با اسناد
                         </NavLink>
+                        <AuthorizeView Policy="@UiPolicies.AdminOnly">
+                            <NavLink class="nav-item-ai" href="/image-generation">
+                                <i class="bi bi-image"></i> تولید تصویر
+                            </NavLink>
+                        </AuthorizeView>
                     </nav>
                 </Authorized>
             </AuthorizeView>

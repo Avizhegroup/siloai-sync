@@ -1,0 +1,112 @@
+@page "/image-generation"
+@using Telerik.Blazor.Components
+@attribute [Authorize(Policy = UiPolicies.AdminOnly)]
+
+<div class="imggen-page">
+    <div class="rag-settings">
+        <div class="rag-setting-title">
+            <div class="rag-setting-icon">
+                <i class="bi bi-image"></i>
+            </div>
+            <div>
+                <div class="rag-setting-heading">تولید تصویر</div>
+                <div class="rag-setting-description">
+                    دستورالعمل‌های نوع «تولید تصویر»، درخواست متنی و تصاویر ورودی به مدل داده می‌شود و تصویر نتیجه برمی‌گردد.
+                </div>
+            </div>
+        </div>
+        <div class="rag-setting-fields">
+            <div class="rag-field">
+                <label><i class="bi bi-key me-1"></i> کلید دستورالعمل </label>
+                <TelerikTextBox @bind-Value="_key"
+                                Placeholder="اختیاری"
+                                Enabled="@(!_isSending)"
+                                Width="100%" />
+            </div>
+        </div>
+    </div>
+
+    <div class="imggen-grid">
+        <div class="imggen-panel">
+            <label class="imggen-label"><i class="bi bi-chat-text me-1"></i> درخواست </label>
+            <TelerikTextArea @bind-Value="_prompt"
+                             Rows="6"
+                             Placeholder="تصویر مورد نظر خود را توضیح دهید..."
+                             Enabled="@(!_isSending)"
+                             Width="100%" />
+
+            <label class="imggen-label mt-3"><i class="bi bi-images me-1"></i> تصاویر ورودی (اختیاری، حداکثر @MaxImages) </label>
+            <label class="btn btn-outline-primary btn-sm px-4 @(_isSending ? "disabled" : "")">
+                <i class="bi bi-folder2-open me-1"></i> انتخاب تصاویر
+                <InputFile OnChange="OnFilesSelected"
+                           class="d-none"
+                           multiple
+                           accept="image/png,image/jpeg,image/webp,image/gif" />
+            </label>
+
+            @if (_inputs.Count > 0)
+            {
+                <div class="imggen-thumbs">
+                    @foreach (var item in _inputs)
+                    {
+                        <div class="imggen-thumb">
+                            <img src="@item.Preview" alt="@item.File.Name" />
+                            <button type="button" class="file-chip-remove" title="حذف" @onclick="() => RemoveInput(item)">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                            <span class="mono" dir="ltr">@item.File.Name</span>
+                        </div>
+                    }
+                </div>
+            }
+
+            <div class="mt-4 d-flex gap-2">
+                <button type="button"
+                        class="btn btn-primary px-4"
+                        @onclick="GenerateAsync"
+                        disabled="@(_isSending || string.IsNullOrWhiteSpace(_prompt))">
+                    <i class="bi bi-stars me-2"></i> تولید تصویر
+                </button>
+                <button type="button" class="btn btn-outline-secondary" @onclick="Reset" disabled="@_isSending">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i> پاک‌سازی
+                </button>
+            </div>
+        </div>
+
+        <div class="imggen-panel">
+            <label class="imggen-label"><i class="bi bi-card-image me-1"></i> نتیجه </label>
+
+            @if (_isSending)
+            {
+                <TelerikLoaderContainer LoaderType="@LoaderType.InfiniteSpinner"
+                                        Text="در حال تولید تصویر..." />
+            }
+            else if (_results.Count == 0)
+            {
+                <div class="imggen-empty">
+                    <i class="bi bi-image"></i>
+                    <span>هنوز تصویری تولید نشده است.</span>
+                </div>
+            }
+            else
+            {
+                @foreach (var image in _results)
+                {
+                    <div class="imggen-result">
+                        <img src="@ToDataUri(image)" alt="تصویر تولیدشده" />
+                        <a class="btn btn-outline-primary btn-sm mt-2"
+                           href="@ToDataUri(image)"
+                           download="@($"image-{DateTime.Now:yyyyMMdd-HHmmss}.{Extension(image.MediaType)}")">
+                            <i class="bi bi-download me-1"></i> دانلود
+                        </a>
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(_resultText))
+                {
+                    <div class="imggen-text">@_resultText</div>
+                }
+            }
+        </div>
+    </div>
+</div>
