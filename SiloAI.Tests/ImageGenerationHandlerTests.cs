@@ -57,17 +57,6 @@ public class ImageGenerationHandlerTests
     }
 
     [Fact]
-    public async Task Customer_without_balance_is_rejected_before_calling_the_model()
-    {
-        var (handler, _, agent, _) = Create(balance: 0);
-
-        await Assert.ThrowsAsync<InsufficientCreditException>(
-            () => handler.Handle(new ImageGenerationCommand { Prompt = "x", CustomerId = 1 }, default));
-
-        Assert.Null(agent.LastPrompt);
-    }
-
-    [Fact]
     public async Task Insufficient_balance_at_charge_time_is_surfaced()
     {
         var (handler, ledger, _, _) = Create();

@@ -27,6 +27,19 @@ public class EnumContractTests
     [InlineData(UsageFeature.ImageGeneration, 5)]
     public void UsageFeature_values_are_stable(UsageFeature feature, int value) => Assert.Equal(value, (int)feature);
 
+    [Theory]
+    [InlineData(AiModelKind.Rag, 1)]
+    [InlineData(AiModelKind.Normal, 2)]
+    [InlineData(AiModelKind.ImageGeneration, 3)]
+    public void AiModelKind_values_are_stable(AiModelKind kind, int value) => Assert.Equal(value, (int)kind);
+
+    [Fact]
+    public void Every_AiModelKind_has_a_display_name()
+    {
+        foreach (var kind in Enum.GetValues<AiModelKind>())
+            Assert.NotEqual(kind.ToString(), kind.ToDisplay());
+    }
+
     [Fact]
     public void Every_RagDocType_has_a_display_name()
     {

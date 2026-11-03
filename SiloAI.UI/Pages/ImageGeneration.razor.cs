@@ -7,7 +7,7 @@ namespace SiloAI.UI.Pages;
 
 public partial class ImageGeneration
 {
-    public const int MaxImages = 8;
+    public const int MaxImages = 1;
     public const long MaxImageSize = 5 * 1024 * 1024;
 
     private sealed record InputImage(IBrowserFile File, string Preview);
@@ -25,19 +25,16 @@ public partial class ImageGeneration
 
     private async Task OnFilesSelected(InputFileChangeEventArgs args)
     {
+        // The image-edit API takes one input image: a new selection replaces the previous one.
         foreach (var file in args.GetMultipleFiles(MaxImages))
         {
-            if (_inputs.Count >= MaxImages)
-            {
-                Notification?.Show($"حداکثر {MaxImages} تصویر مجاز است.", "warning");
-                break;
-            }
-
             if (file.Size > MaxImageSize)
             {
                 Notification?.Show($"حجم «{file.Name}» بیش از ۵ مگابایت است.", "warning");
                 continue;
             }
+
+            _inputs.Clear();
 
             using var stream = file.OpenReadStream(MaxImageSize);
             using var ms = new MemoryStream();

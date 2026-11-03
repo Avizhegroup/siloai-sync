@@ -20,9 +20,9 @@ namespace SiloAI.Domains.Migrations
             // them on the Financial page. If OCR has no row either, fall back to M=1, no floors;
             // the real values are then entered on the Financial page. Idempotent.
             //
-            // The AI model for the feature is deliberately NOT seeded: the seeded GPT-4.1 Mini
-            // cannot output images, so the admin must add an image-capable model on the AI Models
-            // page and assign it to "تولید تصویر".
+            // The AI model for the feature is deliberately NOT seeded: the admin adds a model of
+            // the image-generation kind (e.g. openai/gpt-image-2) on the AI Models page and assigns
+            // it to "تولید تصویر".
             migrationBuilder.Sql(@"
 IF NOT EXISTS (SELECT 1 FROM [tbl_PricingSettings] WHERE [fld_Feature] = 5)
 BEGIN
