@@ -39,6 +39,11 @@ public partial class RagInstructions
     {
         Code = RagDocType.Support,
         Title = "پشتیبان"
+    },
+    new()
+    {
+        Code = RagDocType.ImageGeneration,
+        Title = "تولید تصویر"
     }
 ];
 

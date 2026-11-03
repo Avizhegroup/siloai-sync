@@ -28,6 +28,8 @@ public static partial class Program
 
         services.AddScoped<AgentFileTaskService>();
 
+        services.AddScoped<SiloAI.Agent.ImageGeneration.IImageGenerationAgentService, SiloAI.Agent.ImageGeneration.ImageGenerationAgentService>();
+
         services.AddSingleton<ChatAgentCache>();
 
         services.AddScoped<AiCostCalculator>();

@@ -6,7 +6,10 @@ public enum RagDocType
     Report,
     ImageOCR,
     PageAgent,
-    Support
+    Support,
+
+    /// <summary>Instructions + text request + input images in, generated image out. No RAG.</summary>
+    ImageGeneration
 }
 
 public static class RagDocTypeExtensions
@@ -18,6 +21,7 @@ public static class RagDocTypeExtensions
         RagDocType.ImageOCR => "تصویر",
         RagDocType.PageAgent => "عامل صفحه محور",
         RagDocType.Support => "پشتیبانی",
+        RagDocType.ImageGeneration => "تولید تصویر",
         _ => type.ToString()
     };
 }
