@@ -26,7 +26,7 @@ public class ImageGenerationForm
     $"{JwtBearerDefaults.AuthenticationScheme},{ApiKeyAuthenticationHandler.SchemeName}")]
 public class ImageGenerationController(IMediator mediator) : ControllerBase
 {
-    public const int MaxImages = 1;
+    public const int MaxImages = 8;
     public const long MaxImageBytes = 10 * 1024 * 1024;
 
     [HttpPost]

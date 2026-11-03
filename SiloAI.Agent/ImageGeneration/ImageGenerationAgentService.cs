@@ -22,15 +22,13 @@ public interface IImageGenerationAgentService
 /// <summary>
 /// Stateless task: instructions + text request + optional input image in, generated image out.
 /// No RAG, no session. The instructions are the active <see cref="RagDocType.ImageGeneration"/>
-/// RagInstructions (scoped by <c>key</c>); the image model call goes through the OpenAI SDK
-/// <c>ImageClient</c> (<see cref="OpenAiImageBackend"/>).
+/// RagInstructions (scoped by <c>key</c>); the image model call goes through <see cref="IImageBackend"/>.
 /// </summary>
 public class ImageGenerationAgentService(
     IImageBackend backend,
     AiApiContext context) : IImageGenerationAgentService
 {
-    /// <summary>The SDK's image-edit call takes a single input image.</summary>
-    public const int MaxInputImages = 1;
+    public const int MaxInputImages = 8;
 
     public async Task<ImageGenerationAgentResult> GenerateAsync(
         string prompt,
@@ -54,17 +52,18 @@ public class ImageGenerationAgentService(
             throw new ArgumentException("Prompt cannot be empty.", nameof(composedPrompt));
 
         if (images.Count > MaxInputImages)
-            throw new InvalidOperationException($"At most {MaxInputImages} input image is supported.");
+            throw new InvalidOperationException($"At most {MaxInputImages} input images are supported.");
 
         ValidateModel(model);
 
-        var image = images.Count == 1
-            ? await backend.EditAsync(model.Identifier, images[0], composedPrompt, cancellationToken)
+        var result = images.Count > 0
+            ? await backend.EditAsync(model.Identifier, images, composedPrompt, cancellationToken)
             : await backend.GenerateAsync(model.Identifier, composedPrompt, cancellationToken);
 
-        // The image API reports no token usage; billing then falls to the feature's floor
-        // (per-image price) configured on the Financial page.
-        return new ImageGenerationAgentResult([image], null, 0, 0, 0);
+        // Token usage (when the gateway reports it) feeds the pricing engine; with none reported
+        // billing falls to the feature's floor (per-image price) on the Financial page.
+        return new ImageGenerationAgentResult(
+            result.Images, null, result.InputTokens, result.CachedInputTokens, result.OutputTokens);
     }
 
     /// <summary>Only models registered with Kind = ImageGeneration can serve this feature.</summary>

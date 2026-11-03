@@ -14,6 +14,9 @@ public class ImageGenerationAgentServiceTests
 
     private static readonly ImageGenerationInputImage Input = new() { Data = [1, 2, 3], MediaType = "image/png" };
 
+    private static readonly ImageBackendResult Result = new(
+        [new GeneratedImageDto { DataBase64 = "AQ==", MediaType = "image/png" }], 120, 20, 30);
+
     [Theory]
     [InlineData(AiModelKind.Normal)]
     [InlineData(AiModelKind.Rag)]
@@ -53,7 +56,7 @@ public class ImageGenerationAgentServiceTests
         Assert.Equal("openai/gpt-image-2", backend.LastModel);
         Assert.Equal("a cat", backend.LastPrompt);
         Assert.Single(result.Images);
-        Assert.Equal(0, result.OutputTokens);
+        Assert.Equal((120L, 20L, 30L), (result.InputTokens, result.CachedInputTokens, result.OutputTokens));
     }
 
     [Fact]
@@ -65,17 +68,29 @@ public class ImageGenerationAgentServiceTests
         await service.ExecuteAsync("make them happy", [Input], Model(), default);
 
         Assert.Equal(new[] { "edit" }, backend.Calls);
-        Assert.Same(Input, backend.LastImage);
+        Assert.Same(Input, Assert.Single(backend.LastImages!));
     }
 
     [Fact]
-    public async Task More_than_one_input_image_is_rejected_before_calling_the_model()
+    public async Task Several_input_images_are_all_sent_to_the_edit_call()
+    {
+        var backend = new FakeBackend();
+        var service = new ImageGenerationAgentService(backend, null!);
+
+        await service.ExecuteAsync("basket", [Input, Input, Input, Input], Model(), default);
+
+        Assert.Equal(new[] { "edit" }, backend.Calls);
+        Assert.Equal(4, backend.LastImages!.Count);
+    }
+
+    [Fact]
+    public async Task More_than_the_maximum_input_images_is_rejected_before_calling_the_model()
     {
         var backend = new FakeBackend();
         var service = new ImageGenerationAgentService(backend, null!);
 
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => service.ExecuteAsync("x", [Input, Input], Model(), default));
+            () => service.ExecuteAsync("x", Enumerable.Repeat(Input, ImageGenerationAgentService.MaxInputImages + 1).ToList(), Model(), default));
 
         Assert.Empty(backend.Calls);
     }
@@ -96,22 +111,20 @@ public class ImageGenerationAgentServiceTests
     {
         public List<string> Calls { get; } = [];
         public string? LastModel, LastPrompt;
-        public ImageGenerationInputImage? LastImage;
+        public IReadOnlyList<ImageGenerationInputImage>? LastImages;
 
-        private static GeneratedImageDto Image() => new() { DataBase64 = "AQ==", MediaType = "image/png" };
-
-        public Task<GeneratedImageDto> GenerateAsync(string model, string prompt, CancellationToken ct)
+        public Task<ImageBackendResult> GenerateAsync(string model, string prompt, CancellationToken ct)
         {
             Calls.Add("generate");
             (LastModel, LastPrompt) = (model, prompt);
-            return Task.FromResult(Image());
+            return Task.FromResult(Result);
         }
 
-        public Task<GeneratedImageDto> EditAsync(string model, ImageGenerationInputImage image, string prompt, CancellationToken ct)
+        public Task<ImageBackendResult> EditAsync(string model, IReadOnlyList<ImageGenerationInputImage> images, string prompt, CancellationToken ct)
         {
             Calls.Add("edit");
-            (LastModel, LastPrompt, LastImage) = (model, prompt, image);
-            return Task.FromResult(Image());
+            (LastModel, LastPrompt, LastImages) = (model, prompt, images);
+            return Task.FromResult(Result);
         }
     }
 }
