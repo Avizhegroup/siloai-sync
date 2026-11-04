@@ -48,6 +48,12 @@ public class InvalidContentCheckMiddleware
             return;
         }
 
+        if (path?.StartsWith("/api/rag/instructions", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            await next(context);
+            return;
+        }
+
         if (ContainsSqlInjection(requestContent))
         {
             logger.LogWarning("Possible SQL injection attempt detected: {RequestContent}", requestContent);

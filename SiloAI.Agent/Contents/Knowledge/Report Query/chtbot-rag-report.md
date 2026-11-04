@@ -275,6 +275,23 @@ If the date and time are stored together in a single datetime field:
 - Display the date portion in Shamsi/Jalali format.
 - Preserve the time portion.
 
+**Known Shamsi-Native Date Columns — IMPORTANT**
+
+Some date columns in the database are already stored as Shamsi/Jalali date strings and MUST NOT be converted using `dbo.GeorgianDateToJalaliDate()`.
+
+Known example:
+
+- `tbl_MovementActions.MovementActionDate`
+  - Stores dates directly in Shamsi/Jalali format.
+  - Example values: `1405/02/10`, `1405/02/11`.
+  - Select and display this column directly.
+  - Do NOT apply `dbo.GeorgianDateToJalaliDate()` to this column.
+  - Use its original value for chart categories, grouping, and date display.
+
+Before applying any date conversion function, determine the actual storage format of the specific date column.
+
+The date conversion function MUST be selected based on the actual storage format of the column, not merely because the column contains a date.
+
 IMPORTANT:
 - NEVER display a raw Gregorian date directly to the user in the final report result.
 - Use `dbo.GeorgianDateToJalaliDate()` ONLY for converting Gregorian dates to Shamsi for display in the final `SELECT` output.
