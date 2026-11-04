@@ -1,8 +1,9 @@
 # RAG Chat — External Integration Guide - SILO
 
 This document is for **external clients** integrating with SiloAI's Retrieval-Augmented
-Generation (RAG) chat feature. It explains how the feature works end-to-end and describes
-every public HTTP endpoint, including the input payloads and the responses each one returns.
+Generation (RAG) chat feature and its companion AI endpoints (image OCR and image generation).
+It explains how the features work end-to-end and describes every public HTTP endpoint,
+including the input payloads and the responses each one returns.
 
 ---
 
@@ -83,9 +84,39 @@ All endpoints below require one of:
 
 - **JWT authentication** — standard HTTP `Authorization` header using the JWT scheme
   (scheme name followed by the access token).
-- **API key** (RAG chat endpoints only) — `X-Api-Key: <key>` header. The key is hashed
-  (SHA-256) and validated against active, non-expired keys; if the key is linked to a
-  customer, the conversation is scoped to that customer.
+- **API key** — `X-Api-Key: <key>` header. The key is hashed (SHA-256) and validated against
+  active, non-expired keys; if the key is linked to a customer, the call is scoped to that
+  customer and **billed to that customer's credit**.
+
+Which scheme each endpoint accepts:
+
+| Endpoint group                                   | JWT | API key |
+|--------------------------------------------------|:---:|:-------:|
+| RAG chat (`/api/rag/chat/*`)                     | yes | yes     |
+| Image generation (`/api/image-generation`)       | yes | yes     |
+| Image OCR (`/api/image/ocr`)                     | no  | yes     |
+
+### Document types (`docType`)
+
+Wherever an endpoint takes `docType`: in **JSON bodies send the number** (e.g. `"docType": 5`); in **`multipart/form-data` fields** either the name (`ImageGeneration`) or the number works. Responses return the number.
+
+| Name              | Number | Used for                                                               |
+|-------------------|:------:|------------------------------------------------------------------------|
+| `GeneralChat`     | 0      | General RAG chat.                                                      |
+| `Report`          | 1      | Report generation.                                                     |
+| `ImageOCR`        | 2      | Image text extraction (`/api/image/ocr`).                              |
+| `PageAgent`       | 3      | Page-oriented agent.                                                   |
+| `Support`         | 4      | Support chat.                                                          |
+| `ImageGeneration` | 5      | Image generation (`/api/image-generation`) — instructions only, no RAG.|
+
+### Common error responses
+
+| Status | Meaning                                                                                   |
+|-------:|-------------------------------------------------------------------------------------------|
+| 400    | Invalid input (the body is `{ "message": "..." }` on the image endpoints).                |
+| 401    | Missing/invalid credentials.                                                              |
+| 402    | The customer's credit is exhausted (`{ "message": "..." }`).                              |
+| 422    | Server-side configuration or model problem (image generation), message explains why.      |
 
 ---
 
@@ -99,7 +130,12 @@ Base route: `api/rag/chat`
 
 Starts a brand-new RAG conversation without sending a message yet.
 
-**Input:** none (empty body).
+**Input** (`RagChatNewSessionCommand`, JSON body — send `{}` for the defaults):
+
+| Field     | Type | Required | Default       | Description                                                                                  |
+|-----------|------|----------|---------------|------------------------------------------------------------------------------------------------|
+| `docType` | enum | no       | `GeneralChat` | Document type whose active instructions apply to this conversation.                          |
+| `useRag`  | bool | no       | `true`        | `false` = chat on the `docType`'s instructions only (no retrieval). Fixed for the conversation. |
 
 **Output** (`RagChatResponse`):
 
@@ -122,8 +158,9 @@ Sends a user message, retrieves relevant knowledge, and returns the AI's grounde
 | `message`        | string    | **yes**  | —                | The user's question.                                                          |
 | `topK`           | int       | no       | `5`              | Number of chunks to retrieve (clamped 1–20).                                  |
 | `isMainChat`     | bool      | no       | `false`          | `true` hides citations/source markers for a general-assistant style answer.  |
-| `docType`        | enum      | no       | `GeneralChat`    | One of `GeneralChat`, `Report`, `Image`, `PageAgent`. Filters retrieval and active instructions. |
+| `docType`        | enum      | no       | `GeneralChat`    | One of `GeneralChat`, `Report`, `ImageOCR`, `PageAgent`, `Support` (see *Document types*). Filters retrieval and active instructions. |
 | `key`            | string?   | no       | `null`           | Optional additional partition/tenant key to filter which documents are searched. |
+| `useRag`         | bool      | no       | `true`           | `false` = instructions-only chat: no retrieval, no citations, no search tool. Only read when this call **creates** the conversation; an existing conversation keeps the mode it started with. |
 
 **Output** (`RagChatResponse`):
 
@@ -177,6 +214,7 @@ pricing), and the answer text is converted to speech (text-to-speech).
 | `docType`        | enum      | no       | `GeneralChat` | Same as `send`.                                                            |
 | `key`            | string?   | no       | `null`        | Same as `send`.                                                            |
 | `isMainChat`     | bool      | no       | `false`       | Same as `send`.                                                            |
+| `useRag`         | bool      | no       | `true`        | Same as `send` (instructions-only voice chat when `false`).                |
 | `language`       | string?   | no       | `null`        | Optional language hint for transcription (e.g. `fa`, `en`).                |
 | `voice`          | string?   | no       | `null`        | Optional voice name for the spoken answer (provider-specific).             |
 
@@ -221,7 +259,7 @@ Lists all uploaded documents.
 | `fileName`          | string    | Internal stored file name (randomized).                   |
 | `originalFileName`  | string    | Name as uploaded by the client.                            |
 | `contentType`       | string    | MIME type.                                                 |
-| `docType`           | enum      | `GeneralChat` / `Report` / `Image` / `PageAgent`.          |
+| `docType`           | enum      | Document type (see *Document types*, numbers 0–5 except `ImageGeneration`, which has no documents). |
 | `key`               | string?   | Optional partition/tenant key.                              |
 | `category`          | string?   | Optional free-text category.                                |
 | `tags`              | string?   | Optional free-text tags.                                    |
@@ -257,7 +295,7 @@ Uploads and indexes a new document (`multipart/form-data`).
 | Field      | Type    | Required | Description                                                     |
 |------------|---------|----------|-------------------------------------------------------------------|
 | `file`     | file    | **yes**  | The document to upload. Must not exceed the configured max size (default 25 MB) and must use a supported extension (default `.txt`, `.md`). |
-| `docType`  | enum?   | no       | `GeneralChat` / `Report` / `Image` / `PageAgent`. Defaults to `GeneralChat`. |
+| `docType`  | enum?   | no       | Document type (see *Document types*). Defaults to `GeneralChat`. |
 | `key`      | string? | no       | Optional partition/tenant key used to scope retrieval later.      |
 | `category` | string? | no       | Optional free-text category.                                       |
 | `tags`     | string? | no       | Optional free-text tags.                                            |
@@ -377,6 +415,86 @@ Updates an existing instruction. **Input:** `id` (route) + same body shape as cr
 
 Deletes an instruction. **Output:** `204 No Content` on success, `404 Not Found` if missing.
 
+### 5.4 Image generation
+
+Instructions + a text request + optional input images in, a generated image out. There is no
+retrieval: the model is driven only by the `ImageGeneration` instructions (managed with the
+instructions endpoints, `docType = ImageGeneration`), your `prompt`, and your images.
+Usage is priced and billed to the calling customer through the same credit ledger as chat.
+
+#### `POST /api/image-generation`
+
+Auth: JWT **or** `X-Api-Key`. Content type: `multipart/form-data`.
+
+**Input (form fields):**
+
+| Field       | Type          | Required | Description                                                                                                  |
+|-------------|---------------|----------|----------------------------------------------------------------------------------------------------------------|
+| `prompt`    | string        | **yes**  | What to generate or how to edit the input images.                                                              |
+| `images`    | file (repeat) | no       | 0–8 input images; repeat the field once per file. **PNG, JPEG or WebP only**, max 10 MB each. With no images the call is text-to-image; with images it is an edit using them as references. |
+| `key`       | string        | no       | Selects the instructions stored under this key. Omit to use instructions with no key.                          |
+| `requestId` | guid          | no       | Idempotency token. Re-sending the same `requestId` after a timeout never charges the customer twice.          |
+
+**Output** (`ImageGenerationResponse`, 200):
+
+| Field                | Type           | Description                                                     |
+|----------------------|----------------|-----------------------------------------------------------------|
+| `images`             | array          | Generated image(s).                                             |
+| `images[].dataBase64`| string         | Image bytes, base64-encoded (no `data:` prefix).                |
+| `images[].mediaType` | string         | `image/png`, `image/jpeg` or `image/webp`.                      |
+| `text`               | string \| null | Accompanying model text, if any.                                |
+
+**Errors:** `400` (blank `prompt`, more than 8 images, empty/oversized image, or an image that is not
+PNG/JPEG/WebP — the format is detected from the file bytes, not the declared content type),
+`402` (credit exhausted), `422` (no image model configured for the feature, the assigned model is not
+an image-generation model, or the model/gateway rejected the call — `message` has the reason).
+
+**Example (text → image):**
+
+```bash
+curl -X POST https://<host>/api/image-generation \
+  -H "X-Api-Key: $SILO_API_KEY" \
+  -F prompt="A cute baby sea otter" \
+  -F requestId="$(uuidgen)" \
+| jq -r '.images[0].dataBase64' | base64 -d > otter.png
+```
+
+**Example (edit with reference images):**
+
+```bash
+curl -X POST https://<host>/api/image-generation \
+  -H "X-Api-Key: $SILO_API_KEY" \
+  -F prompt="Generate a photorealistic gift basket containing all the items in the reference pictures." \
+  -F key="gift-baskets" \
+  -F images=@body-lotion.png \
+  -F images=@bath-bomb.png \
+  -F images=@soap.png \
+| jq -r '.images[0].dataBase64' | base64 -d > basket.png
+```
+
+### 5.5 Image OCR
+
+Extracts text from an image using the `ImageOCR` instructions. Auth: **`X-Api-Key` only**.
+
+#### `POST /api/image/ocr`
+
+Content type: `multipart/form-data`.
+
+| Field       | Type   | Required | Description                                                         |
+|-------------|--------|----------|-----------------------------------------------------------------------|
+| `imageData` | file   | **yes**  | The image to read.                                                    |
+| `mediaType` | string | **yes**  | The image's media type, e.g. `image/png`.                             |
+| `docType`   | enum   | **yes**  | Normally `ImageOCR` — selects which instructions apply.               |
+| `key`       | string | **yes**  | Instruction key to use (send an empty value if none).                 |
+
+**Output** (200): `{ "extractedText": "..." }`. **Errors:** `400` (no image), `402` (credit exhausted).
+
+```bash
+curl -X POST https://<host>/api/image/ocr \
+  -H "X-Api-Key: $SILO_API_KEY" \
+  -F imageData=@receipt.png -F mediaType=image/png -F docType=ImageOCR -F key=""
+```
+
 ---
 
 ## 6. Typical client workflow
@@ -388,3 +506,11 @@ Deletes an instruction. **Output:** `204 No Content` on success, `404 Not Found`
    `responseText` and `citations` from each response.
 5. (Optional) Use `POST /api/rag/documents/search` to debug/preview retrieval quality
    independent of the chat model.
+
+### Generating an image (no RAG)
+
+1. (Optional, one-time) Add `ImageGeneration` instructions: `POST /api/rag/instructions` with
+   `docType = ImageGeneration` (and a `key` if you want several instruction sets).
+2. Call `POST /api/image-generation` with `prompt` (+ `images`, `key`, `requestId`).
+3. Base64-decode `images[0].dataBase64` and save/serve it using `images[0].mediaType`.
+4. On a network timeout, retry with the **same** `requestId` to avoid a double charge.
