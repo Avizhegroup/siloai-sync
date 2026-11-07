@@ -258,6 +258,29 @@ A registered unit may contain multiple smaller units and may represent a measura
 
 Therefore, Shipment / Load should be understood as the **traceable registered unit**, rather than assuming that it always represents a specific type of package.
 
+### Relationship Between Serial Count and Product Quantity
+
+The number of registered serials is not necessarily equal to the number of physical product units.
+
+Each unique serial represents one traceable registered unit, which may contain or represent a specific quantity of the Product.
+
+For example:
+
+- One tile pallet may have one serial representing 80 square meters.
+- One stone block may have one serial representing 24 tons.
+- One box of blades may have one serial representing 40 pieces.
+- One pump may have one serial representing one piece.
+
+Therefore:
+
+- **Unique Serial Count** represents the number of individually identified and traceable units.
+- **Product Quantity** represents the actual amount of Product associated with each serial.
+- **Total Product Quantity** is calculated by adding the quantities associated with the relevant serials.
+
+Depending on the project, a registered serial may represent a measurable quantity, or it may correspond to exactly one Product unit.
+
+The display of quantity and measurement fields may be configured according to project requirements.
+
 ---
 
 ## 14. Dynamic Technical Information
@@ -282,7 +305,28 @@ The assistant must not assume that every technical characteristic belongs to the
 
 ---
 
-## 15. Product Technical Information in Operations and Reports
+## 15. Serial-Specific Information
+
+Each registered serial may contain information specific to that individual unit. Unlike Product-level attributes, these values may differ between serials belonging to the same Product.
+
+Examples include:
+
+- Production line and production shift
+- Actual product quantity
+- Actual weight and volume
+- Inspection and quality-control information
+
+### Actual Weight and Volume
+
+The default weight and volume defined for a Product or its packaging may differ from the actual values of an individual serial.
+
+Where supported by the project, actual weight and volume can be recorded separately for each serial.
+
+These actual values may be used in warehouse processes such as Product placement and collection.
+
+---
+
+## 16. Product Technical Information in Operations and Reports
 
 Product technical information may be used in different parts of Silo, depending on the project configuration.
 
@@ -299,7 +343,7 @@ The exact usage depends on the configuration and capabilities available in the p
 
 ---
 
-## 16. Active and Inactive Products
+## 17. Active and Inactive Products
 
 A Product can be active or inactive.
 
@@ -323,7 +367,7 @@ Deactivation preserves existing information and history; it is not deletion.
 
 ---
 
-## 17. Products Requiring Double Tags
+## 18. Products Requiring Double Tags
 
 Some Products may require two tags for each registered serial.
 
@@ -337,7 +381,7 @@ The exact behavior depends on the project's configuration.
 
 ---
 
-## 18. Product and Serial/Tag Registration
+## 19. Product and Serial/Tag Registration
 
 A Product must exist before a serial or tag can be registered for that Product.
 
@@ -353,7 +397,7 @@ Therefore, Product management is one of the foundations of serial and tag manage
 
 ---
 
-## 19. Product Management in Different Projects
+## 20. Product Management in Different Projects
 
 The Product concept is consistent across Silo, but the way Products are represented can vary between projects.
 
@@ -377,7 +421,7 @@ The assistant must not assume that every project supports the same integration o
 
 ---
 
-## 20. Product Concepts at a Glance
+## 21. Product Concepts at a Glance
 
 | Concept | Simple Meaning |
 |---|---|
@@ -407,7 +451,7 @@ The assistant must not assume that every project supports the same integration o
 
 ---
 
-## 21. Important Accuracy Rules
+## 22. Important Accuracy Rules
 
 The exact Product structure and behavior depend on the configuration of the Silo project.
 

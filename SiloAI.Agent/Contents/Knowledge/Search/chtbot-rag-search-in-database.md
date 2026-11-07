@@ -105,7 +105,16 @@ Use only tables whose existence and required columns have been confirmed in the 
 
 This table represents registered inventory items and their associated RFID tags.
 
-Business meaning: a row is a physical product instance (a single tracked unit/serial) in the production and warehouse lifecycle. It is NOT a product definition. The classification columns stored on the tag (`fld_ProductGroup`, `fld_ProductBrand`, `fld_ProductSubGroup`, `fld_ProductClass`) are denormalized snapshots of the product's state; the true source of the product hierarchy is `tbl_Products`. Movement history of a tag is stored in `tbl_TagsMovement`.
+Business meaning: a row is a physical product instance (a single tracked unit/serial) in the production and warehouse lifecycle. It is NOT a product definition. 
+The product-related columns stored in `tbl_Tags` are not the source of truth for product master information. Whenever a query about a serial or tag requires product attributes, use `tbl_Tags.ProductCode` to join `tbl_Products.ProductCode` and retrieve the attributes from `tbl_Products`.
+
+Do not join product classification lookup tables directly using product-related columns stored in `tbl_Tags`. These columns may contain stored values or snapshots, but they must not be used as the default source for product master attributes.
+
+The exceptions are:
+- `fld_ProductPropertyAId`: join directly to `tbl_ProductPropertyA` for production line.
+- `fld_ProductPropertyBId`: join directly to `tbl_ProductPropertyB` for work shift.
+
+For product size, use `tbl_Products.ProductSize` and join it to `tbl_ProductPropertyC`.
 
 Important columns include:
 
@@ -151,9 +160,16 @@ Important columns include:
 
 #### Display Rule for Tag Columns That Reference Lookup Tables
 
-The following `tbl_Tags` columns store codes/IDs that reference other tables: `ProductCode`, `ProductType`, `ProductStatus`, `fld_ProductGroup`, `fld_ProductBrand`, `fld_ProductSubGroup`, `fld_ProductClass`, `fld_ProductPropertyAId`, `fld_ProductPropertyBId`, `fld_ProductPropertyCId`, `TagInDestinationId`, `TagZone`, `TagRegisterUser`.
+The following `tbl_Tags` columns contain product-related values or references: `ProductName`, `ProductType`, `ProductStatus`, `fld_ProductGroup`, `fld_ProductBrand`, `fld_ProductSubGroup`, `fld_ProductClass`, `fld_ProductPropertyAId`, `fld_ProductPropertyBId`, and `fld_ProductPropertyCId`.
 
-When a user asks for any of these attributes of a tag/serial (for example size, product type, quality, brand, group, warehouse, zone), JOIN the lookup table and return ONLY its title/name column. Never return the code or ID, and never return the raw column value instead of the title. The attributes of the tag's product definition (type, quality, group, subgroup, brand, class, size) are resolved by default through the master product (`tbl_Tags.ProductCode = tbl_Products.ProductCode`); the value stored on the tag itself is used only when the user explicitly asks about the value recorded on the tag. See Section 4.5 (Table 4.5.1) for the exact join and title column of every attribute.
+Apply these rules:
+
+- Product name and classification attributes (type, quality, group, subgroup, brand, class, and size) must always be retrieved through `tbl_Tags.ProductCode = tbl_Products.ProductCode`.
+- Never use `tbl_Tags` product name or classification columns as alternative sources.
+- Production line and work shift must be retrieved directly from `tbl_Tags.fld_ProductPropertyAId` and `tbl_Tags.fld_ProductPropertyBId`, respectively.
+- Product size must be retrieved through `tbl_Products.ProductSize` → `tbl_ProductPropertyC`, never through `tbl_Tags.fld_ProductPropertyCId`.
+- Other tag-specific attributes, such as warehouse, zone, and tag registrar, must follow their documented relationships in Section 4.5 (Table 4.5.1).
+- For lookup attributes, return the title/name, never the raw code or ID.
 
 #### Primary Key
 
@@ -681,15 +697,8 @@ The following mapping describes the documented business relationships.
 | Warehouse / Destination (انبار) | `tbl_Tags.TagInDestinationId` | `tbl_Destination` | `TagInDestinationId = DestinationCode` | `DestinationTitle` |
 | Zone / Location (ناحیه) | `tbl_Tags.TagZone` | `tbl_Zones` | `TagZone = ZoneCode` | `ZoneTitle` |
 | Master Product (کالا) | `tbl_Tags.ProductCode` | `tbl_Products` | `ProductCode = ProductCode` | `ProductTitle` |
-| Brand (برند) | `tbl_Tags.fld_ProductBrand` | `tbl_ProductBrand` | `fld_ProductBrand = fld_ProductBrandCode` | `fld_ProductBrandTitle` |
-| Group (گروه کالا) | `tbl_Tags.fld_ProductGroup` | `tbl_ProductGroup` | `fld_ProductGroup = fld_ProductGroupCode` | `fld_ProductGroupTitle` |
-| Subgroup (زیرگروه کالا) | `tbl_Tags.fld_ProductSubGroup` | `tbl_ProductSubGroup` | `fld_ProductSubGroup = fld_ProductSubGroupCode` | `fld_ProductSubGroupTitle` |
-| Product Class (طبقه کالا) | `tbl_Tags.fld_ProductClass` | `tbl_ProductClass` | `fld_ProductClass = fld_ProductClassCode` | `fld_ProductClassTitle` |
 | Property A / Production Line (خط تولید، where applicable) | `tbl_Tags.fld_ProductPropertyAId` | `tbl_ProductPropertyA` | `fld_ProductPropertyAId = fld_ProductPropertyAId` | `fld_ProductPropertyATitle` |
 | Property B / Work Shift (شیفت کاری، where applicable) | `tbl_Tags.fld_ProductPropertyBId` | `tbl_ProductPropertyB` | `fld_ProductPropertyBId = fld_ProductPropertyBId` | `fld_ProductPropertyBTitle` |
-| Property C / Size (سایز، where applicable) | `tbl_Tags.fld_ProductPropertyCId` | `tbl_ProductPropertyC` | `fld_ProductPropertyCId = fld_ProductPropertyCId` | `fld_ProductPropertyCTitle` |
-| Quality Status (کیفیت کالا) | `tbl_Tags.ProductStatus` | `tbl_ProductStatus` | `ProductStatus = ProductStatusCode` | `ProductStatusTitle` |
-| Product Type / Category (نوع کالا) | `tbl_Tags.ProductType` | `tbl_ProductType` | `ProductType = ProductTypeCode` | `ProductTypeTitle` |
 | Tag Registrar (ثبت‌کننده تگ) | `tbl_Tags.TagRegisterUser` | `tbl_User` | `TagRegisterUser = Id` | `Name` |
 | Operation Type (نوع عملیات) | `tbl_MovementActions.MovementActionTp` | `tbl_ActionTypes` | `MovementActionTp = fld_ActionTypeId` | `fld_ActionTypeTitle` |
 | Station / Gate (گیت) | `tbl_MovementActions.MovementActionUHFLogGate` | `tbl_Station` | `MovementActionUHFLogGate = fld_StationCode` | `fld_StationName` |
@@ -699,6 +708,17 @@ The following mapping describes the documented business relationships.
 | Document Status (وضعیت سند) | `tbl_DocumentHeader.fld_DocumentStatus` | `tbl_DocumentStatus` | `fld_DocumentStatus = fld_DocumentStatusId` | `fld_DocumentStatusTitle` |
 | Document Registrant (ثبت‌کننده سند) | `tbl_DocumentHeader.fld_DocumentSaveUserId` | `tbl_User` | `fld_DocumentSaveUserId = Id` | `Name` |
 | Reader Log Station (گیت اسکن) | `tbl_UHFReaderLogHeader.fld_StationCode` | `tbl_Station` | `fld_StationCode = fld_StationCode` | `fld_StationName` |
+For product attributes requested about a serial or tag, first join:
+
+`tbl_Tags.ProductCode = tbl_Products.ProductCode`
+
+Then resolve the requested attribute using the corresponding column in `tbl_Products` and its lookup table.
+
+Never use product-related columns stored in `tbl_Tags` as the direct reference for product classification lookups.
+
+Exceptions:
+- Production line: `tbl_Tags.fld_ProductPropertyAId` → `tbl_ProductPropertyA.fld_ProductPropertyAId`
+- Work shift: `tbl_Tags.fld_ProductPropertyBId` → `tbl_ProductPropertyB.fld_ProductPropertyBId`
 
 ### 4.1 Filtering by Names
 
@@ -710,7 +730,11 @@ The same principle applies to product, zone, brand, group, subgroup, class, qual
 
 Use an exact comparison only when the user requests an exact match or the business requirement explicitly requires one.
 
-Properties that are stored directly as text or numbers on `tbl_Tags` (for example `ProductName`, `ProductCount`) do not need a lookup join; filter them directly on `tbl_Tags`.
+Product master attributes must be filtered using `tbl_Products` after joining `tbl_Tags` to `tbl_Products` through `ProductCode`.
+
+For example, when searching for a serial by product name, use `tbl_Products.ProductTitle`, not `tbl_Tags.ProductName`.
+
+Only fields that are genuinely tag-specific, such as `ProductCount`, may be filtered directly on `tbl_Tags` when appropriate.
 
 ### 4.2 Important Limitations
 
@@ -762,35 +786,76 @@ This rule applies to every question about a tag (`tbl_Tags`) or a product (`tbl_
 4. Use `LEFT JOIN` so that the tag/product row is kept. If no title exists, the title is NULL; never substitute the code for a missing title.
 5. Filtering and grouping by such an attribute use its title column (`LIKE` for names, `GROUP BY` the title).
 6. The Persian output alias names the attribute, not the code: for example `[سایز]`, `[نوع کالا]`, `[برند]`, `[گروه کالا]`, `[کیفیت کالا]`, `[انبار]`.
-7. Choose the starting table by what the user gives: a product code or product name (کالا) → start from `tbl_Products` and use Table 4.5.2; a serial or EPC (سریال / تگ) → start from `tbl_Tags`. For a serial/EPC, the attributes of the tag's product definition (type, quality, group, subgroup, brand, class, size) are resolved by default through the MASTER product: join `tbl_Products` on `tbl_Tags.ProductCode = tbl_Products.ProductCode`, then the lookup of Table 4.5.2. Use the value stored directly on `tbl_Tags` (last column of Table 4.5.1) only when the user explicitly asks about the value recorded on the tag itself. Attributes that exist only on the tag (production line, shift, warehouse, warehouse type, zone, registrar) use the tag columns of Table 4.5.1. Do not silently substitute a tag-stored value for a master value or vice versa.
+7. Choose the starting table according to the user's input:
+   - Product code or product name → start from `tbl_Products`.
+   - Serial number or EPC → start from `tbl_Tags`.
+
+   When a query starts from `tbl_Tags` and requires product master attributes, always join `tbl_Products` using:
+
+   `tbl_Tags.ProductCode = tbl_Products.ProductCode`
+
+   Then resolve every requested product attribute through the corresponding column in `tbl_Products` and its lookup table, as defined in Table 4.5.2.
+
+   Never use the product-related columns stored in `tbl_Tags` as the direct source for product master attributes.
+
+   The only exceptions are production line and work shift:
+   - Production line is resolved directly from `tbl_Tags.fld_ProductPropertyAId`.
+   - Work shift is resolved directly from `tbl_Tags.fld_ProductPropertyBId`.
+
+   Product size must always be resolved through `tbl_Products.ProductSize`, not `tbl_Tags.fld_ProductPropertyCId`.
 
 #### Table 4.5.1 — attributes asked about a tag/serial (alias `t`)
 
-Attributes of the tag's product definition (default source = master product `p`, joined with `LEFT JOIN tbl_Products p ON t.ProductCode = p.ProductCode`, then the lookup of Table 4.5.2):
+Attributes of the tag's product definition must be retrieved from the master product record (`p`), using `t.ProductCode = p.ProductCode`. Lookup tables must then be joined to `p` to retrieve their display titles.
 
-| Attribute asked (Persian) | Default path (master product) | Title column to return | Tag-stored alternative (only when the user asks about the value recorded on the tag) |
-|---|---|---|---|
-| نام کالا | `p.ProductCode` (join above) | `p.ProductTitle` | `t.ProductName` is the name stored on the tag |
-| نوع کالا | `p.ProductType = pt.ProductTypeCode` | `pt.ProductTypeTitle` | `t.ProductType = pt.ProductTypeCode` |
-| کیفیت / وضعیت کیفی | `p.ProductStatus = ps.ProductStatusCode` | `ps.ProductStatusTitle` | `t.ProductStatus = ps.ProductStatusCode` |
-| گروه کالا | `p.fld_ProductGroup = pg.fld_ProductGroupCode` | `pg.fld_ProductGroupTitle` | `t.fld_ProductGroup = pg.fld_ProductGroupCode` |
-| زیرگروه کالا | `p.fld_ProductSubGroup = psg.fld_ProductSubGroupCode` | `psg.fld_ProductSubGroupTitle` | `t.fld_ProductSubGroup = psg.fld_ProductSubGroupCode` |
-| برند | `p.fld_ProductBrand = pb.fld_ProductBrandCode` | `pb.fld_ProductBrandTitle` | `t.fld_ProductBrand = pb.fld_ProductBrandCode` |
-| طبقه کالا | `p.fld_ProductClass = pc.fld_ProductClassCode` | `pc.fld_ProductClassTitle` | `t.fld_ProductClass = pc.fld_ProductClassCode` |
-| سایز | `p.ProductSize = psz.fld_ProductPropertyCId` | `psz.fld_ProductPropertyCTitle` | `t.fld_ProductPropertyCId = psz.fld_ProductPropertyCId` |
+**Required master product JOIN:** `LEFT JOIN tbl_Products AS p  ON t.ProductCode = p.ProductCode`
 
-Attributes that exist only on the tag (always from `tbl_Tags`):
+**Product master attributes:**
+
+| Attribute asked (Persian) | Default path (master product) | Title column to return |
+|---|---|---|
+| نام کالا | `p.ProductTitle` | `p.ProductTitle` |
+| نوع کالا | `p.ProductType = pt.ProductTypeCode` | `pt.ProductTypeTitle` |
+| کیفیت / وضعیت کیفی | `p.ProductStatus = ps.ProductStatusCode` | `ps.ProductStatusTitle` |
+| گروه کالا | `p.fld_ProductGroup = pg.fld_ProductGroupCode` | `pg.fld_ProductGroupTitle` |
+| زیرگروه کالا | `p.fld_ProductSubGroup = psg.fld_ProductSubGroupCode` | `psg.fld_ProductSubGroupTitle` |
+| برند | `p.fld_ProductBrand = pb.fld_ProductBrandCode` | `pb.fld_ProductBrandTitle` |
+| طبقه کالا | `p.fld_ProductClass = pc.fld_ProductClassCode` | `pc.fld_ProductClassTitle` |
+| سایز | `p.ProductSize = psz.fld_ProductPropertyCId` | `psz.fld_ProductPropertyCTitle` |
+
+**Tag-specific attributes (always retrieved from `tbl_Tags`):**
+
+These attributes belong to the tag/serial record itself and must not be retrieved through the master product record.
 
 | Attribute asked (Persian) | Column in `tbl_Tags` | Join (use `LEFT JOIN`) | Title column to return |
 |---|---|---|---|
 | خط تولید | `fld_ProductPropertyAId` | `tbl_ProductPropertyA pa ON t.fld_ProductPropertyAId = pa.fld_ProductPropertyAId` | `pa.fld_ProductPropertyATitle` |
 | شیفت کاری | `fld_ProductPropertyBId` | `tbl_ProductPropertyB pb2 ON t.fld_ProductPropertyBId = pb2.fld_ProductPropertyBId` | `pb2.fld_ProductPropertyBTitle` |
 | انبار | `TagInDestinationId` | `tbl_Destination d ON t.TagInDestinationId = d.DestinationCode` | `d.DestinationTitle` |
-| نوع انبار | through the warehouse | `tbl_DestinationType dt ON d.DestinationType = dt.fld_DestinationTypeCode` (after joining `d`) | `dt.fld_DestinationTypeName` |
+| نوع انبار | Through the warehouse | `tbl_DestinationType dt ON d.DestinationType = dt.fld_DestinationTypeCode` (after joining `d`) | `dt.fld_DestinationTypeName` |
 | محل / ناحیه | `TagZone` | `tbl_Zones z ON t.TagZone = z.ZoneCode` | `z.ZoneTitle` |
 | ثبت‌کننده تگ | `TagRegisterUser` | `tbl_User u ON t.TagRegisterUser = u.Id` | `u.Name` |
 
-Columns of `tbl_Tags` with no documented lookup (return the stored value only when the user asks for them; never invent a join): `TagStatus`, `TagInDestinationId2`, `TagInActionId2`, `fld_LastModifierUser`, `ContractStatus`, `RegCode`, `ProjectCode`.
+**Columns of `tbl_Tags` with no documented lookup:**
+
+For the following columns, return the stored value only when the user explicitly asks for that attribute. Do not invent or assume a lookup relationship.
+
+- `TagStatus`
+- `TagInDestinationId2`
+- `TagInActionId2`
+- `fld_LastModifierUser`
+- `ContractStatus`
+- `RegCode`
+- `ProjectCode`
+
+**Important rules:**
+
+1. For product master attributes, always use `tbl_Tags.ProductCode → tbl_Products.ProductCode → lookup table`.
+2. Do not use classification or product-property values stored in `tbl_Tags` as an alternative source for product master attributes, even if corresponding columns exist in `tbl_Tags`.
+3. The exceptions are production line (`fld_ProductPropertyAId`) and work shift (`fld_ProductPropertyBId`), which must be joined directly from `tbl_Tags`.
+4. Size must be retrieved through `tbl_Products.ProductSize → tbl_ProductPropertyC.fld_ProductPropertyCId`, not through `tbl_Tags.fld_ProductPropertyCId`.
+5. Use `LEFT JOIN` for the documented lookup relationships so that missing lookup records do not remove the tag/serial from the query result.
+
 
 #### Table 4.5.2 — `tbl_Products` attributes (alias `p`)
 
@@ -827,12 +892,31 @@ Product type of a serial (user gives a serial; default master-product path):
 <<Search
 SELECT
     t.ProductSerial AS [سریال کالا],
-    pt.ProductTypeTitle AS [نوع کالا]
+    p.ProductTitle AS [نام کالا],
+    pb.fld_ProductBrandTitle AS [برند],
+    pg.fld_ProductGroupTitle AS [گروه کالا],
+    psg.fld_ProductSubGroupTitle AS [زیرگروه کالا],
+    pc.fld_ProductClassTitle AS [طبقه کالا],
+    pt.ProductTypeTitle AS [نوع کالا],
+    ps.ProductStatusTitle AS [کیفیت کالا],
+    psz.fld_ProductPropertyCTitle AS [سایز]
 FROM tbl_Tags AS t
 LEFT JOIN tbl_Products AS p
     ON t.ProductCode = p.ProductCode
+LEFT JOIN tbl_ProductBrand AS pb
+    ON p.fld_ProductBrand = pb.fld_ProductBrandCode
+LEFT JOIN tbl_ProductGroup AS pg
+    ON p.fld_ProductGroup = pg.fld_ProductGroupCode
+LEFT JOIN tbl_ProductSubGroup AS psg
+    ON p.fld_ProductSubGroup = psg.fld_ProductSubGroupCode
+LEFT JOIN tbl_ProductClass AS pc
+    ON p.fld_ProductClass = pc.fld_ProductClassCode
 LEFT JOIN tbl_ProductType AS pt
     ON p.ProductType = pt.ProductTypeCode
+LEFT JOIN tbl_ProductStatus AS ps
+    ON p.ProductStatus = ps.ProductStatusCode
+LEFT JOIN tbl_ProductPropertyC AS psz
+    ON p.ProductSize = psz.fld_ProductPropertyCId
 WHERE t.ProductSerial = N'10000019'
 >>
 
@@ -877,7 +961,11 @@ If the user asks about registered tags, current stock, current warehouse locatio
 
 Use the appropriate lookup tables when the user asks for human-readable names.
 
-When the answer includes classification, location or user attributes of the tag, always show their titles through the joins of Section 4.5.1, never their codes or IDs.
+When the answer includes product classification attributes for a serial or tag, resolve them through `tbl_Products` using the relationship `tbl_Tags.ProductCode = tbl_Products.ProductCode`, followed by the appropriate lookup joins in Table 4.5.2.
+
+Resolve tag-specific attributes such as production line, work shift, warehouse, zone, and tag registrar through their documented relationships in Table 4.5.1.
+
+Never resolve product master attributes directly from product-related columns stored in `tbl_Tags`.
 
 ### 5.3 Entry History (تاریخچه ورود)
 
@@ -1616,24 +1704,43 @@ Use `fld_ActionTypeTitle` to display the operation type.
 
 ### 11.6 Product Classification
 
-The following code-based relationships are documented:
+Product classification attributes for a serial or tag must be resolved through the master product table.
 
-- `tbl_Tags.fld_ProductBrand` → `tbl_ProductBrand.fld_ProductBrandCode`
-- `tbl_Tags.fld_ProductGroup` → `tbl_ProductGroup.fld_ProductGroupCode`
-- `tbl_Tags.fld_ProductSubGroup` → `tbl_ProductSubGroup.fld_ProductSubGroupCode`
-- `tbl_Tags.fld_ProductClass` → `tbl_ProductClass.fld_ProductClassCode`
-- `tbl_Tags.ProductStatus` → `tbl_ProductStatus.ProductStatusCode`
-- `tbl_Tags.ProductType` → `tbl_ProductType.ProductTypeCode`
-- `tbl_Products.fld_ProductBrand`, `fld_ProductGroup`, `fld_ProductSubGroup`, `fld_ProductClass`, `ProductStatus`, `ProductType` → the same lookup code columns
-- `tbl_ProductSubGroup.fld_ProductGroupCode` → `tbl_ProductGroup.fld_ProductGroupCode`
+The primary relationship is:
+
+`tbl_Tags.ProductCode`
+→ `tbl_Products.ProductCode`
+
+The following relationships are used to resolve product classification titles from the master product:
+
+- `tbl_Products.fld_ProductBrand` → `tbl_ProductBrand.fld_ProductBrandCode`
+- `tbl_Products.fld_ProductGroup` → `tbl_ProductGroup.fld_ProductGroupCode`
+- `tbl_Products.fld_ProductSubGroup` → `tbl_ProductSubGroup.fld_ProductSubGroupCode`
+- `tbl_Products.fld_ProductClass` → `tbl_ProductClass.fld_ProductClassCode`
+- `tbl_Products.ProductStatus` → `tbl_ProductStatus.ProductStatusCode`
+- `tbl_Products.ProductType` → `tbl_ProductType.ProductTypeCode`
+
+The product name is retrieved from `tbl_Products.ProductTitle`.
+
+Never use the corresponding product-related columns stored in `tbl_Tags` as direct lookup references for product classification.
+
+The subgroup hierarchy relationship remains:
+
+`tbl_ProductSubGroup.fld_ProductGroupCode`
+→ `tbl_ProductGroup.fld_ProductGroupCode`
 
 ### 11.7 Product Properties
 
+Production line and work shift are tag-specific attributes and are resolved directly from `tbl_Tags`:
+
 - `tbl_Tags.fld_ProductPropertyAId` → `tbl_ProductPropertyA.fld_ProductPropertyAId`
 - `tbl_Tags.fld_ProductPropertyBId` → `tbl_ProductPropertyB.fld_ProductPropertyBId`
-- `tbl_Tags.fld_ProductPropertyCId` → `tbl_ProductPropertyC.fld_ProductPropertyCId`
-- `tbl_Products.ProductSize` → `tbl_ProductPropertyC.fld_ProductPropertyCId`
-- `tbl_ProductPropertyB.fld_ProductPropertyAId` → `tbl_ProductPropertyA.fld_ProductPropertyAId`
+
+Product size is a master product attribute and must be resolved through `tbl_Products`:
+
+- `tbl_Tags.ProductCode` → `tbl_Products.ProductCode` → `tbl_Products.ProductSize` → `tbl_ProductPropertyC.fld_ProductPropertyCId`
+
+Do not use `tbl_Tags.fld_ProductPropertyCId` to resolve product size.
 
 ### 11.8 Station and User
 
@@ -1859,7 +1966,9 @@ The following principles are mandatory when interpreting the Silo WMS database:
 - A tag marked as locked is associated with a failed goods inspection and may be restricted in operations that are sensitive to inspection status. Do not infer that the locked state independently blocks exit, cancellation, or all operations. 
 - For a denied-operation question, retrieve the actual tag state and the operation type controls instead of listing possible reasons.
 - Attributes of tags and products that reference other tables are always displayed as titles/names, never as codes or IDs, unless the user explicitly asks for the code.
-- The size of a product is resolved through `tbl_ProductPropertyC`; the product type through `tbl_ProductType`; quality through `tbl_ProductStatus`; brand, group, subgroup and class through their own lookup tables.
+- For serial/tag queries, all product master attributes must be resolved through `tbl_Tags.ProductCode` → `tbl_Products.ProductCode`, followed by the appropriate lookup joins. This includes product name, type, quality, brand, group, subgroup, class, and size.
+Production line and work shift are exceptions and must be resolved directly from `tbl_Tags.fld_ProductPropertyAId` and `tbl_Tags.fld_ProductPropertyBId`, respectively.
+Never use product-related columns stored in `tbl_Tags` as direct lookup references for product master attributes.
 
 **The objective is not merely to generate syntactically valid SQL. The objective is to generate SQL that accurately represents the Silo WMS database and its real business processes.**
 
@@ -2113,19 +2222,26 @@ tbl_Province: fld_Id int IDENTITY, fld_Name nv(50) NN
 These are logical business-key relationships (not necessarily enforced foreign keys). Use only these joins.
 
 Product, classification and inventory:
+
 - tbl_Tags.ProductCode → tbl_Products.ProductCode
-- tbl_Tags / tbl_Products . fld_ProductBrand → tbl_ProductBrand.fld_ProductBrandCode
-- tbl_Tags / tbl_Products . fld_ProductGroup → tbl_ProductGroup.fld_ProductGroupCode
-- tbl_Tags / tbl_Products . fld_ProductSubGroup → tbl_ProductSubGroup.fld_ProductSubGroupCode
-- tbl_Tags / tbl_Products . fld_ProductClass → tbl_ProductClass.fld_ProductClassCode
-- tbl_Tags / tbl_Products . ProductStatus → tbl_ProductStatus.ProductStatusCode
-- tbl_Tags / tbl_Products . ProductType → tbl_ProductType.ProductTypeCode
-- tbl_Tags.fld_ProductPropertyAId → tbl_ProductPropertyA.fld_ProductPropertyAId; fld_ProductPropertyBId → tbl_ProductPropertyB.fld_ProductPropertyBId; fld_ProductPropertyCId → tbl_ProductPropertyC.fld_ProductPropertyCId
+
+- tbl_Products.fld_ProductBrand → tbl_ProductBrand.fld_ProductBrandCode
+- tbl_Products.fld_ProductGroup → tbl_ProductGroup.fld_ProductGroupCode
+- tbl_Products.fld_ProductSubGroup → tbl_ProductSubGroup.fld_ProductSubGroupCode
+- tbl_Products.fld_ProductClass → tbl_ProductClass.fld_ProductClassCode
+- tbl_Products.ProductStatus → tbl_ProductStatus.ProductStatusCode
+- tbl_Products.ProductType → tbl_ProductType.ProductTypeCode
+
+- tbl_Tags.fld_ProductPropertyAId → tbl_ProductPropertyA.fld_ProductPropertyAId
+- tbl_Tags.fld_ProductPropertyBId → tbl_ProductPropertyB.fld_ProductPropertyBId
+- tbl_Products.ProductSize → tbl_ProductPropertyC.fld_ProductPropertyCId
+
+- tbl_ProductSubGroup.fld_ProductGroupCode → tbl_ProductGroup.fld_ProductGroupCode
+- tbl_ProductPropertyB.fld_ProductPropertyAId → tbl_ProductPropertyA.fld_ProductPropertyAId
+
 - tbl_Products.ProductSize → tbl_ProductPropertyC.fld_ProductPropertyCId
 - tbl_Products.ProductRegUser → tbl_User.Id; tbl_Products.ProductGalleryId → tbl_Gallery.fld_GalleryId
 - tbl_Tags.TagRegisterUser → tbl_User.Id
-- tbl_ProductSubGroup.fld_ProductGroupCode → tbl_ProductGroup.fld_ProductGroupCode
-- tbl_ProductPropertyB.fld_ProductPropertyAId → tbl_ProductPropertyA.fld_ProductPropertyAId
 
 Location:
 - tbl_Tags.TagInDestinationId → tbl_Destination.DestinationCode; tbl_Tags.TagZone → tbl_Zones.ZoneCode
