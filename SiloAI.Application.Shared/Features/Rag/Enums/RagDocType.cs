@@ -1,4 +1,4 @@
-﻿namespace SiloAI.Application.Shared.Features;
+namespace SiloAI.Application.Shared.Features;
 
 public enum RagDocType
 {
@@ -9,7 +9,10 @@ public enum RagDocType
     Support,
 
     /// <summary>Instructions + text request + input images in, generated image out. No RAG.</summary>
-    ImageGeneration
+    ImageGeneration,
+
+    /// <summary>Instructions + optional text request + input images in, text analysis out. No RAG.</summary>
+    ImageAnalysis
 }
 
 public static class RagDocTypeExtensions
@@ -22,6 +25,7 @@ public static class RagDocTypeExtensions
         RagDocType.PageAgent => "عامل صفحه محور",
         RagDocType.Support => "پشتیبانی",
         RagDocType.ImageGeneration => "تولید تصویر",
+        RagDocType.ImageAnalysis => "تحلیل تصویر",
         _ => type.ToString()
     };
 }

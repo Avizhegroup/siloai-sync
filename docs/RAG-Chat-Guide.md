@@ -1,7 +1,7 @@
 # RAG Chat — External Integration Guide - SILO
 
 This document is for **external clients** integrating with SiloAI's Retrieval-Augmented
-Generation (RAG) chat feature and its companion AI endpoints (image OCR and image generation).
+Generation (RAG) chat feature and its companion AI endpoints (image OCR, image analysis and image generation).
 It explains how the features work end-to-end and describes every public HTTP endpoint,
 including the input payloads and the responses each one returns.
 
@@ -94,6 +94,7 @@ Which scheme each endpoint accepts:
 |--------------------------------------------------|:---:|:-------:|
 | RAG chat (`/api/rag/chat/*`)                     | yes | yes     |
 | Image generation (`/api/image-generation`)       | yes | yes     |
+| Image analysis (`/api/image-analysis`)           | yes | yes     |
 | Image OCR (`/api/image/ocr`)                     | no  | yes     |
 
 ### Document types (`docType`)
@@ -108,6 +109,7 @@ Wherever an endpoint takes `docType`: in **JSON bodies send the number** (e.g. `
 | `PageAgent`       | 3      | Page-oriented agent.                                                   |
 | `Support`         | 4      | Support chat.                                                          |
 | `ImageGeneration` | 5      | Image generation (`/api/image-generation`) — instructions only, no RAG.|
+| `ImageAnalysis`   | 6      | Image analysis (`/api/image-analysis`) — instructions only, no RAG.    |
 
 ### Common error responses
 
@@ -158,7 +160,7 @@ Sends a user message, retrieves relevant knowledge, and returns the AI's grounde
 | `message`        | string    | **yes**  | —                | The user's question.                                                          |
 | `topK`           | int       | no       | `5`              | Number of chunks to retrieve (clamped 1–20).                                  |
 | `isMainChat`     | bool      | no       | `false`          | `true` hides citations/source markers for a general-assistant style answer.  |
-| `docType`        | enum      | no       | `GeneralChat`    | One of `GeneralChat`, `Report`, `ImageOCR`, `PageAgent`, `Support` (see *Document types*). Filters retrieval and active instructions. |
+| `docType`        | enum      | no       | `GeneralChat`    | One of `GeneralChat`, `Report`, `ImageOCR`, `PageAgent`, `Support` (see *Document types*; the image types have their own endpoints). Filters retrieval and active instructions. |
 | `key`            | string?   | no       | `null`           | Optional additional partition/tenant key to filter which documents are searched. |
 | `useRag`         | bool      | no       | `true`           | `false` = instructions-only chat: no retrieval, no citations, no search tool. Only read when this call **creates** the conversation; an existing conversation keeps the mode it started with. |
 
@@ -259,7 +261,7 @@ Lists all uploaded documents.
 | `fileName`          | string    | Internal stored file name (randomized).                   |
 | `originalFileName`  | string    | Name as uploaded by the client.                            |
 | `contentType`       | string    | MIME type.                                                 |
-| `docType`           | enum      | Document type (see *Document types*, numbers 0–5 except `ImageGeneration`, which has no documents). |
+| `docType`           | enum      | Document type (see *Document types*, numbers 0–6 except `ImageGeneration` and `ImageAnalysis`, which have no documents). |
 | `key`               | string?   | Optional partition/tenant key.                              |
 | `category`          | string?   | Optional free-text category.                                |
 | `tags`              | string?   | Optional free-text tags.                                    |
@@ -495,6 +497,51 @@ curl -X POST https://<host>/api/image/ocr \
   -F imageData=@receipt.png -F mediaType=image/png -F docType=ImageOCR -F key=""
 ```
 
+### 5.6 Image analysis
+
+Instructions + an optional text request + one or more images in, a **text analysis** out (not
+limited to extracting text like OCR). There is no retrieval: the model is driven only by the
+`ImageAnalysis` instructions (managed with the instructions endpoints, `docType = ImageAnalysis`,
+selected with `key`), your optional `prompt`, and your images. It is billed to the calling
+customer on the real token usage, through the same credit ledger as chat.
+
+#### `POST /api/image-analysis`
+
+Auth: JWT **or** `X-Api-Key`. Content type: `multipart/form-data`.
+
+**Input (form fields):**
+
+| Field       | Type          | Required | Description                                                                                                  |
+|-------------|---------------|----------|----------------------------------------------------------------------------------------------------------------|
+| `images`    | file (repeat) | **yes**  | 1–8 images; repeat the field once per file. **PNG, JPEG or WebP only**, max 10 MB each (format detected from the bytes). |
+| `prompt`    | string        | no       | The question/task for this request, e.g. "list visible defects". May be omitted when the instructions already say what to do — but at least one of `prompt` or active instructions must exist. |
+| `key`       | string        | no       | Selects the instructions stored under this key. Use different keys for different analysis jobs (defects, receipts, ...). |
+| `requestId` | guid          | no       | Idempotency token. Re-sending the same `requestId` after a timeout never charges the customer twice.          |
+
+**Output** (`ImageAnalysisResponse`, 200):
+
+| Field                             | Type   | Description                              |
+|-----------------------------------|--------|------------------------------------------|
+| `text`                            | string | The analysis.                            |
+| `tokenUsage.inputTokenCount`      | long   | Prompt tokens.                           |
+| `tokenUsage.cachedInputTokenCount`| long   | Tokens served from prompt cache.         |
+| `tokenUsage.outputTokenCount`     | long   | Completion tokens.                       |
+| `tokenUsage.totalTokenCount`      | long   | Input + output.                          |
+
+**Errors:** `400` (no image, more than 8, empty/oversized image, or not PNG/JPEG/WebP), `402` (credit
+exhausted), `422` (no model assigned for the feature, the model lacks image-input/text-output support,
+nothing tells the model what to analyze, or the model returned no text — `message` has the reason).
+
+```bash
+curl -X POST https://<host>/api/image-analysis \
+  -H "X-Api-Key: $SILO_API_KEY" \
+  -F prompt="List any visible defects and rate their severity." \
+  -F key="qa-inspection" \
+  -F requestId="$(uuidgen)" \
+  -F images=@front.png -F images=@back.jpg \
+| jq -r '.text'
+```
+
 ---
 
 ## 6. Typical client workflow
@@ -514,3 +561,10 @@ curl -X POST https://<host>/api/image/ocr \
 2. Call `POST /api/image-generation` with `prompt` (+ `images`, `key`, `requestId`).
 3. Base64-decode `images[0].dataBase64` and save/serve it using `images[0].mediaType`.
 4. On a network timeout, retry with the **same** `requestId` to avoid a double charge.
+
+### Analysing images (text out, no RAG)
+
+1. (One-time) Add `ImageAnalysis` instructions: `POST /api/rag/instructions` with `docType = 6` and a `key`
+   per analysis job (e.g. `qa-inspection`).
+2. Call `POST /api/image-analysis` with `images` (+ `prompt`, `key`, `requestId`).
+3. Read `text`; on a timeout retry with the **same** `requestId` to avoid a double charge.

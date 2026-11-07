@@ -1,0 +1,104 @@
+@page "/image-analysis"
+@using Telerik.Blazor.Components
+@attribute [Authorize(Policy = UiPolicies.AdminOnly)]
+
+<div class="imggen-page">
+    <div class="rag-settings">
+        <div class="rag-setting-title">
+            <div class="rag-setting-icon">
+                <i class="bi bi-search"></i>
+            </div>
+            <div>
+                <div class="rag-setting-heading">تحلیل تصویر</div>
+                <div class="rag-setting-description">
+                    دستورالعمل‌های نوع «تحلیل تصویر»، درخواست متنی (اختیاری) و تصاویر به مدل داده می‌شود و تحلیل به‌صورت متن برمی‌گردد.
+                </div>
+            </div>
+        </div>
+        <div class="rag-setting-fields">
+            <div class="rag-field">
+                <label><i class="bi bi-key me-1"></i> کلید دستورالعمل </label>
+                <TelerikTextBox @bind-Value="_key"
+                                Placeholder="اختیاری"
+                                Enabled="@(!_isSending)"
+                                Width="100%" />
+            </div>
+        </div>
+    </div>
+
+    <div class="imggen-grid">
+        <div class="imggen-panel">
+            <label class="imggen-label"><i class="bi bi-chat-text me-1"></i> درخواست (اختیاری) </label>
+            <TelerikTextArea @bind-Value="_prompt"
+                             Rows="6"
+                             Placeholder="مثلاً: ایرادات ظاهری این محصول را فهرست کن..."
+                             Enabled="@(!_isSending)"
+                             Width="100%" />
+
+            <label class="imggen-label mt-3"><i class="bi bi-images me-1"></i> تصاویر (حداکثر @MaxImages) </label>
+            <label class="btn btn-outline-primary btn-sm px-4 @(_isSending ? "disabled" : "")">
+                <i class="bi bi-folder2-open me-1"></i> انتخاب تصاویر
+                <InputFile OnChange="OnFilesSelected"
+                           class="d-none"
+                           multiple
+                           accept="image/png,image/jpeg,image/webp" />
+            </label>
+
+            @if (_inputs.Count > 0)
+            {
+                <div class="imggen-thumbs">
+                    @foreach (var item in _inputs)
+                    {
+                        <div class="imggen-thumb">
+                            <img src="@item.Preview" alt="@item.File.Name" />
+                            <button type="button" class="file-chip-remove" title="حذف" @onclick="() => RemoveInput(item)">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                            <span class="mono" dir="ltr">@item.File.Name</span>
+                        </div>
+                    }
+                </div>
+            }
+
+            <div class="mt-4 d-flex gap-2">
+                <button type="button"
+                        class="btn btn-primary px-4"
+                        @onclick="AnalyzeAsync"
+                        disabled="@(_isSending || _inputs.Count == 0)">
+                    <i class="bi bi-stars me-2"></i> تحلیل
+                </button>
+                <button type="button" class="btn btn-outline-secondary" @onclick="Reset" disabled="@_isSending">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i> پاک‌سازی
+                </button>
+            </div>
+        </div>
+
+        <div class="imggen-panel">
+            <label class="imggen-label"><i class="bi bi-card-text me-1"></i> نتیجه </label>
+
+            @if (_isSending)
+            {
+                <TelerikLoaderContainer LoaderType="@LoaderType.InfiniteSpinner"
+                                        Text="در حال تحلیل تصویر..." />
+            }
+            else if (string.IsNullOrWhiteSpace(_resultText))
+            {
+                <div class="imggen-empty">
+                    <i class="bi bi-card-text"></i>
+                    <span>هنوز تحلیلی انجام نشده است.</span>
+                </div>
+            }
+            else
+            {
+                <div class="imggen-text" dir="auto">@_resultText</div>
+
+                @if (_usage is not null)
+                {
+                    <div class="imggen-label mt-3 mono" dir="ltr">
+                        tokens — in: @_usage.InputTokenCount · cached: @_usage.CachedInputTokenCount · out: @_usage.OutputTokenCount
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>

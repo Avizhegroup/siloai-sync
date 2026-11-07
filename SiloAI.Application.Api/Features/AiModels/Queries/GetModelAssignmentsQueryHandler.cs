@@ -3,7 +3,7 @@ namespace SiloAI.Application.Api.Features;
 public class GetModelAssignmentsQueryHandler(AiApiContext context) : IRequestHandler<GetModelAssignmentsQuery, List<ModelAssignmentDto>>
 {
     private static readonly UsageFeature[] AllFeatures =
-        [UsageFeature.SupportChat, UsageFeature.Report, UsageFeature.PageAgent, UsageFeature.Ocr, UsageFeature.ImageGeneration];
+        [UsageFeature.SupportChat, UsageFeature.Report, UsageFeature.PageAgent, UsageFeature.Ocr, UsageFeature.ImageGeneration, UsageFeature.ImageAnalysis];
 
     public async Task<List<ModelAssignmentDto>> Handle(GetModelAssignmentsQuery request, CancellationToken cancellationToken)
     {
