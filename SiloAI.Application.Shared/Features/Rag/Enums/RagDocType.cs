@@ -5,7 +5,8 @@ public enum RagDocType
     GeneralChat,
     Report,
     ImageOCR,
-    PageAgent
+    PageAgent,
+    Support
 }
 
 public static class RagDocTypeExtensions
@@ -16,6 +17,7 @@ public static class RagDocTypeExtensions
         RagDocType.Report => "گزارش",
         RagDocType.ImageOCR => "تصویر",
         RagDocType.PageAgent => "عامل صفحه محور",
+        RagDocType.Support => "پشتیبانی",
         _ => type.ToString()
     };
 }
