@@ -12,6 +12,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <InternalsVisibleTo Include="SiloAI.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
       <ProjectReference Include="..\SiloAI.Application.Shared\SiloAI.Application.Shared.csproj" />
       <ProjectReference Include="..\SiloAI.Domains\SiloAI.Domains.csproj" />
       <ProjectReference Include="..\SiloAI.Shared\SiloAI.Shared.csproj" />
