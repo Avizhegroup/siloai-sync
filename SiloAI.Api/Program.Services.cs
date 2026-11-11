@@ -27,6 +27,7 @@ public static partial class Program
         services.AddScoped<ChatAgentService>();
 
         services.AddScoped<AgentFileTaskService>();
+        services.AddScoped<IImageAnalysisService>(sp => sp.GetRequiredService<AgentFileTaskService>());
 
         services.AddScoped<SiloAI.Agent.ImageGeneration.IImageBackend, SiloAI.Agent.ImageGeneration.HttpImageBackend>();
 

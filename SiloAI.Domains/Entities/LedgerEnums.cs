@@ -14,5 +14,6 @@ public enum UsageFeature
     Report = 2,
     PageAgent = 3,
     Ocr = 4,
-    ImageGeneration = 5
+    ImageGeneration = 5,
+    ImageAnalysis = 6
 }

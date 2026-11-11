@@ -17,6 +17,7 @@ public class EnumContractTests
     [InlineData(RagDocType.PageAgent, 3)]
     [InlineData(RagDocType.Support, 4)]
     [InlineData(RagDocType.ImageGeneration, 5)]
+    [InlineData(RagDocType.ImageAnalysis, 6)]
     public void RagDocType_values_are_stable(RagDocType type, int value) => Assert.Equal(value, (int)type);
 
     [Theory]
@@ -25,6 +26,7 @@ public class EnumContractTests
     [InlineData(UsageFeature.PageAgent, 3)]
     [InlineData(UsageFeature.Ocr, 4)]
     [InlineData(UsageFeature.ImageGeneration, 5)]
+    [InlineData(UsageFeature.ImageAnalysis, 6)]
     public void UsageFeature_values_are_stable(UsageFeature feature, int value) => Assert.Equal(value, (int)feature);
 
     [Theory]
