@@ -1,4 +1,4 @@
-﻿using Microsoft.Agents.AI;
+using Microsoft.Agents.AI;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Options;
@@ -14,6 +14,17 @@ using ChatMessage = Microsoft.Extensions.AI.ChatMessage;
 
 namespace SiloAI.Agent.Tasks;
 
+public sealed record ImageAnalysisInput(byte[] Data, string MediaType);
+
+public sealed record ImageAnalysisResult(string Text, long InputTokens, long CachedInputTokens, long OutputTokens);
+
+public interface IImageAnalysisService
+{
+    Task<ImageAnalysisResult> AnalyzeImagesAsync(
+        IReadOnlyList<ImageAnalysisInput> images, string? prompt, ResolvedAiModel model,
+        RagDocType docType, string? key, CancellationToken cancellationToken = default);
+}
+
 /// <summary>
 /// Non-chat agent tasks: one file in, one text answer out, no AgentSession and no conversation
 /// history. Uses the same <see cref="ChatAgentCache"/> as ChatAgentService (a shared, generic
@@ -23,8 +34,62 @@ namespace SiloAI.Agent.Tasks;
 public class AgentFileTaskService(
     IOptions<OpenAIOptions> options,
     AiApiContext context,
-    ChatAgentCache agentCache)
+    ChatAgentCache agentCache) : IImageAnalysisService
 {
+    /// <summary>
+    /// Image analysis: instructions (DocType + Key) + an optional text request + one or more
+    /// images in, a text answer out. Stateless, no RAG. Unlike <see cref="ExtractTextFromFileAsync"/>
+    /// it also reports the model's token usage so the caller can bill the real cost.
+    /// </summary>
+    public async Task<ImageAnalysisResult> AnalyzeImagesAsync(
+        IReadOnlyList<ImageAnalysisInput> images,
+        string? prompt,
+        ResolvedAiModel model,
+        RagDocType docType,
+        string? key,
+        CancellationToken cancellationToken = default)
+    {
+        if (images is null || images.Count == 0)
+            throw new ArgumentException("At least one image is required.", nameof(images));
+
+        ValidateAnalysisModel(model);
+
+        var instructions = await LoadInstructionsAsync(docType, key!, cancellationToken);
+
+        if (string.IsNullOrWhiteSpace(instructions) && string.IsNullOrWhiteSpace(prompt))
+            throw new InvalidOperationException(
+                "Nothing tells the model what to analyze: send a prompt or add active instructions for this type/key.");
+
+        var agent = GetOrCreateAgent(model.Identifier, instructions);
+
+        var contents = new List<AIContent>();
+        if (!string.IsNullOrWhiteSpace(prompt)) contents.Add(new TextContent(prompt.Trim()));
+        contents.AddRange(images.Select(i => (AIContent)new DataContent(i.Data, i.MediaType)));
+
+        // Instructions travel once, through ChatOptions.Instructions on the cached agent.
+        var response = await agent.RunAsync(
+            new List<ChatMessage> { new(ChatRole.User, contents) },
+            cancellationToken: cancellationToken);
+
+        var text = response?.ToString()?.Trim() ?? string.Empty;
+        if (text.Length == 0)
+            throw new InvalidOperationException("The model returned no analysis text.");
+
+        return new ImageAnalysisResult(
+            text,
+            response!.Usage?.InputTokenCount ?? 0,
+            response.Usage?.CachedInputTokenCount ?? 0,
+            response.Usage?.OutputTokenCount ?? 0);
+    }
+
+    internal static void ValidateAnalysisModel(ResolvedAiModel model)
+    {
+        if (!model.SupportsImageInput || !model.SupportsTextOutput)
+            throw new InvalidOperationException(
+                $"Model '{model.Identifier}' does not support image input with text output and cannot be " +
+                "used for image analysis. Enable those capabilities on the AI Models page.");
+    }
+
     /// <param name="model">
     /// The model to call, resolved by the caller via <c>IAiModelResolver</c>. Must support file
     /// input and text output.
@@ -89,7 +154,9 @@ public class AgentFileTaskService(
     {
         var docTypeValue = (int)docType;
 
-        var cachedInstructions = await agentCache.GetOrCreateInstructionsAsync(docTypeValue, async () =>
+        // Keyed by (DocType, Key): the query below filters by Key, so a DocType-only cache entry
+        // would serve the first Key's instructions to every other Key.
+        var cachedInstructions = await agentCache.GetOrCreateInstructionsAsync(docTypeValue, key, async () =>
             (IReadOnlyList<CachedRagInstruction>)await context.RagInstructions
                 .Where(p => p.DocType == docTypeValue 
                          && p.Key == key

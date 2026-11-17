@@ -17,6 +17,8 @@ public static class FinancialEnumExtensions
         UsageFeature.Report => "گزارش",
         UsageFeature.PageAgent => "عامل صفحه محور",
         UsageFeature.Ocr => "تصویر (OCR)",
+        UsageFeature.ImageGeneration => "تولید تصویر",
+        UsageFeature.ImageAnalysis => "تحلیل تصویر",
         _ => feature.ToString()
     };
 }

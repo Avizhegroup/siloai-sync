@@ -10,7 +10,7 @@ public partial class AiModels
     public UpsertAiModelRequest _form = new();
 
     public List<AiModelDto>? _models;
-    public List<AiModelDto>? _normalModels => _models?.Where(m => m.Kind == AiModelKind.Normal && m.IsActive).ToList();
+    public List<AiModelDto>? _normalModels => _models?.Where(m => m.IsActive).ToList();
     public List<CustomerDto>? _customers;
     public int? _assignmentCustomerId;
     public List<ModelAssignmentDto>? _assignments;
@@ -23,13 +23,18 @@ public partial class AiModels
     [
         new()
     {
-        Text = "مدل عمومی (چت/تصویر/فایل/صدا)",
+        Text = "مدل معمولی",
         Value = AiModelKind.Normal
     },
     new()
     {
         Text = "مدل بازیابی (RAG / Embedding)",
         Value = AiModelKind.Rag
+    },
+    new()
+    {
+        Text = "مدل تولید عکس",
+        Value = AiModelKind.ImageGeneration
     }
     ];
 

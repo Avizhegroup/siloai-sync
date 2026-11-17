@@ -33,6 +33,9 @@
   <Folder Name="/src/Presentation/UI/">
     <Project Path="SiloAI.UI/SiloAI.UI.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="SiloAI.Tests/SiloAI.Tests.csproj" />
+  </Folder>
   <Folder Name="/src/Shared/">
     <Project Path="SiloAI.Shared/SiloAI.Shared.csproj" />
   </Folder>
