@@ -2244,8 +2244,11 @@ Product, classification and inventory:
 - tbl_Tags.TagRegisterUser → tbl_User.Id
 
 Location:
-- tbl_Tags.TagInDestinationId → tbl_Destination.DestinationCode; tbl_Tags.TagZone → tbl_Zones.ZoneCode
-- tbl_Zones.ZoneStoreCode → tbl_Destination.DestinationCode; tbl_Zones.ZoneCorridorId → tbl_Corridor.fld_CorridorId; tbl_Corridor.fld_CorridorWarehouseCode → tbl_Destination.DestinationCode
+- tbl_Tags.TagInDestinationId → tbl_Destination.DestinationCode;
+- tbl_Tags.TagZone → tbl_Zones.ZoneCode
+- tbl_Zones.ZoneStoreCode → tbl_Destination.DestinationCode;
+- tbl_Zones.ZoneCorridorId → tbl_Corridor.fld_CorridorId;
+- tbl_Corridor.fld_CorridorWarehouseCode → tbl_Destination.DestinationCode
 - tbl_Destination.DestinationType → tbl_DestinationType.fld_DestinationTypeCode
 
 Movement:
