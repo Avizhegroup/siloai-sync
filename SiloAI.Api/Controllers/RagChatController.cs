@@ -90,6 +90,8 @@ public class RagChatController(IMediator mediator) : ControllerBase
                 Key = request.Key,
                 UseRag = request.UseRag,
                 Username = User?.Identity?.Name ?? string.Empty,
+                IsFinalAnswer = request.IsFinalAnswer,
+                DatabaseResultsJson = request.DatabaseResultsJson,
                 OwnerId = User.GetOwnerId(),
                 CustomerId = int.Parse(User.GetCustomerId())
             }, cancellationToken);

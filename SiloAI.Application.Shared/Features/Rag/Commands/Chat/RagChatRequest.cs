@@ -14,4 +14,6 @@ public class RagChatRequest
     /// when this request starts a new conversation; an existing conversation keeps its mode.
     /// </summary>
     public bool UseRag { get; set; } = true;
+    public bool IsFinalAnswer { get; set; } = false;
+    public string? DatabaseResultsJson { get; set; }
 }
