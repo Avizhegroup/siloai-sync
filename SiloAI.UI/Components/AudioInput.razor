@@ -1,6 +1,6 @@
 <div class="audio-input">
     <div class="d-flex flex-wrap gap-2 align-items-center">
-        @if (_isRecording)
+        @if (IsRecording)
         {
             <button type="button" class="btn btn-danger btn-sm px-3" @onclick="StopRecordingAsync">
                 <i class="bi bi-stop-circle me-1"></i> پایان ضبط
@@ -25,7 +25,7 @@
         }
     </div>
 
-    @if (Value is not null && !_isRecording)
+    @if (Value is not null && !IsRecording)
     {
         <div class="mt-2">
             <audio controls src="@($"data:{Value.ContentType};base64,{Convert.ToBase64String(Value.Data)}")"></audio>

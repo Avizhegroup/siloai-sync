@@ -9,7 +9,7 @@ public sealed record AudioClip(byte[] Data, string FileName, string ContentType)
 
 public partial class AudioInput : IAsyncDisposable
 {
-    private bool _isRecording;
+    private bool IsRecording;
 
     [Parameter] public AudioClip? Value { get; set; }
     [Parameter] public EventCallback<AudioClip?> ValueChanged { get; set; }
@@ -34,12 +34,12 @@ public partial class AudioInput : IAsyncDisposable
             return;
         }
 
-        _isRecording = true;
+        IsRecording = true;
     }
 
     private async Task StopRecordingAsync()
     {
-        _isRecording = false;
+        IsRecording = false;
 
         var result = await JS.InvokeAsync<RecordingResult?>("siloSpeech.stop");
         if (result is null || string.IsNullOrEmpty(result.Data))
@@ -95,7 +95,7 @@ public partial class AudioInput : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        if (_isRecording)
+        if (IsRecording)
         {
             try { await JS.InvokeVoidAsync("siloSpeech.cancel"); } catch { /* circuit already gone */ }
         }
