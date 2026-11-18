@@ -1,4 +1,4 @@
-using SiloAI.Application.Shared.Contracts.AiModels;
+﻿using SiloAI.Application.Shared.Contracts.AiModels;
 
 namespace SiloAI.Application.Api.Services;
 
@@ -23,7 +23,7 @@ public class AiModelResolver(AiApiContext dbContext) : IAiModelResolver
         // 2) The global default (CustomerId == null) for this feature.
         var defaultModel = await dbContext.CustomerModelAssignments
             .AsNoTracking()
-            .Where(a => a.CustomerId == null && a.Feature == feature)
+            .Where(a => a.Feature == feature)
             .Select(a => a.AiModel)
             .FirstOrDefaultAsync(cancellationToken);
 

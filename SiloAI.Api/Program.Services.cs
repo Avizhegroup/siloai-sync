@@ -1,4 +1,4 @@
-﻿using SiloAI.Agent.Chat;
+using SiloAI.Agent.Chat;
 using SiloAI.Agent.Rag;
 using SiloAI.Agent.Tasks;
 using SiloAI.Api.Auth;
@@ -27,6 +27,11 @@ public static partial class Program
         services.AddScoped<ChatAgentService>();
 
         services.AddScoped<AgentFileTaskService>();
+        services.AddScoped<IImageAnalysisService>(sp => sp.GetRequiredService<AgentFileTaskService>());
+
+        services.AddScoped<SiloAI.Agent.ImageGeneration.IImageBackend, SiloAI.Agent.ImageGeneration.HttpImageBackend>();
+
+        services.AddScoped<SiloAI.Agent.ImageGeneration.IImageGenerationAgentService, SiloAI.Agent.ImageGeneration.ImageGenerationAgentService>();
 
         services.AddSingleton<ChatAgentCache>();
 

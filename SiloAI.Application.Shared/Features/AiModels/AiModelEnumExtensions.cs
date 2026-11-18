@@ -6,6 +6,7 @@ public static class AiModelKindExtensions
     {
         AiModelKind.Rag => "مدل بازیابی (RAG)",
         AiModelKind.Normal => "مدل عمومی",
+        AiModelKind.ImageGeneration => "مدل تولید تصویر",
         _ => kind.ToString()
     };
 }

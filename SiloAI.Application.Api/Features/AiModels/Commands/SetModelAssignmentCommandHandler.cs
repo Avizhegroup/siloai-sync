@@ -11,10 +11,6 @@ public class SetModelAssignmentCommandHandler(AiApiContext context) : IRequestHa
             .FirstOrDefaultAsync(m => m.Id == input.AiModelId, cancellationToken)
             ?? throw new InvalidOperationException($"AiModel '{input.AiModelId}' was not found.");
 
-        if (model.Kind != AiModelKind.Normal)
-            throw new InvalidOperationException(
-                "Only a Normal-kind model can be assigned to a feature. The RAG/embedding model is " +
-                "shared infrastructure, set separately as the default RAG model.");
 
         if (!model.IsActive)
             throw new InvalidOperationException("Cannot assign an inactive model.");

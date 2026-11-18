@@ -37,6 +37,13 @@ public sealed class ChatAgentCache
     /// </summary>
     private readonly ConcurrentDictionary<int, IReadOnlyList<CachedRagInstruction>> _instructionsCache = new();
 
+    /// <summary>
+    /// Same rows, scoped by (DocType, Key). Use this when the query filters by Key: the DocType-only
+    /// cache above would otherwise hand the first Key's instructions to every other Key.
+    /// Dropped together with the DocType's entries by <see cref="InvalidateInstructions"/>.
+    /// </summary>
+    private readonly ConcurrentDictionary<(int DocType, string Key), IReadOnlyList<CachedRagInstruction>> _keyedInstructionsCache = new();
+
     public AIAgent GetOrCreate(string cacheKey, Func<AIAgent> factory)
         => _cache.GetOrAdd(cacheKey, _ => factory());
 
@@ -61,17 +68,48 @@ public sealed class ChatAgentCache
     }
 
     /// <summary>
+    /// Returns the cached rows for (<paramref name="docType"/>, <paramref name="key"/>), loading
+    /// them through <paramref name="factory"/> on a cache miss. A null/blank key is its own scope.
+    /// </summary>
+    public async Task<IReadOnlyList<CachedRagInstruction>> GetOrCreateInstructionsAsync(
+        int docType,
+        string? key,
+        Func<Task<IReadOnlyList<CachedRagInstruction>>> factory)
+    {
+        var scope = (docType, key ?? string.Empty);
+
+        if (_keyedInstructionsCache.TryGetValue(scope, out var cached))
+        {
+            return cached;
+        }
+
+        var contents = await factory();
+
+        _keyedInstructionsCache[scope] = contents;
+
+        return contents;
+    }
+
+    /// <summary>
     /// Drops the cached instruction contents for a single DocType. Call this after any
     /// create/update/delete of a RagInstruction so the next read re-loads from the database.
     /// </summary>
     public void InvalidateInstructions(int docType)
-        => _instructionsCache.TryRemove(docType, out _);
+    {
+        _instructionsCache.TryRemove(docType, out _);
+
+        foreach (var scope in _keyedInstructionsCache.Keys.Where(k => k.DocType == docType))
+            _keyedInstructionsCache.TryRemove(scope, out _);
+    }
 
     /// <summary>
     /// Drops all cached instruction contents.
     /// </summary>
     public void InvalidateAllInstructions()
-        => _instructionsCache.Clear();
+    {
+        _instructionsCache.Clear();
+        _keyedInstructionsCache.Clear();
+    }
 
     public static string BuildKey(
         string? modelName,

@@ -91,6 +91,7 @@ public partial class Chat
 
     private readonly List<RagDocTypeItem> _ragDocTypes =
     Enum.GetValues<RagDocType>()
+        .Where(type => type != RagDocType.ImageGeneration) // image generation has its own page (/image-generation)
         .Select(type => new RagDocTypeItem
         {
             Code = type,

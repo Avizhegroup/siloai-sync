@@ -1,4 +1,4 @@
-namespace SiloAI.Domains;
+﻿namespace SiloAI.Domains;
 
 public enum AiModelKind
 {
@@ -6,7 +6,8 @@ public enum AiModelKind
     Rag = 1,
 
     /// <summary>A general-purpose model assignable to a UsageFeature (chat, OCR, report, page agent).</summary>
-    Normal = 2
+    Normal = 2,
+    ImageGeneration
 }
 
 /// <summary>

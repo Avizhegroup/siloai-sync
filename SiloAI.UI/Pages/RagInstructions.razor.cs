@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using SiloAI.UI.Components;
 using Telerik.Blazor;
@@ -39,6 +39,16 @@ public partial class RagInstructions
     {
         Code = RagDocType.Support,
         Title = "پشتیبان"
+    },
+    new()
+    {
+        Code = RagDocType.ImageGeneration,
+        Title = "تولید تصویر"
+    },
+    new()
+    {
+        Code = RagDocType.ImageAnalysis,
+        Title = "تحلیل تصویر"
     }
 ];
 
