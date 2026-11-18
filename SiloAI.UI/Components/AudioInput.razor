@@ -1,0 +1,37 @@
+@inject IJSRuntime JS
+
+<div class="audio-input">
+    <div class="d-flex flex-wrap gap-2 align-items-center">
+        @if (_isRecording)
+        {
+            <button type="button" class="btn btn-danger btn-sm px-3" @onclick="StopRecordingAsync">
+                <i class="bi bi-stop-circle me-1"></i> پایان ضبط
+            </button>
+            <span class="imggen-label mb-0"><i class="bi bi-record-circle text-danger me-1"></i> در حال ضبط...</span>
+        }
+        else
+        {
+            <button type="button" class="btn btn-outline-primary btn-sm px-3" @onclick="StartRecordingAsync" disabled="@Disabled">
+                <i class="bi bi-mic me-1"></i> ضبط صدا
+            </button>
+            <label class="btn btn-outline-secondary btn-sm px-3 mb-0 @(Disabled ? "disabled" : "")">
+                <i class="bi bi-folder2-open me-1"></i> انتخاب فایل صوتی
+                <InputFile OnChange="OnFileSelectedAsync" class="d-none" accept="audio/*,.mp3,.wav,.m4a,.ogg,.webm,.flac,.mp4" />
+            </label>
+            @if (Value is not null)
+            {
+                <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="ClearAsync" disabled="@Disabled">
+                    <i class="bi bi-x-lg me-1"></i> حذف
+                </button>
+            }
+        }
+    </div>
+
+    @if (Value is not null && !_isRecording)
+    {
+        <div class="mt-2">
+            <audio controls src="@($"data:{Value.ContentType};base64,{Convert.ToBase64String(Value.Data)}")"></audio>
+            <div class="imggen-label mono" dir="ltr">@Value.FileName · @(Value.Data.Length / 1024) KB</div>
+        </div>
+    }
+</div>

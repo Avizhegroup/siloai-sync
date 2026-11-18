@@ -95,6 +95,7 @@ Which scheme each endpoint accepts:
 | RAG chat (`/api/rag/chat/*`)                     | yes | yes     |
 | Image generation (`/api/image-generation`)       | yes | yes     |
 | Image analysis (`/api/image-analysis`)           | yes | yes     |
+| Speech-to-text / text-to-speech (`/api/speech/*`)| yes | no      |
 | Image OCR (`/api/image/ocr`)                     | no  | yes     |
 
 ### Document types (`docType`)
@@ -541,6 +542,38 @@ curl -X POST https://<host>/api/image-analysis \
   -F images=@front.png -F images=@back.jpg \
 | jq -r '.text'
 ```
+
+### 5.7 Speech-to-text and text-to-speech (admin panel)
+
+Standalone speech endpoints used by the admin panel's «گفتار و صدا» page. **JWT only** — they are not
+metered per customer, so they are not exposed to customer API keys. (For customers, use the voice-chat
+endpoint in section 5.1, which runs speech-to-text → RAG chat → text-to-speech.)
+
+#### `POST /api/speech/transcribe`
+
+Content type: `multipart/form-data` (max 25 MB).
+
+| Field      | Type   | Required | Description                                                              |
+|------------|--------|----------|--------------------------------------------------------------------------|
+| `audio`    | file   | **yes**  | `mp3`, `mpeg`, `mpga`, `wav`, `flac`, `m4a`, `mp4`, `ogg` or `webm`.     |
+| `language` | string | no       | Language hint, e.g. `fa`, `en`.                                          |
+
+**Output** (200): `{ "text": "..." }`. **Errors:** `400` (no file / unsupported type), `422`, `502` (provider error).
+
+#### `POST /api/speech/synthesize`
+
+Content type: `application/json`.
+
+```json
+{ "text": "سلام دنیا", "voice": "alloy" }
+```
+
+| Field   | Type   | Required | Description                                                                                       |
+|---------|--------|----------|---------------------------------------------------------------------------------------------------|
+| `text`  | string | **yes**  | 1–4096 characters.                                                                                |
+| `voice` | string | no       | `alloy`, `ash`, `coral`, `echo`, `fable`, `nova`, `onyx`, `sage`, `shimmer`. Default `alloy`.     |
+
+**Output** (200): the spoken audio as `audio/mpeg` (binary). **Errors:** `400` (blank/too long text, unknown voice), `422`, `502`.
 
 ---
 

@@ -1,0 +1,188 @@
+@page "/speech"
+@using Telerik.Blazor.Components
+@using SiloAI.UI.Components
+@attribute [Authorize(Policy = UiPolicies.AdminOnly)]
+
+<div class="imggen-page">
+    <div class="rag-settings">
+        <div class="rag-setting-title">
+            <div class="rag-setting-icon">
+                <i class="bi bi-soundwave"></i>
+            </div>
+            <div>
+                <div class="rag-setting-heading">گفتار و صدا</div>
+                <div class="rag-setting-description">
+                    گفتگوی صوتی با دستیار، تبدیل گفتار به متن و تبدیل متن به گفتار را در این صفحه آزمایش کنید.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <TelerikTabStrip>
+        <TabStripTab Title="گفتگوی صوتی">
+            <div class="imggen-grid">
+                <div class="imggen-panel">
+                    <div class="rag-setting-fields">
+                        <div class="rag-field">
+                            <label><i class="bi bi-tags me-1"></i> نوع </label>
+                            <TelerikDropDownList Data="@_docTypes"
+                                                 TextField="@nameof(DocTypeOption.Title)"
+                                                 ValueField="@nameof(DocTypeOption.Code)"
+                                                 @bind-Value="_voiceDocType"
+                                                 Enabled="@(!_isBusy && _conversationId is null)"
+                                                 Width="100%" />
+                        </div>
+                        <div class="rag-field">
+                            <label><i class="bi bi-key me-1"></i> کلید </label>
+                            <TelerikTextBox @bind-Value="_voiceKey" Placeholder="اختیاری"
+                                            Enabled="@(!_isBusy && _conversationId is null)" Width="100%" />
+                        </div>
+                        <div class="rag-field">
+                            <label><i class="bi bi-megaphone me-1"></i> صدا </label>
+                            <TelerikDropDownList Data="@SpeechLimits.Voices" @bind-Value="_voiceName"
+                                                 Enabled="@(!_isBusy)" Width="100%" />
+                        </div>
+                        <div class="rag-field">
+                            <label><i class="bi bi-translate me-1"></i> زبان </label>
+                            <TelerikTextBox @bind-Value="_voiceLanguage" Placeholder="مثلاً fa یا en (اختیاری)"
+                                            Enabled="@(!_isBusy)" Width="100%" />
+                        </div>
+                        <div class="rag-field">
+                            <label><i class="bi bi-book me-1"></i> استفاده از پایگاه دانش (RAG) </label>
+                            <TelerikSwitch @bind-Value="_voiceUseRag"
+                                           Enabled="@(!_isBusy && _conversationId is null)"
+                                           OnLabel="بله" OffLabel="خیر" />
+                        </div>
+                    </div>
+
+                    <label class="imggen-label mt-3"><i class="bi bi-mic me-1"></i> پیام صوتی </label>
+                    <AudioInput @bind-Value="_voiceClip" Disabled="_isBusy" />
+
+                    <div class="mt-4 d-flex gap-2">
+                        <button type="button" class="btn btn-primary px-4" @onclick="SendVoiceAsync"
+                                disabled="@(_isBusy || _voiceClip is null)">
+                            <i class="bi bi-send me-2"></i> ارسال
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" @onclick="NewConversation"
+                                disabled="@(_isBusy || (_turns.Count == 0 && _conversationId is null))">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i> گفتگوی جدید
+                        </button>
+                    </div>
+                </div>
+
+                <div class="imggen-panel">
+                    <label class="imggen-label"><i class="bi bi-chat-dots me-1"></i> گفتگو </label>
+
+                    @if (_isBusy && _activeTab == SpeechTab.Voice)
+                    {
+                        <TelerikLoaderContainer LoaderType="@LoaderType.InfiniteSpinner" Text="در حال پردازش..." />
+                    }
+
+                    @if (_turns.Count == 0 && !(_isBusy && _activeTab == SpeechTab.Voice))
+                    {
+                        <div class="imggen-empty">
+                            <i class="bi bi-chat-dots"></i>
+                            <span>هنوز پیامی ارسال نشده است.</span>
+                        </div>
+                    }
+
+                    @foreach (var turn in _turns)
+                    {
+                        <div class="imggen-result mb-3">
+                            <div class="imggen-text" dir="auto"><i class="bi bi-person me-1"></i> @turn.Transcript</div>
+                            <div class="imggen-text" dir="auto"><i class="bi bi-robot me-1"></i> @turn.ResponseText</div>
+                            <audio controls src="@turn.AudioSrc" class="mt-2"></audio>
+                        </div>
+                    }
+                </div>
+            </div>
+        </TabStripTab>
+
+        <TabStripTab Title="گفتار به متن">
+            <div class="imggen-grid">
+                <div class="imggen-panel">
+                    <label class="imggen-label"><i class="bi bi-translate me-1"></i> زبان </label>
+                    <TelerikTextBox @bind-Value="_sttLanguage" Placeholder="مثلاً fa یا en (اختیاری)"
+                                    Enabled="@(!_isBusy)" Width="100%" />
+
+                    <label class="imggen-label mt-3"><i class="bi bi-mic me-1"></i> صدا </label>
+                    <AudioInput @bind-Value="_sttClip" Disabled="_isBusy" />
+
+                    <div class="mt-4">
+                        <button type="button" class="btn btn-primary px-4" @onclick="TranscribeAsync"
+                                disabled="@(_isBusy || _sttClip is null)">
+                            <i class="bi bi-card-text me-2"></i> تبدیل به متن
+                        </button>
+                    </div>
+                </div>
+
+                <div class="imggen-panel">
+                    <label class="imggen-label"><i class="bi bi-card-text me-1"></i> متن </label>
+
+                    @if (_isBusy && _activeTab == SpeechTab.Stt)
+                    {
+                        <TelerikLoaderContainer LoaderType="@LoaderType.InfiniteSpinner" Text="در حال تبدیل..." />
+                    }
+                    else if (string.IsNullOrWhiteSpace(_sttResult))
+                    {
+                        <div class="imggen-empty">
+                            <i class="bi bi-card-text"></i>
+                            <span>هنوز متنی تولید نشده است.</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="imggen-text" dir="auto">@_sttResult</div>
+                    }
+                </div>
+            </div>
+        </TabStripTab>
+
+        <TabStripTab Title="متن به گفتار">
+            <div class="imggen-grid">
+                <div class="imggen-panel">
+                    <label class="imggen-label"><i class="bi bi-chat-text me-1"></i> متن (حداکثر @SpeechLimits.MaxTextLength کاراکتر) </label>
+                    <TelerikTextArea @bind-Value="_ttsText" Rows="8" MaxLength="@SpeechLimits.MaxTextLength"
+                                     Placeholder="متنی که باید خوانده شود..." Enabled="@(!_isBusy)" Width="100%" />
+
+                    <label class="imggen-label mt-3"><i class="bi bi-megaphone me-1"></i> صدا </label>
+                    <TelerikDropDownList Data="@SpeechLimits.Voices" @bind-Value="_ttsVoice"
+                                         Enabled="@(!_isBusy)" Width="100%" />
+
+                    <div class="mt-4">
+                        <button type="button" class="btn btn-primary px-4" @onclick="SynthesizeAsync"
+                                disabled="@(_isBusy || string.IsNullOrWhiteSpace(_ttsText))">
+                            <i class="bi bi-volume-up me-2"></i> تبدیل به گفتار
+                        </button>
+                    </div>
+                </div>
+
+                <div class="imggen-panel">
+                    <label class="imggen-label"><i class="bi bi-volume-up me-1"></i> خروجی صوتی </label>
+
+                    @if (_isBusy && _activeTab == SpeechTab.Tts)
+                    {
+                        <TelerikLoaderContainer LoaderType="@LoaderType.InfiniteSpinner" Text="در حال تولید صدا..." />
+                    }
+                    else if (_ttsAudioSrc is null)
+                    {
+                        <div class="imggen-empty">
+                            <i class="bi bi-volume-up"></i>
+                            <span>هنوز صدایی تولید نشده است.</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <audio controls src="@_ttsAudioSrc"></audio>
+                        <div>
+                            <a class="btn btn-outline-primary btn-sm mt-2" href="@_ttsAudioSrc"
+                               download="@($"speech-{DateTime.Now:yyyyMMdd-HHmmss}.mp3")">
+                                <i class="bi bi-download me-1"></i> دانلود
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </TabStripTab>
+    </TelerikTabStrip>
+</div>
