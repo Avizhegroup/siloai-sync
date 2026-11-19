@@ -34,4 +34,9 @@ public record ResolvedAiModel(
     bool SupportsVoiceOutput,
     decimal InputPricePerMillionTokens,
     decimal OutputPricePerMillionTokens,
-    decimal CachedInputPricePerMillionTokens);
+    decimal CachedInputPricePerMillionTokens,
+    string? Voices = null)
+{
+    /// <summary>Text-to-speech models: the voices this model supports (first = default); empty otherwise.</summary>
+    public IReadOnlyList<string> VoiceList => AiModelVoices.Parse(Voices);
+}

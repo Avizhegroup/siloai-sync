@@ -1,4 +1,4 @@
-﻿namespace SiloAI.Domains;
+namespace SiloAI.Domains;
 
 public enum AiModelKind
 {
@@ -7,7 +7,14 @@ public enum AiModelKind
 
     /// <summary>A general-purpose model assignable to a UsageFeature (chat, OCR, report, page agent).</summary>
     Normal = 2,
-    ImageGeneration
+
+    ImageGeneration = 3,
+
+    /// <summary>Speech-to-text (transcription) model — assignable to <see cref="UsageFeature.SpeechToText"/>.</summary>
+    SpeechToText = 4,
+
+    /// <summary>Text-to-speech model with its own list of <see cref="AiModel.Voices"/> — assignable to <see cref="UsageFeature.TextToSpeech"/>.</summary>
+    TextToSpeech = 5
 }
 
 /// <summary>
@@ -79,6 +86,15 @@ public class AiModel
     /// </summary>
     [Column("fld_IsDefaultRagModel")]
     public bool IsDefaultRagModel { get; set; }
+
+    /// <summary>
+    /// Text-to-speech models only: the voices THIS model supports, comma-separated, first = the
+    /// default. Voice names are provider- and model-specific (a voice valid for one TTS model can
+    /// be rejected by another), so they live on the model, not in a global list. Null otherwise.
+    /// </summary>
+    [Column("fld_Voices")]
+    [StringLength(1000)]
+    public string? Voices { get; set; }
 
     // --- Pricing (USD per 1,000,000 tokens), entered by the admin — not derived ---
 

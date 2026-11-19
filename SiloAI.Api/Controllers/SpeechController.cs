@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SiloAI.Api.Auth;
 using SiloAI.Application.Api;
 using SiloAI.Application.Shared.Features;
 
@@ -10,6 +11,9 @@ public class TranscribeForm
 {
     public IFormFile Audio { get; set; } = default!;
     public string? Language { get; set; }
+
+    /// <summary>Admin-only override of the speech-to-text model; null = the assigned model.</summary>
+    public Guid? ModelId { get; set; }
 }
 
 /// <summary>
@@ -27,8 +31,15 @@ public class SpeechController : ControllerBase
     public async Task<IActionResult> Transcribe(
         [FromForm] TranscribeForm form,
         [FromServices] ISpeechToTextService stt,
+        [FromServices] ISpeechModelService speechModels,
         CancellationToken cancellationToken)
     {
+        var customerId = int.TryParse(User.GetCustomerId(), out var cid) ? cid : (int?)null;
+
+        // Choosing a model is an admin (no customer) capability; customers get their assigned one.
+        if (form.ModelId is not null && customerId is not null)
+            return StatusCode(403, new { message = "Customers cannot choose the speech model." });
+
         if (form.Audio is null || form.Audio.Length == 0)
             return BadRequest(new { message = "Audio file is required." });
 
@@ -39,7 +50,9 @@ public class SpeechController : ControllerBase
         {
             await using var stream = form.Audio.OpenReadStream();
 
-            var text = (await stt.TranscribeAsync(stream, form.Audio.FileName, form.Language, cancellationToken)).Trim();
+            var model = await speechModels.ResolveSpeechToTextAsync(customerId, form.ModelId, cancellationToken);
+
+            var text = (await stt.TranscribeAsync(stream, form.Audio.FileName, form.Language, model, cancellationToken)).Trim();
 
             return Ok(new TranscriptionResponse { Text = text });
         }
@@ -57,15 +70,23 @@ public class SpeechController : ControllerBase
     public async Task<IActionResult> Synthesize(
         [FromBody] SynthesizeSpeechRequest request,
         [FromServices] ITextToSpeechService tts,
+        [FromServices] ISpeechModelService speechModels,
         CancellationToken cancellationToken)
     {
+        var customerId = int.TryParse(User.GetCustomerId(), out var cid) ? cid : (int?)null;
+
+        if (request?.ModelId is not null && customerId is not null)
+            return StatusCode(403, new { message = "Customers cannot choose the speech model." });
+
         var error = SpeechValidation.ValidateSynthesis(request);
         if (error is not null)
             return BadRequest(new { message = error });
 
         try
         {
-            var speech = await tts.SynthesizeAsync(request.Text!.Trim(), request.Voice?.Trim().ToLowerInvariant(), cancellationToken);
+            var model = await speechModels.ResolveTextToSpeechAsync(customerId, request.ModelId, cancellationToken);
+
+            var speech = await tts.SynthesizeAsync(request.Text!.Trim(), request.Voice?.Trim(), model, cancellationToken);
 
             return File(speech.Audio, speech.ContentType);
         }

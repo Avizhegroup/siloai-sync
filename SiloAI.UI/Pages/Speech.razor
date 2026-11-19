@@ -38,8 +38,19 @@
                                             Enabled="@(!_isBusy && _conversationId is null)" Width="100%" />
                         </div>
                         <div class="rag-field">
+                            <label><i class="bi bi-mic me-1"></i> مدل گفتار به متن </label>
+                            <TelerikDropDownList Data="@_sttModels" TextField="@nameof(AiModelDto.Name)" ValueField="@nameof(AiModelDto.Id)"
+                                                 @bind-Value="_voiceSttModelId" Enabled="@(!_isBusy)" Width="100%" />
+                        </div>
+                        <div class="rag-field">
+                            <label><i class="bi bi-volume-up me-1"></i> مدل متن به گفتار </label>
+                            <TelerikDropDownList Data="@_ttsModels" TextField="@nameof(AiModelDto.Name)" ValueField="@nameof(AiModelDto.Id)"
+                                                 Value="@_voiceTtsModelId" ValueChanged="@((Guid? id) => VoiceTtsModelChanged(id))"
+                                                 Enabled="@(!_isBusy)" Width="100%" />
+                        </div>
+                        <div class="rag-field">
                             <label><i class="bi bi-megaphone me-1"></i> صدا </label>
-                            <TelerikDropDownList Data="@SpeechLimits.Voices" @bind-Value="_voiceName"
+                            <TelerikDropDownList Data="@VoicesOf(_voiceTtsModelId)" @bind-Value="_voiceName"
                                                  Enabled="@(!_isBusy)" Width="100%" />
                         </div>
                         <div class="rag-field">
@@ -101,7 +112,11 @@
         <TabStripTab Title="گفتار به متن">
             <div class="imggen-grid">
                 <div class="imggen-panel">
-                    <label class="imggen-label"><i class="bi bi-translate me-1"></i> زبان </label>
+                    <label class="imggen-label"><i class="bi bi-mic me-1"></i> مدل گفتار به متن </label>
+                    <TelerikDropDownList Data="@_sttModels" TextField="@nameof(AiModelDto.Name)" ValueField="@nameof(AiModelDto.Id)"
+                                         @bind-Value="_sttModelId" Enabled="@(!_isBusy)" Width="100%" />
+
+                    <label class="imggen-label mt-3"><i class="bi bi-translate me-1"></i> زبان </label>
                     <TelerikTextBox @bind-Value="_sttLanguage" Placeholder="مثلاً fa یا en (اختیاری)"
                                     Enabled="@(!_isBusy)" Width="100%" />
 
@@ -145,8 +160,13 @@
                     <TelerikTextArea @bind-Value="_ttsText" Rows="8" MaxLength="@SpeechLimits.MaxTextLength"
                                      Placeholder="متنی که باید خوانده شود..." Enabled="@(!_isBusy)" Width="100%" />
 
+                    <label class="imggen-label mt-3"><i class="bi bi-volume-up me-1"></i> مدل متن به گفتار </label>
+                    <TelerikDropDownList Data="@_ttsModels" TextField="@nameof(AiModelDto.Name)" ValueField="@nameof(AiModelDto.Id)"
+                                         Value="@_ttsModelId" ValueChanged="@((Guid? id) => TtsModelChanged(id))"
+                                         Enabled="@(!_isBusy)" Width="100%" />
+
                     <label class="imggen-label mt-3"><i class="bi bi-megaphone me-1"></i> صدا </label>
-                    <TelerikDropDownList Data="@SpeechLimits.Voices" @bind-Value="_ttsVoice"
+                    <TelerikDropDownList Data="@VoicesOf(_ttsModelId)" @bind-Value="_ttsVoice"
                                          Enabled="@(!_isBusy)" Width="100%" />
 
                     <div class="mt-4">

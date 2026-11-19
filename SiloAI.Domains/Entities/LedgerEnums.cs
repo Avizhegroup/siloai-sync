@@ -15,5 +15,7 @@ public enum UsageFeature
     PageAgent = 3,
     Ocr = 4,
     ImageGeneration = 5,
-    ImageAnalysis = 6
+    ImageAnalysis = 6,
+    SpeechToText = 7,
+    TextToSpeech = 8
 }

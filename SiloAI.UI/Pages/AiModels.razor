@@ -58,9 +58,17 @@
                                 {
                                     <span class="small text-muted">@CapabilitiesSummary(m)</span>
                                 }
-                                else
+                                else if (m.Kind == AiModelKind.TextToSpeech)
+                                {
+                                    <span class="small text-muted" dir="ltr">@string.Join(", ", m.VoiceList)</span>
+                                }
+                                else if (m.Kind == AiModelKind.Rag)
                                 {
                                     <span class="small text-muted">ابعاد بردار: @m.EmbeddingDimensions</span>
+                                }
+                                else
+                                {
+                                    <span class="small text-muted">—</span>
                                 }
                             </Template>
                         </GridColumn>
@@ -161,6 +169,20 @@
                             <div class="form-text">باید دقیقاً با عرض ستون VECTOR در پایگاه‌داده (فعلاً ۱۵۳۶) یکسان باشد تا بتوان آن را مدل پیش‌فرض RAG کرد.</div>
                         </div>
                     </div>
+                }
+                else if (_form.Kind == AiModelKind.TextToSpeech)
+                {
+                    <div class="row g-3 mt-1">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">شخصیت‌های صوتی (Voices)</label>
+                            <TelerikTextArea @bind-Value="_form.Voices" Rows="2" MaxLength="@AiModelVoices.MaxLength" Class="w-100" />
+                            <div class="form-text">نام صداها را با ویرگول جدا کنید؛ اولین مورد پیش‌فرض است. هر مدل صدای‌های خودش را دارد، فقط صداهایی که این مدل پشتیبانی می‌کند را وارد کنید (مثال: alloy, nova).</div>
+                        </div>
+                    </div>
+                }
+                else if (_form.Kind == AiModelKind.SpeechToText)
+                {
+                    <div class="form-text mt-2">مدل تبدیل گفتار به متن؛ بدون تنظیمات اضافه. از بخش «تخصیص مدل‌ها» به قابلیت مربوطه اختصاص دهید.</div>
                 }
                 else
                 {

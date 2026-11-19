@@ -7,6 +7,8 @@ public static class AiModelKindExtensions
         AiModelKind.Rag => "مدل بازیابی (RAG)",
         AiModelKind.Normal => "مدل عمومی",
         AiModelKind.ImageGeneration => "مدل تولید تصویر",
+        AiModelKind.SpeechToText => "مدل گفتار به متن",
+        AiModelKind.TextToSpeech => "مدل متن به گفتار",
         _ => kind.ToString()
     };
 }

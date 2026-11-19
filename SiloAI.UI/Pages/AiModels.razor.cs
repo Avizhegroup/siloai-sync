@@ -1,4 +1,4 @@
-﻿namespace SiloAI.UI.Pages;
+namespace SiloAI.UI.Pages;
 
 public partial class AiModels
 {
@@ -35,6 +35,16 @@ public partial class AiModels
     {
         Text = "مدل تولید عکس",
         Value = AiModelKind.ImageGeneration
+    },
+    new()
+    {
+        Text = "مدل گفتار به متن (STT)",
+        Value = AiModelKind.SpeechToText
+    },
+    new()
+    {
+        Text = "مدل متن به گفتار (TTS)",
+        Value = AiModelKind.TextToSpeech
     }
     ];
 
@@ -80,6 +90,7 @@ public partial class AiModels
             SupportsVoiceInput = model.SupportsVoiceInput,
             SupportsVoiceOutput = model.SupportsVoiceOutput,
             EmbeddingDimensions = model.EmbeddingDimensions,
+            Voices = model.Voices,
             InputPricePerMillionTokens = model.InputPricePerMillionTokens,
             OutputPricePerMillionTokens = model.OutputPricePerMillionTokens,
             CachedInputPricePerMillionTokens = model.CachedInputPricePerMillionTokens,
@@ -103,6 +114,23 @@ public partial class AiModels
         {
             Notification.Show("برای مدل RAG، ابعاد بردار الزامی است.", "error");
             return;
+        }
+
+        if (_form.Kind == AiModelKind.TextToSpeech)
+        {
+            var voiceError = AiModelVoices.Validate(_form.Voices);
+
+            if (voiceError is not null)
+            {
+                Notification.Show(voiceError, "error");
+                return;
+            }
+
+            if (AiModelVoices.Parse(_form.Voices).Count == 0)
+            {
+                Notification.Show("برای مدل متن به گفتار حداقل یک صدا الزامی است.", "error");
+                return;
+            }
         }
 
         _isSaving = true;

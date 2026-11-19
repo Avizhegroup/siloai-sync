@@ -1,4 +1,4 @@
-﻿using SiloAI.Application.Shared.Contracts.AiModels;
+using SiloAI.Application.Shared.Contracts.AiModels;
 
 namespace SiloAI.Application.Api.Services;
 
@@ -50,7 +50,7 @@ public class AiModelResolver(AiApiContext dbContext) : IAiModelResolver
         return ToResolved(model);
     }
 
-    private static ResolvedAiModel ToResolved(AiModel model) => new(
+    internal static ResolvedAiModel ToResolved(AiModel model) => new(
         model.Id,
         model.Identifier,
         model.Kind,
@@ -65,5 +65,6 @@ public class AiModelResolver(AiApiContext dbContext) : IAiModelResolver
         model.SupportsVoiceOutput,
         model.InputPricePerMillionTokens,
         model.OutputPricePerMillionTokens,
-        model.CachedInputPricePerMillionTokens);
+        model.CachedInputPricePerMillionTokens,
+        model.Voices);
 }

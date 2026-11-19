@@ -219,7 +219,8 @@ pricing), and the answer text is converted to speech (text-to-speech).
 | `isMainChat`     | bool      | no       | `false`       | Same as `send`.                                                            |
 | `useRag`         | bool      | no       | `true`        | Same as `send` (instructions-only voice chat when `false`).                |
 | `language`       | string?   | no       | `null`        | Optional language hint for transcription (e.g. `fa`, `en`).                |
-| `voice`          | string?   | no       | `null`        | Optional voice name for the spoken answer (provider-specific).             |
+| `voice`          | string?   | no       | model default | A voice offered by the text-to-speech model (see AI Models page); unknown voice → `400`. |
+| `sttModelId` / `ttsModelId` | guid? | no | assigned | **Admin (no customer) only**; customers sending these get `403`. Must be active models of kind STT / TTS. |
 
 **Output:** the spoken answer as a binary audio file (`Content-Type: audio/mpeg`).
 The text data is returned in response headers:
@@ -571,9 +572,10 @@ Content type: `application/json`.
 | Field   | Type   | Required | Description                                                                                       |
 |---------|--------|----------|---------------------------------------------------------------------------------------------------|
 | `text`  | string | **yes**  | 1–4096 characters.                                                                                |
-| `voice` | string | no       | `alloy`, `ash`, `coral`, `echo`, `fable`, `nova`, `onyx`, `sage`, `shimmer`. Default `alloy`.     |
+| `voice` | string | no       | A voice listed on the chosen TTS model (voices are per model, set on the AI Models page). Blank = the model's first voice. |
+| `modelId` | guid | no | Admin-only TTS model override; default = model assigned to feature «متن به گفتار». Customers get `403`. |
 
-**Output** (200): the spoken audio as `audio/mpeg` (binary). **Errors:** `400` (blank/too long text, unknown voice), `422`, `502`.
+**Output** (200): the spoken audio as `audio/mpeg` (binary). **Errors:** `400` (blank/too long text), `403` (model override by a customer), `422` (unknown voice for the model, wrong model kind, no model assigned), `502`.
 
 ---
 
@@ -601,3 +603,13 @@ Content type: `application/json`.
    per analysis job (e.g. `qa-inspection`).
 2. Call `POST /api/image-analysis` with `images` (+ `prompt`, `key`, `requestId`).
 3. Read `text`; on a timeout retry with the **same** `requestId` to avoid a double charge.
+
+
+### Speech models and voices
+
+Speech models are ordinary entries on the AI Models page, with kind **Speech-to-text** or **Text-to-speech**.
+Each is assigned to the features «گفتار به متن» / «متن به گفتار» (global default or per customer), like any other
+model. A text-to-speech model carries its own comma-separated **voices** (first = default), because voice names are
+provider/model specific and are not guaranteed to work across models. The migration `AddSpeechModelsAndVoices`
+seeds the previously hard-coded models (`microsoft/mai-transcribe-2`, `openai/tts-1-hd` with the OpenAI voice set)
+as global defaults, so behaviour is unchanged until an admin changes it. Speech calls remain unmetered.

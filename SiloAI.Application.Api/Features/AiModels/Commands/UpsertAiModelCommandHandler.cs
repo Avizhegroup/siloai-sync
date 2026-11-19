@@ -1,4 +1,4 @@
-﻿namespace SiloAI.Application.Api.Features;
+namespace SiloAI.Application.Api.Features;
 
 public class UpsertAiModelCommandHandler(AiApiContext context) : IRequestHandler<UpsertAiModelCommand, AiModelDto>
 {
@@ -8,6 +8,17 @@ public class UpsertAiModelCommandHandler(AiApiContext context) : IRequestHandler
 
         if (input.Kind == AiModelKind.Rag && (input.EmbeddingDimensions is null || input.EmbeddingDimensions <= 0))
             throw new InvalidOperationException("A RAG (embedding) model requires a positive EmbeddingDimensions value.");
+
+        string? voices = null;
+        if (input.Kind == AiModelKind.TextToSpeech)
+        {
+            var voiceError = AiModelVoices.Validate(input.Voices);
+            if (voiceError is not null)
+                throw new InvalidOperationException(voiceError);
+
+            voices = AiModelVoices.Normalize(input.Voices)
+                ?? throw new InvalidOperationException("A text-to-speech model requires at least one voice.");
+        }
 
         var duplicateIdentifier = await context.AiModels
             .AsNoTracking()
@@ -60,11 +71,13 @@ public class UpsertAiModelCommandHandler(AiApiContext context) : IRequestHandler
             model.SupportsFileOutput = false;
             model.SupportsVoiceInput = false;
             model.SupportsVoiceOutput = false;
-            model.EmbeddingDimensions = input.EmbeddingDimensions;
+            model.EmbeddingDimensions = input.Kind == AiModelKind.Rag ? input.EmbeddingDimensions : null;
             // IsDefaultRagModel is intentionally left untouched here — toggled only via
             // SetDefaultRagModelCommand, which also enforces the single-default invariant.
         }
 
+        // Voices are a text-to-speech-only property; every other kind stores null.
+        model.Voices = voices;
         model.InputPricePerMillionTokens = input.InputPricePerMillionTokens;
         model.OutputPricePerMillionTokens = input.OutputPricePerMillionTokens;
         model.CachedInputPricePerMillionTokens = input.CachedInputPricePerMillionTokens;
@@ -92,6 +105,7 @@ public class UpsertAiModelCommandHandler(AiApiContext context) : IRequestHandler
         SupportsVoiceOutput = m.SupportsVoiceOutput,
         EmbeddingDimensions = m.EmbeddingDimensions,
         IsDefaultRagModel = m.IsDefaultRagModel,
+        Voices = m.Voices,
         InputPricePerMillionTokens = m.InputPricePerMillionTokens,
         OutputPricePerMillionTokens = m.OutputPricePerMillionTokens,
         CachedInputPricePerMillionTokens = m.CachedInputPricePerMillionTokens,

@@ -27,12 +27,16 @@ public class EnumContractTests
     [InlineData(UsageFeature.Ocr, 4)]
     [InlineData(UsageFeature.ImageGeneration, 5)]
     [InlineData(UsageFeature.ImageAnalysis, 6)]
+    [InlineData(UsageFeature.SpeechToText, 7)]
+    [InlineData(UsageFeature.TextToSpeech, 8)]
     public void UsageFeature_values_are_stable(UsageFeature feature, int value) => Assert.Equal(value, (int)feature);
 
     [Theory]
     [InlineData(AiModelKind.Rag, 1)]
     [InlineData(AiModelKind.Normal, 2)]
     [InlineData(AiModelKind.ImageGeneration, 3)]
+    [InlineData(AiModelKind.SpeechToText, 4)]
+    [InlineData(AiModelKind.TextToSpeech, 5)]
     public void AiModelKind_values_are_stable(AiModelKind kind, int value) => Assert.Equal(value, (int)kind);
 
     [Fact]

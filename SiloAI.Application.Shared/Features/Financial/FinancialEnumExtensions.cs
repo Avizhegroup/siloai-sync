@@ -19,6 +19,8 @@ public static class FinancialEnumExtensions
         UsageFeature.Ocr => "تصویر (OCR)",
         UsageFeature.ImageGeneration => "تولید تصویر",
         UsageFeature.ImageAnalysis => "تحلیل تصویر",
+        UsageFeature.SpeechToText => "گفتار به متن",
+        UsageFeature.TextToSpeech => "متن به گفتار",
         _ => feature.ToString()
     };
 }

@@ -19,6 +19,12 @@ public class AiModelDto
     public int? EmbeddingDimensions { get; set; }
     public bool IsDefaultRagModel { get; set; }
 
+    /// <summary>Text-to-speech models: comma-separated voices this model supports (first = default).</summary>
+    public string? Voices { get; set; }
+
+    /// <summary><see cref="Voices"/> as a list.</summary>
+    public IReadOnlyList<string> VoiceList => AiModelVoices.Parse(Voices);
+
     public decimal InputPricePerMillionTokens { get; set; }
     public decimal OutputPricePerMillionTokens { get; set; }
     public decimal CachedInputPricePerMillionTokens { get; set; }
@@ -51,6 +57,9 @@ public class UpsertAiModelRequest
     public bool SupportsVoiceOutput { get; set; }
 
     public int? EmbeddingDimensions { get; set; }
+
+    /// <summary>Text-to-speech models only: comma/newline-separated voice names this model supports (first = default).</summary>
+    public string? Voices { get; set; }
 
     [Range(0, double.MaxValue)]
     public decimal InputPricePerMillionTokens { get; set; }
