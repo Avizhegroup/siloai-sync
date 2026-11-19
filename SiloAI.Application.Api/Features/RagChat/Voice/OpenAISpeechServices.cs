@@ -1,4 +1,4 @@
-﻿using System.ClientModel;
+using System.ClientModel;
 using System.Net.Http.Headers;
 using Microsoft.Extensions.Options;
 using OpenAI;
@@ -9,17 +9,15 @@ namespace SiloAI.Application.Api;
 
 public sealed class OpenAISpeechToTextService : ISpeechToTextService
 {
-    public const string Model = "microsoft/mai-transcribe-2";
-    private readonly AudioClient _client;
-    private IOptions<OpenAIOptions> _options;
+    private readonly IOptions<OpenAIOptions> _options;
 
     public OpenAISpeechToTextService(IOptions<OpenAIOptions> options)
     {
         _options = options;
-        _client = new AudioClient(Model, OpenAIClientFactory.Credential(options.Value), OpenAIClientFactory.ClientOptions(options.Value));
     }
 
-    public async Task<string> TranscribeAsync(Stream audio, string fileName, string? language, CancellationToken cancellationToken)
+    public async Task<string> TranscribeAsync(
+        Stream audio, string fileName, string? language, ResolvedAiModel model, CancellationToken cancellationToken)
     {
         //var transcriptionOptions = new AudioTranscriptionOptions();
         //if (!string.IsNullOrWhiteSpace(language))
@@ -40,7 +38,7 @@ public sealed class OpenAISpeechToTextService : ISpeechToTextService
 
         using var form = new MultipartFormDataContent();
         
-        form.Add(new StringContent(Model), "model");
+        form.Add(new StringContent(model.Identifier), "model");
        
         if (!string.IsNullOrWhiteSpace(language))
             form.Add(new StringContent(language), "language");
@@ -73,21 +71,25 @@ public sealed class OpenAISpeechToTextService : ISpeechToTextService
 
 public sealed class OpenAITextToSpeechService : ITextToSpeechService
 {
-    public const string Model = "openai/tts-1-hd";
-    private const string DefaultVoice = "alloy";
-
-    private readonly AudioClient _client;
+    private readonly IOptions<OpenAIOptions> _options;
 
     public OpenAITextToSpeechService(IOptions<OpenAIOptions> options)
     {
-        _client = new AudioClient(Model, OpenAIClientFactory.Credential(options.Value), OpenAIClientFactory.ClientOptions(options.Value));
+        _options = options;
     }
 
-    public async Task<SpeechResult> SynthesizeAsync(string text, string? voice, CancellationToken cancellationToken)
+    public async Task<SpeechResult> SynthesizeAsync(
+        string text, string? voice, ResolvedAiModel model, CancellationToken cancellationToken)
     {
-        var result = await _client.GenerateSpeechAsync(
+        var client = new AudioClient(
+            model.Identifier, OpenAIClientFactory.Credential(_options.Value), OpenAIClientFactory.ClientOptions(_options.Value));
+
+        // The voice must be one this model offers (blank = the model's first/default voice).
+        var chosenVoice = AiModelVoices.Choose(model.VoiceList, voice);
+
+        var result = await client.GenerateSpeechAsync(
             text,
-            new GeneratedSpeechVoice(string.IsNullOrWhiteSpace(voice) ? DefaultVoice : voice),
+            new GeneratedSpeechVoice(chosenVoice),
             new SpeechGenerationOptions { ResponseFormat = GeneratedSpeechFormat.Mp3 },
             cancellationToken);
 

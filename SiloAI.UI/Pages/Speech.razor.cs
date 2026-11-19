@@ -30,24 +30,79 @@ public partial class Speech
     private AudioClip? _voiceClip;
     private RagDocType _voiceDocType = RagDocType.GeneralChat;
     private string _voiceKey = string.Empty;
-    private string _voiceName = "alloy";
+    private string _voiceName = string.Empty;
+    private Guid? _voiceSttModelId;
+    private Guid? _voiceTtsModelId;
     private string _voiceLanguage = string.Empty;
     private bool _voiceUseRag = true;
     private Guid? _conversationId;
 
     // speech to text
     private AudioClip? _sttClip;
+    private Guid? _sttModelId;
     private string _sttLanguage = string.Empty;
     private string? _sttResult;
 
     // text to speech
     private string _ttsText = string.Empty;
-    private string _ttsVoice = "alloy";
+    private Guid? _ttsModelId;
+    private string _ttsVoice = string.Empty;
     private string? _ttsAudioSrc;
+
+    // Models come from the AI Models page; voices belong to the selected text-to-speech model.
+    private List<AiModelDto> _sttModels = [];
+    private List<AiModelDto> _ttsModels = [];
 
     [Inject] public AiApiClient ApiClient { get; set; } = default!;
 
     [CascadingParameter] public TelerikNotification? Notification { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var models = await ApiClient.GetFromJsonAsync<List<AiModelDto>>("admin/ai-models") ?? [];
+            var assignments = await ApiClient.GetFromJsonAsync<List<ModelAssignmentDto>>("admin/ai-models/assignments") ?? [];
+
+            _sttModels = models.Where(m => m.IsActive && m.Kind == AiModelKind.SpeechToText).ToList();
+            _ttsModels = models.Where(m => m.IsActive && m.Kind == AiModelKind.TextToSpeech).ToList();
+
+            // Start on the globally assigned model (what customers get), else the first available.
+            _sttModelId = _voiceSttModelId = PickInitial(_sttModels, assignments, UsageFeature.SpeechToText);
+            _ttsModelId = _voiceTtsModelId = PickInitial(_ttsModels, assignments, UsageFeature.TextToSpeech);
+
+            _voiceName = DefaultVoice(_voiceTtsModelId);
+            _ttsVoice = DefaultVoice(_ttsModelId);
+        }
+        catch (HttpRequestException)
+        {
+            Notification?.Show("بارگذاری مدل‌ها ناموفق بود.", "error");
+        }
+    }
+
+    private static Guid? PickInitial(List<AiModelDto> models, List<ModelAssignmentDto> assignments, UsageFeature feature)
+    {
+        var assigned = assignments.FirstOrDefault(a => a.Feature == feature)?.AiModelId;
+
+        return assigned is { } id && models.Any(m => m.Id == id) ? id : models.FirstOrDefault()?.Id;
+    }
+
+    private IReadOnlyList<string> VoicesOf(Guid? modelId) =>
+        _ttsModels.FirstOrDefault(m => m.Id == modelId)?.VoiceList ?? [];
+
+    private string DefaultVoice(Guid? modelId) => VoicesOf(modelId).FirstOrDefault() ?? string.Empty;
+
+    private void VoiceTtsModelChanged(Guid? id)
+    {
+        _voiceTtsModelId = id;
+        _voiceName = DefaultVoice(id);
+    }
+
+    private void TtsModelChanged(Guid? id)
+    {
+        _ttsModelId = id;
+        _ttsVoice = DefaultVoice(id);
+    }
 
     private void NewConversation()
     {
@@ -67,6 +122,9 @@ public partial class Speech
             content.Add(new StringContent(((int)_voiceDocType).ToString()), "docType");
             content.Add(new StringContent(_voiceUseRag ? "true" : "false"), "useRag");
             content.Add(new StringContent(_voiceName), "voice");
+
+            if (_voiceSttModelId is { } sttId) content.Add(new StringContent(sttId.ToString()), "sttModelId");
+            if (_voiceTtsModelId is { } ttsId) content.Add(new StringContent(ttsId.ToString()), "ttsModelId");
 
             if (_conversationId is { } id) content.Add(new StringContent(id.ToString()), "conversationId");
             if (!string.IsNullOrWhiteSpace(_voiceKey)) content.Add(new StringContent(_voiceKey.Trim()), "key");
@@ -106,6 +164,8 @@ public partial class Speech
             using var content = new MultipartFormDataContent();
             content.Add(AudioPart(_sttClip), "audio", _sttClip.FileName);
 
+            if (_sttModelId is { } modelId) content.Add(new StringContent(modelId.ToString()), "modelId");
+
             if (!string.IsNullOrWhiteSpace(_sttLanguage)) content.Add(new StringContent(_sttLanguage.Trim()), "language");
 
             var response = await ApiClient.PostMultipartAsync("api/speech/transcribe", content);
@@ -130,7 +190,7 @@ public partial class Speech
             _ttsAudioSrc = null;
 
             var response = await ApiClient.PostAsJsonAsync("api/speech/synthesize",
-                new SynthesizeSpeechRequest { Text = _ttsText.Trim(), Voice = _ttsVoice });
+                new SynthesizeSpeechRequest { Text = _ttsText.Trim(), Voice = _ttsVoice, ModelId = _ttsModelId });
 
             if (!response.IsSuccessStatusCode)
             {

@@ -23,6 +23,7 @@ public class GetAiModelsQueryHandler(AiApiContext context) : IRequestHandler<Get
                 SupportsVoiceOutput = m.SupportsVoiceOutput,
                 EmbeddingDimensions = m.EmbeddingDimensions,
                 IsDefaultRagModel = m.IsDefaultRagModel,
+                Voices = m.Voices,
                 InputPricePerMillionTokens = m.InputPricePerMillionTokens,
                 OutputPricePerMillionTokens = m.OutputPricePerMillionTokens,
                 CachedInputPricePerMillionTokens = m.CachedInputPricePerMillionTokens,

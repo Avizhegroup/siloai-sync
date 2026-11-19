@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SiloAI.Api.Auth;
@@ -38,6 +38,12 @@ public class RagChatController(IMediator mediator) : ControllerBase
         if (form.Audio is null || form.Audio.Length == 0)
             return BadRequest(new { message = "Audio file is required." });
 
+        var callerCustomerId = int.TryParse(User.GetCustomerId(), out var cid) ? cid : (int?)null;
+
+        // Choosing speech models is an admin (no customer) capability.
+        if ((form.SttModelId is not null || form.TtsModelId is not null) && callerCustomerId is not null)
+            return StatusCode(403, new { message = "Customers cannot choose the speech models." });
+
         try
         {
             await using var audioStream = form.Audio.OpenReadStream();
@@ -48,6 +54,8 @@ public class RagChatController(IMediator mediator) : ControllerBase
                 FileName = form.Audio.FileName,
                 Language = form.Language,
                 Voice = form.Voice,
+                SttModelId = form.SttModelId,
+                TtsModelId = form.TtsModelId,
                 ConversationId = form.ConversationId,
                 DocType = form.DocType,
                 Key = form.Key,
@@ -113,4 +121,6 @@ public class RagVoiceChatForm
     public bool UseRag { get; set; } = true;
     public string? Language { get; set; }
     public string? Voice { get; set; }
+    public Guid? SttModelId { get; set; }
+    public Guid? TtsModelId { get; set; }
 }

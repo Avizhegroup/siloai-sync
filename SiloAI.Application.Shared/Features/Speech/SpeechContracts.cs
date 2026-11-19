@@ -9,8 +9,11 @@ public class SynthesizeSpeechRequest
 {
     public string? Text { get; set; }
 
-    /// <summary>One of <see cref="SpeechLimits.Voices"/>; blank = the service default.</summary>
+    /// <summary>A voice offered by the chosen model; blank = the model's default (first) voice.</summary>
     public string? Voice { get; set; }
+
+    /// <summary>Admin-only override of the text-to-speech model; null = the assigned model.</summary>
+    public Guid? ModelId { get; set; }
 }
 
 public static class SpeechLimits
@@ -20,6 +23,7 @@ public static class SpeechLimits
 
     public const long MaxAudioBytes = 25 * 1024 * 1024;
 
+    /// <summary>Suggested voices when creating a text-to-speech model (OpenAI set). Real validation uses the model's own list.</summary>
     public static readonly string[] Voices = ["alloy", "ash", "coral", "echo", "fable", "nova", "onyx", "sage", "shimmer"];
 }
 
@@ -34,9 +38,9 @@ public static class SpeechValidation
         if (request.Text.Length > SpeechLimits.MaxTextLength)
             return $"Text must be at most {SpeechLimits.MaxTextLength} characters.";
 
-        if (!string.IsNullOrWhiteSpace(request.Voice)
-            && !SpeechLimits.Voices.Contains(request.Voice.Trim(), StringComparer.OrdinalIgnoreCase))
-            return $"Unknown voice '{request.Voice}'.";
+        // The voice is validated against the selected model's own voices at synthesis time.
+        if (!string.IsNullOrWhiteSpace(request.Voice) && request.Voice.Trim().Length > 60)
+            return "Voice name is too long.";
 
         return null;
     }
