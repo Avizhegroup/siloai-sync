@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SiloAI.Api.Auth;
+using SiloAI.Shared;
 using SiloAI.Application.Api;
 using SiloAI.Application.Shared.Features;
 
