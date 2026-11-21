@@ -103,111 +103,266 @@ When a user wants to filter by a name or title (e.g., Warehouse, Zone, Product, 
 | User / Operator | `MovementActionUserId` | `tbl_User` | `Id` | `Name` |
 | Warehouse Type (نوع انبار) | `DestinationType` | `tbl_DestinationType` | `fld_DestinationTypeCode` | `fld_DestinationTypeName` |
 
-#### 1. ENTITY RESOLUTION — Where to Start the Query
-Choose the correct starting table based on the user's intent:
-- **Products (Master Data):**
-  If asking about product definitions, technical specifications, packaging, product attributes, or master product information → Start with `tbl_Products`.
+#### 1. Entity Relationships and Data Sources
 
-- **Inventory / Current Tags:**
-  If asking about currently registered tags, current stock, or the current state/location of tagged items → Start with `tbl_Tags`.
+The database contains several functional areas, each represented
+by dedicated tables.
 
-- **Entry History (ورود):**
-  If asking about goods entering the warehouse or entry history → Start with `tbl_TagsMovement` and relate the movement to `tbl_MovementActions` through `RMovementActionId`.
+##### 1.1 Master Product Data
 
-- **Exit / Return History (خروج / برگشت):**
-  If asking about goods leaving the warehouse or returning to the warehouse → Start with `tbl_TagsMovement` and relate the movement to `tbl_MovementActions` through `HMovementActionId`.
-  NEVER assume `HMovementActionId` alone means a physical exit. Always verify the actual operation using `MovementActionTp` and, when necessary, `MovementActionData`.
+tbl_Products contains master product definitions and technical
+information, including product titles, technical codes, sizes,
+and dynamic technical properties stored in ProductTechnicalData.
 
-- **Operations / Movements (عملیات):**
-  If asking about registered operations, users, gates, documents, operation dates, operation types, or movement records → Start with `tbl_MovementActions`.
+##### 1.2 Current Inventory and Registered Tags
 
-- **RFID Logs:**
-  If asking whether a tag was physically detected/read by an RFID reader, antenna, or gate → Start with `tbl_UHF_ReaderLog`.
+tbl_Tags represents currently registered inventory items and
+their associated RFID/tag information.
 
-- **Truck / Vehicle Crossings:**
-  If asking about trucks, vehicle plates, drivers, shipments, or Truck Cross information → Start with `tbl_TruckCross`, or join it through `tbl_MovementActions.MovementActionTruckCrossId` when the question is operation-related.
+It contains product serials, EPC values, product information,
+warehouse and zone references, registration information,
+lifecycle status, and inventory-related properties.
 
-- **Handheld Inventory (انبارگردانی دستی):**
-  If asking about manual inventory counting performed using handheld devices → Start with `tbl_InventoryTags`.
+##### 1.3 Entry History
 
-- **Physical Counting (شمارش فیزیکی):**
-  This is a separate business concept from handheld inventory counting. Do NOT automatically treat "شمارش فیزیکی" as "انبارگردانی". Physical counting may involve other reader devices and Excel-based processes.
+tbl_TagsMovement stores the details of inventory movements.
 
-- **Placement Missions (جانمایی):**
-  If asking about product/tag placement or movement between zones → Start with `tbl_ProductPlacementMissions`.
+The RMovementActionId relationship connects movement details
+to the corresponding operation in tbl_MovementActions.
 
-#### 2. THE GOLDEN MOVEMENT CHAIN — History Queries
-For movement and history queries, understand and follow this relationship chain:
-`tbl_Tags`
-→ `ProductSerial`
-→ `tbl_TagsMovement`
-→ `RMovementActionId / HMovementActionId`
-→ `tbl_MovementActions`
-→ `MovementActionTp`
-→ `tbl_ActionTypes`
+This relationship represents the entry/registration movement
+path in the existing Silo business logic.
 
-Important:
-- `RMovementActionId` and `HMovementActionId` represent different movement-history paths in the system.
-- `RMovementActionId` is used by the entry/registration movement path in the existing system logic.
-- `HMovementActionId` is used by the exit/return movement path in the existing system logic.
-- `HMovementActionId` alone does NOT prove that the operation was a physical exit.
-- To determine the exact business meaning of an operation, inspect:
+##### 1.4 Exit and Return History
 
-  * `tbl_MovementActions.MovementActionTp`
-  * `tbl_ActionTypes.fld_ActionTypeTitle`
-  * `tbl_MovementActions.MovementActionData` when necessary.
+The HMovementActionId relationship connects movement details
+to operations in tbl_MovementActions through the
+exit/return movement path.
 
-#### 3. LOCATION LOGIC — Destination vs. DestinationType
-Never confuse `tbl_Destination` with `tbl_DestinationType`.
-- `tbl_Destination` = Actual physical location / warehouse / destination.
-- `tbl_DestinationType` = Category or type of the physical location.
+The actual business meaning of each operation is represented
+by MovementActionTp and its corresponding record in
+tbl_ActionTypes.
 
-Conceptually:
-`tbl_Destination.DestinationType` → `tbl_DestinationType`
+##### 1.5 Operations and Movements
 
-The operation table contains location references:
-- `tbl_MovementActions.MovementActionStore`
-  → References a `DestinationCode` in `tbl_Destination` and represents the Store/location associated with the operation.
+tbl_MovementActions contains operation-level information,
+including operation type, associated warehouses, operator,
+station/gate, date, time, description, and dynamic operation
+properties.
 
-- `tbl_MovementActions.MovementActionDestinationId`
-  → References a `DestinationCode` in `tbl_Destination` and represents the destination/target associated with the operation.
+tbl_TagsMovement contains the individual product and serial
+details associated with these operations.
 
-Do NOT automatically assume `MovementActionStore` is always the physical source (مبدأ) in every business scenario. Determine the actual source/target semantics from the specific `ActionType` and the operation's business logic.
+##### 1.6 RFID Reader Logs
 
-For determining the general movement type:
-- `tbl_ActionTypes.fld_ActionTypeFromDestinationType` → Source location type.
+tbl_UHF_ReaderLog contains RFID detection records generated
+by readers, antennas, and gates.
 
-- `tbl_ActionTypes.fld_ActionTypeToTypeDestinationType` → Target location type.
+These records represent physical tag detection events rather
+than inventory registration or warehouse movement records.
 
-These values relate conceptually to `tbl_DestinationType`.
+The relationship between RFID logs and inventory tags is:
 
-Therefore, to understand a movement such as:
-`نوع مکان مبدأ → نوع عملیات → نوع مکان مقصد`
-you may need to combine:
-`tbl_ActionTypes`
-+
-`tbl_DestinationType`
-+
-`tbl_Destination`
-+
-`tbl_MovementActions`
+tbl_UHF_ReaderLog.fld_TagSerial
+→ tbl_Tags.TagEpc
 
-#### 4. DYNAMIC DATA HANDLING — JSON
-Dynamic JSON fields MUST NOT be queried as ordinary relational columns.
-Use `JSON_VALUE` to extract individual JSON properties.
-- **Tag / Item Dynamic Properties:**
-`JSON_VALUE(t.ProductProperties, N'$."FieldName"')`
-Source: `tbl_Tags.ProductProperties`
+##### 1.7 Truck and Vehicle Crossings
 
-- **Operation Dynamic Properties:**
-`JSON_VALUE(ma.MovementActionData, N'$."FieldName"')`
-Source: `tbl_MovementActions.MovementActionData`
+tbl_TruckCross contains truck crossing information, including
+vehicle-related records.
 
-- **Master Product Technical Properties:**
-`JSON_VALUE(p.ProductTechnicalData, N'$."FieldName"')`
-Source: `tbl_Products.ProductTechnicalData`
+Operation-related truck crossing information is associated
+with tbl_MovementActions through MovementActionTruckCrossId.
 
-Always determine which JSON field contains the requested business property before writing the query.
+##### 1.8 Handheld Inventory Counting
+
+tbl_InventoryTags contains records associated with manual
+inventory counting performed using handheld devices.
+
+Its relationship with inventory tags is:
+
+tbl_InventoryTags.fld_InventoryTagEPC
+→ tbl_Tags.TagEpc
+
+##### 1.9 Physical Counting
+
+Physical counting (شمارش فیزیکی) is a separate business
+process from handheld inventory counting (انبارگردانی دستی).
+
+Physical counting may involve RFID reader devices and
+Excel-based processes.
+
+##### 1.10 Product Placement
+
+tbl_ProductPlacementMissions contains records related to
+product/tag placement and movement between storage zones.
+
+Its relationship with registered inventory is:
+
+tbl_ProductPlacementMissions.fld_PPMProductSerial
+→ tbl_Tags.ProductSerial
+
+#### 2. Movement History Relationships
+
+Movement history is represented through the relationship
+between inventory tags, movement details, and operation headers.
+
+The main relationship is:
+
+tbl_Tags
+→ ProductSerial
+→ tbl_TagsMovement
+→ RMovementActionId / HMovementActionId
+→ tbl_MovementActions
+→ MovementActionTp
+→ tbl_ActionTypes
+
+##### 2.1 Movement Reference Paths
+
+The Silo database uses two distinct movement reference fields:
+
+- RMovementActionId:
+  Represents the entry/registration movement path.
+
+- HMovementActionId:
+  Represents the exit/return movement path.
+
+These fields identify different relationships between movement
+details and operation headers.
+
+##### 2.2 Operation Classification
+
+The operation type is stored in:
+
+tbl_MovementActions.MovementActionTp
+
+The corresponding operation title is stored in:
+
+tbl_ActionTypes.fld_ActionTypeTitle
+
+HMovementActionId represents a movement-history relationship
+and does not independently identify the physical nature of
+an operation.
+
+The operation's business classification is determined by
+its associated ActionType and, where applicable, the dynamic
+data stored in MovementActionData.
+
+#### 3. Location Data Model
+
+The Silo database distinguishes between physical locations
+and location categories.
+
+##### 3.1 Physical Locations
+
+tbl_Destination represents actual warehouses and destinations.
+
+Its main fields include:
+
+- DestinationId
+- DestinationCode
+- DestinationTitle
+- DestinationType
+- DestinationParentId
+
+DestinationCode identifies the business location and is used
+by other tables as a warehouse reference.
+
+##### 3.2 Location Types
+
+tbl_DestinationType contains the classification of physical
+locations.
+
+Its fields include:
+
+- fld_DestinationTypeCode
+- fld_DestinationTypeName
+
+The relationship between these entities is:
+
+tbl_Destination.DestinationType
+→ tbl_DestinationType.fld_DestinationTypeCode
+
+##### 3.3 Operation Location References
+
+tbl_MovementActions contains two location-related fields:
+
+- MovementActionStore:
+  References DestinationCode in tbl_Destination and represents
+  the store/location associated with the operation.
+
+- MovementActionDestinationId:
+  References DestinationCode in tbl_Destination and represents
+  the associated destination/target location.
+
+The business meaning of source and target locations depends
+on the operation type.
+
+##### 3.4 Movement Location Types
+
+tbl_ActionTypes contains two fields describing the location
+types associated with an operation:
+
+- fld_ActionTypeFromDestinationType:
+  Represents the source location type.
+
+- fld_ActionTypeToTypeDestinationType:
+  Represents the target location type.
+
+These fields are conceptually related to
+tbl_DestinationType.
+
+Together, ActionTypes, DestinationType, Destination, and
+MovementActions describe the relationship between operation
+types and physical source/target locations.
+
+#### 4. Dynamic JSON Properties
+
+Some database entities store additional business properties
+in JSON-formatted columns instead of dedicated relational
+columns.
+
+These properties represent flexible attributes associated
+with inventory items, operations, and master products.
+
+##### 4.1 Tag / Inventory Properties
+
+Source:
+tbl_Tags.ProductProperties
+
+Contains dynamic properties associated with registered
+inventory items.
+
+Individual JSON properties can be accessed using:
+
+JSON_VALUE(t.ProductProperties, N'$."FieldName"')
+
+##### 4.2 Operation Properties
+
+Source:
+tbl_MovementActions.MovementActionData
+
+Contains additional dynamic information associated with
+movement and operation records.
+
+Individual JSON properties can be accessed using:
+
+JSON_VALUE(ma.MovementActionData, N'$."FieldName"')
+
+##### 4.3 Master Product Technical Properties
+
+Source:
+tbl_Products.ProductTechnicalData
+
+Contains dynamic technical attributes associated with
+master product definitions.
+
+Individual JSON properties can be accessed using:
+
+JSON_VALUE(p.ProductTechnicalData, N'$."FieldName"')
+
+The JSON property names and their business meanings depend
+on the relevant product, tag, or operation configuration.
 
 #### 5. AGGREGATION RULES — CRITICAL
 Do NOT confuse the number of unique tagged items with the total quantity.
@@ -234,71 +389,93 @@ Typically:
 This returns the sum of the quantity stored in `ProductCount`.
 These two metrics are NOT interchangeable.
 
-#### 6. DATE & TIME BOUNDARIES AND DATE DISPLAY
-- 6.1 Business Day and Date Filtering
-Date and time information may be stored in different date or datetime fields across different database tables.
-NEVER automatically assume that the business day starts at `00:00`.
-The Silo WMS uses shift-based business logic.
-When a shift-based date boundary is required, use the shift definitions from: `tbl_ProductPropertyB`
+#### 6. Date and Time Data Model
+
+The Silo database contains date and time information in
+different formats depending on the entity and business process.
+
+##### 6.1 Shift-Based Business Day
+
+The Silo WMS uses shift-based business-day definitions.
+
+Shift information is stored in tbl_ProductPropertyB.
 
 Relevant fields include:
-- `fld_ProductPropertyBTitle`
-- `fld_ProductPropertyBDesc`
 
-Shift definitions may use a format such as: `HH:mm-HH:mm`
-The shift start time MUST be considered when determining the actual beginning and end of a business day.
-When converting a Persian/Shamsi date provided by the user to Gregorian for date filtering, use: `dbo.JalaliDateToGeorgianDate`
-Date filtering and date display are two separate concepts and MUST NOT be confused.
+- fld_ProductPropertyBTitle
+- fld_ProductPropertyBDesc
 
-- 6.2 Date Display in Final Report — CRITICAL
-Whenever any date or datetime field from any database table is included in the final `SELECT` result and displayed to the user, if that value is stored as a Gregorian date, it MUST be converted to Shamsi/Jalali format before being displayed.
-Use: `dbo.GeorgianDateToJalaliDate()`
+Shift descriptions may contain time intervals in the
+HH:mm-HH:mm format.
 
-This rule applies to ALL Gregorian date and datetime fields across all database tables and is NOT limited to a specific table or column.
-Examples include, but are not limited to:
-- Operation dates
-- Product registration dates
-- Tag registration dates
-- Entry dates
-- Exit dates
-- Return dates
-- Placement dates
-- Inventory dates
-- RFID log dates
-- Any other Gregorian date or datetime field
-- 
-If the date and time are stored in separate fields:
-- Convert the date field to Shamsi using `dbo.GeorgianDateToJalaliDate()`.
-- Keep the time field unchanged.
+The start and end times of these intervals define the
+operational boundaries of each shift.
 
-If the date and time are stored together in a single datetime field:
-- Display the date portion in Shamsi/Jalali format.
-- Preserve the time portion.
+Consequently, the beginning of a business day may differ
+from 00:00 depending on the configured shift definitions.
 
-**Known Shamsi-Native Date Columns — IMPORTANT**
+##### 6.2 Persian and Gregorian Date Conversion
 
-Some date columns in the database are already stored as Shamsi/Jalali date strings and MUST NOT be converted using `dbo.GeorgianDateToJalaliDate()`.
+The database uses the following functions for date conversion:
 
-Known example:
+- dbo.JalaliDateToGeorgianDate:
+  Converts a Persian/Shamsi date into its Gregorian equivalent.
 
-- `tbl_MovementActions.MovementActionDate`
-  - Stores dates directly in Shamsi/Jalali format.
-  - Example values: `1405/02/10`, `1405/02/11`.
-  - Select and display this column directly.
-  - Do NOT apply `dbo.GeorgianDateToJalaliDate()` to this column.
-  - Use its original value for chart categories, grouping, and date display.
+- dbo.GeorgianDateToJalaliDate:
+  Converts a Gregorian date into its Persian/Shamsi equivalent.
 
-Before applying any date conversion function, determine the actual storage format of the specific date column.
+These functions serve different purposes in date processing.
 
-The date conversion function MUST be selected based on the actual storage format of the column, not merely because the column contains a date.
+##### 6.3 Gregorian Date Storage
 
-IMPORTANT:
-- NEVER display a raw Gregorian date directly to the user in the final report result.
-- Use `dbo.GeorgianDateToJalaliDate()` ONLY for converting Gregorian dates to Shamsi for display in the final `SELECT` output.
-- Use `dbo.JalaliDateToGeorgianDate()` when converting user-provided Shamsi dates to Gregorian for filtering.
-- Do NOT use `dbo.GeorgianDateToJalaliDate()` in `WHERE` conditions for date filtering.
-- The requirement to display dates as Shamsi MUST NOT change the existing date filtering logic.
-- If a date field is already stored as a Shamsi date or Shamsi Unix timestamp, do NOT apply `dbo.GeorgianDateToJalaliDate()` to it.
+Some database date and datetime columns store Gregorian values.
+
+Examples include registration dates, operation-related dates,
+RFID log dates, placement dates, and inventory dates,
+depending on their actual column definitions.
+
+The function dbo.GeorgianDateToJalaliDate converts these
+values into Shamsi/Jalali representation.
+
+##### 6.4 Shamsi-Native Date Storage
+
+Some columns already store Persian/Shamsi dates.
+
+A known example is:
+
+tbl_MovementActions.MovementActionDate
+
+This column stores dates directly in Shamsi/Jalali format.
+
+Example values:
+
+- 1405/02/10
+- 1405/02/11
+
+Its stored values are already suitable for Shamsi date
+display, grouping, and chart categories.
+
+##### 6.5 Shamsi Unix Timestamp
+
+tbl_Tags.TagRegisterShamsiUnixDate stores registration
+date information as a Shamsi Unix timestamp.
+
+This representation differs from ordinary Gregorian
+datetime values and from Shamsi date strings.
+
+##### 6.6 Date and Time Representation
+
+Date information may be stored separately from time
+or together in a single datetime value.
+
+When stored separately, the date and time are represented
+by independent fields.
+
+When stored together, both components are part of the
+same datetime value.
+
+Date storage format and display format are separate
+characteristics of the database fields.
 
 #### 7. CORE RELATIONSHIP MAP
 The main database relationship chain is:

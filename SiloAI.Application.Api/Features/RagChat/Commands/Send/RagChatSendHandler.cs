@@ -91,6 +91,7 @@ public class RagChatSendHandler(
 
         IReadOnlyList<RagSearchHit> hits = [];
         string messageText;
+        var systematicInstructions = instructions.FirstOrDefault(p => p.IsSystematic);
 
         if (useRag)
         {
@@ -100,7 +101,7 @@ public class RagChatSendHandler(
                 request.Message, topK, request.DocType, request.Key, cancellationToken);
 
             // Materialized above — no extra DB round-trip here.
-            var systematicInstructions = instructions.FirstOrDefault(p => p.IsSystematic);
+            //var systematicInstructions = instructions.FirstOrDefault(p => p.IsSystematic);
 
             if (systematicInstructions is null)
             {

@@ -79,6 +79,8 @@ The following tables exist in the database. Use only these tables when building 
 - `fld_ProductGroup`, `fld_ProductBrand`, `fld_ProductSubGroup`, `fld_ProductClass`
 - `TagRegisterUser`, `Username`, `fld_LastModifierUser`
 - `ProductType` – Product type code (FK → `tbl_ProductType.ProductTypeCode`)
+- `ProductProperties` – JSON data containing additional product properties.
+
 
 **`tbl_Destination`** (warehouses)
 - `DestinationId`, `DestinationCode`, `DestinationTitle`
@@ -96,21 +98,27 @@ The following tables exist in the database. Use only these tables when building 
 - `MovementActionUserId` – User ID (FK → `tbl_User.Id`)
 - `MovementActionUHFLogGate` – Station/Gate code (FK → `tbl_Station.fld_StationCode`)
 - `MovementActionDate`, `MovementActionTime`, `MovementActionDesc`
-
+- `MovementActionData` – JSON data containing additional operation information.
+- `MovementActionTruckCrossId` – Reference to the related truck crossing record in `tbl_TruckCross`.
+- 
 **`tbl_TagsMovement`** (Transaction Details)
 - `TagsMovementId` – Primary Key
 - `RMovementActionId` – FK to `tbl_MovementActions.MovementActionId`
 - `ProductSerial`, `ProductCode`
 - `ProductCount` – quantity moved
+- `HMovementActionId` – FK to `tbl_MovementActions.MovementActionId`; used by the exit/return movement path.
 
 **`tbl_ActionTypes`, `tbl_Station`, `tbl_User`** (Lookups)
 - `tbl_ActionTypes`: `fld_ActionTypeId`, `fld_ActionTypeTitle`
 - `tbl_Station`: `fld_StationCode`, `fld_StationName`
 - `tbl_User`: `Id`, `Name`, `Username`
+- `fld_ActionTypeFromDestinationType` – Source destination type associated with the operation type.
+- `fld_ActionTypeToTypeDestinationType` – Target destination type associated with the operation type.
 
 **`tbl_Products`** (Master Product Data)
 - `ProductCode` – Primary Key
 - `ProductTitle`, `ProductTechnicalCode`, `ProductSize`
+- `ProductTechnicalData` – JSON data containing additional technical product specifications.
 
 **`tbl_DestinationType`** (Warehouse Types)
 - `fld_DestinationTypeCode` – Primary Key
