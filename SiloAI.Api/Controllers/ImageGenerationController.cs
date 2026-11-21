@@ -13,6 +13,9 @@ public class ImageGenerationForm
     public string? Prompt { get; set; }
     public string? Key { get; set; }
     public Guid? RequestId { get; set; }
+
+    /// <summary>Admin-only override of the image-generation model.</summary>
+    public Guid? ModelId { get; set; }
     public List<IFormFile> Images { get; set; } = [];
 }
 
@@ -38,6 +41,12 @@ public class ImageGenerationController(IMediator mediator) : ControllerBase
 
         if (form.Images.Count > MaxImages)
             return BadRequest(new { message = $"At most {MaxImages} input images are allowed." });
+
+        var callerCustomerId = int.TryParse(User.GetCustomerId(), out var cid) ? cid : (int?)null;
+
+        // Choosing a model is an admin (no customer) capability; customers get their assigned one.
+        if (form.ModelId is not null && callerCustomerId is not null)
+            return StatusCode(403, new { message = "Customers cannot choose the image-generation model." });
 
         var images = new List<ImageGenerationInputImage>();
 
@@ -66,7 +75,8 @@ public class ImageGenerationController(IMediator mediator) : ControllerBase
                 Images = images,
                 Key = form.Key,
                 RequestId = form.RequestId,
-                CustomerId = int.TryParse(User.GetCustomerId(), out var customerId) ? customerId : null
+                ModelId = form.ModelId,
+                CustomerId = callerCustomerId
             }, cancellationToken);
 
             return Ok(result);

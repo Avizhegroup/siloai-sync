@@ -22,6 +22,9 @@ public class ImageGenerationCommand : IRequest<ImageGenerationResponse>
     public Guid? RequestId { get; set; }
 
     public int? CustomerId { get; set; }
+
+    /// <summary>Admin-only override of the image-generation model; null = the assigned model.</summary>
+    public Guid? ModelId { get; set; }
 }
 
 public class GeneratedImageDto

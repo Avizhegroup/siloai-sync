@@ -438,6 +438,7 @@ Auth: JWT **or** `X-Api-Key`. Content type: `multipart/form-data`.
 | `images`    | file (repeat) | no       | 0–8 input images; repeat the field once per file. **PNG, JPEG or WebP only**, max 10 MB each. With no images the call is text-to-image; with images it is an edit using them as references. |
 | `key`       | string        | no       | Selects the instructions stored under this key. Omit to use instructions with no key.                          |
 | `requestId` | guid          | no       | Idempotency token. Re-sending the same `requestId` after a timeout never charges the customer twice.          |
+| `modelId`   | guid          | no       | **Admin (no customer) only**: use this active image-generation model instead of the assigned one. Customers sending it get `403`. |
 
 **Output** (`ImageGenerationResponse`, 200):
 

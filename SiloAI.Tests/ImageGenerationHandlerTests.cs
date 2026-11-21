@@ -14,11 +14,39 @@ public class ImageGenerationHandlerTests
     private static readonly ResolvedAiModel Model = ImageGenerationAgentServiceTests.Model();
 
     private static (ImageGenerationCommandHandler Handler, FakeLedger Ledger, FakeAgent Agent, FakeResolver Resolver) Create(decimal balance = 100)
+        => Create(out _, balance);
+
+    private static (ImageGenerationCommandHandler Handler, FakeLedger Ledger, FakeAgent Agent, FakeResolver Resolver) Create(
+        out FakeOverrides overrides, decimal balance = 100)
     {
         var ledger = new FakeLedger { Balance = balance };
         var agent = new FakeAgent();
         var resolver = new FakeResolver();
-        return (new ImageGenerationCommandHandler(agent, new FakePricing(), ledger, resolver), ledger, agent, resolver);
+        overrides = new FakeOverrides();
+        return (new ImageGenerationCommandHandler(agent, new FakePricing(), ledger, resolver, overrides), ledger, agent, resolver);
+    }
+
+    [Fact]
+    public async Task An_explicit_model_id_goes_through_the_override_service_not_the_assignment()
+    {
+        var (handler, _, _, resolver) = Create(out var overrides);
+        var id = Guid.NewGuid();
+
+        await handler.Handle(new ImageGenerationCommand { Prompt = "x", ModelId = id }, default);
+
+        Assert.Equal(id, overrides.LastModelId);
+        Assert.Null(resolver.LastFeature);
+    }
+
+    [Fact]
+    public async Task Without_a_model_id_the_assigned_model_is_used()
+    {
+        var (handler, _, _, resolver) = Create(out var overrides);
+
+        await handler.Handle(new ImageGenerationCommand { Prompt = "x" }, default);
+
+        Assert.Null(overrides.LastModelId);
+        Assert.Equal(UsageFeature.ImageGeneration, resolver.LastFeature);
     }
 
     [Fact]
@@ -77,6 +105,18 @@ public class ImageGenerationHandlerTests
             (LastPrompt, LastKey, LastImageCount) = (prompt, key, images.Count);
             return Task.FromResult(new ImageGenerationAgentResult(
                 [new GeneratedImageDto { DataBase64 = "AQ==", MediaType = "image/png" }], null, 10, 0, 5));
+        }
+    }
+
+    private sealed class FakeOverrides : IModelOverrideService
+    {
+        public Guid? LastModelId;
+
+        public Task<ResolvedAiModel> ResolveAsync(
+            int? customerId, Guid? modelId, UsageFeature feature, AiModelKind kind, CancellationToken ct)
+        {
+            LastModelId = modelId;
+            return Task.FromResult(Model);
         }
     }
 

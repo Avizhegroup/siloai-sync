@@ -17,6 +17,15 @@
         </div>
         <div class="rag-setting-fields">
             <div class="rag-field">
+                <label><i class="bi bi-cpu me-1"></i> مدل </label>
+                <TelerikDropDownList Data="@_models"
+                                     TextField="@nameof(AiModelDto.Name)"
+                                     ValueField="@nameof(AiModelDto.Id)"
+                                     @bind-Value="_modelId"
+                                     Enabled="@(!_isSending)"
+                                     Width="100%" />
+            </div>
+            <div class="rag-field">
                 <label><i class="bi bi-key me-1"></i> کلید دستورالعمل </label>
                 <TelerikTextBox @bind-Value="_key"
                                 Placeholder="اختیاری"

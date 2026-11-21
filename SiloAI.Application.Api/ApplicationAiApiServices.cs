@@ -15,6 +15,7 @@ public static class ApplicationAiApiServices
 
         services.AddScoped<IAiModelResolver, AiModelResolver>();
 
+        services.AddScoped<IModelOverrideService, ModelOverrideService>();
         services.AddScoped<ISpeechModelService, SpeechModelService>();
 
         services.AddScoped<ISpeechToTextService, OpenAISpeechToTextService>();

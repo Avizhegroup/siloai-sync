@@ -17,43 +17,11 @@ public interface ISpeechModelService
 
 public sealed class SpeechModelService(AiApiContext context, IAiModelResolver resolver) : ISpeechModelService
 {
+    private readonly ModelOverrideService _overrides = new(context, resolver);
+
     public Task<ResolvedAiModel> ResolveSpeechToTextAsync(int? customerId, Guid? modelId, CancellationToken cancellationToken) =>
-        ResolveAsync(customerId, modelId, UsageFeature.SpeechToText, AiModelKind.SpeechToText, cancellationToken);
+        _overrides.ResolveAsync(customerId, modelId, UsageFeature.SpeechToText, AiModelKind.SpeechToText, cancellationToken);
 
     public Task<ResolvedAiModel> ResolveTextToSpeechAsync(int? customerId, Guid? modelId, CancellationToken cancellationToken) =>
-        ResolveAsync(customerId, modelId, UsageFeature.TextToSpeech, AiModelKind.TextToSpeech, cancellationToken);
-
-    private async Task<ResolvedAiModel> ResolveAsync(
-        int? customerId, Guid? modelId, UsageFeature feature, AiModelKind kind, CancellationToken cancellationToken)
-    {
-        ResolvedAiModel resolved;
-
-        if (modelId is { } id)
-        {
-            var model = await context.AiModels
-                .AsNoTracking()
-                .FirstOrDefaultAsync(m => m.Id == id, cancellationToken)
-                ?? throw new InvalidOperationException($"AI model '{id}' was not found.");
-
-            if (!model.IsActive)
-                throw new InvalidOperationException($"AI model '{model.Name}' is not active.");
-
-            resolved = AiModelResolver.ToResolved(model);
-        }
-        else
-        {
-            resolved = await resolver.ResolveAsync(customerId, feature, cancellationToken);
-        }
-
-        return EnsureKind(resolved, kind);
-    }
-
-    internal static ResolvedAiModel EnsureKind(ResolvedAiModel model, AiModelKind kind)
-    {
-        if (model.Kind != kind)
-            throw new InvalidOperationException(
-                $"Model '{model.Identifier}' is a {model.Kind.ToDisplay()}, but a {kind.ToDisplay()} is required here.");
-
-        return model;
-    }
+        _overrides.ResolveAsync(customerId, modelId, UsageFeature.TextToSpeech, AiModelKind.TextToSpeech, cancellationToken);
 }

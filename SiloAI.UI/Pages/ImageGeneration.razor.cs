@@ -18,10 +18,31 @@ public partial class ImageGeneration
     private string _key = string.Empty;
     private string? _resultText;
     private bool _isSending;
+    private List<AiModelDto> _models = [];
+    private Guid? _modelId;
 
     [Inject] public AiApiClient ApiClient { get; set; } = default!;
 
     [CascadingParameter] public TelerikNotification? Notification { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var models = await ApiClient.GetFromJsonAsync<List<AiModelDto>>("admin/ai-models") ?? [];
+            var assignments = await ApiClient.GetFromJsonAsync<List<ModelAssignmentDto>>("admin/ai-models/assignments") ?? [];
+
+            _models = models.Where(m => m.IsActive && m.Kind == AiModelKind.ImageGeneration).ToList();
+
+            // Start on the globally assigned model (what customers get), else the first available.
+            var assigned = assignments.FirstOrDefault(a => a.Feature == UsageFeature.ImageGeneration)?.AiModelId;
+            _modelId = assigned is { } id && _models.Any(m => m.Id == id) ? id : _models.FirstOrDefault()?.Id;
+        }
+        catch (HttpRequestException)
+        {
+            Notification?.Show("بارگذاری مدل‌ها ناموفق بود.", "error");
+        }
+    }
 
     private async Task OnFilesSelected(InputFileChangeEventArgs args)
     {
@@ -70,6 +91,9 @@ public partial class ImageGeneration
             using var content = new MultipartFormDataContent();
             content.Add(new StringContent(_prompt.Trim()), "prompt");
             content.Add(new StringContent(Guid.NewGuid().ToString()), "requestId");
+
+            if (_modelId is { } modelId)
+                content.Add(new StringContent(modelId.ToString()), "modelId");
 
             if (!string.IsNullOrWhiteSpace(_key))
                 content.Add(new StringContent(_key.Trim()), "key");

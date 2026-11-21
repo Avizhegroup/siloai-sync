@@ -1,4 +1,4 @@
-﻿using SiloAI.Agent.ImageGeneration;
+using SiloAI.Agent.ImageGeneration;
 
 namespace SiloAI.Application.Api.Features;
 
@@ -6,14 +6,20 @@ public class ImageGenerationCommandHandler(
     IImageGenerationAgentService agentService,
     IPricingEngine pricingEngine,
     ICreditLedgerService ledgerService,
-    IAiModelResolver modelResolver) : IRequestHandler<ImageGenerationCommand, ImageGenerationResponse>
+    IAiModelResolver modelResolver,
+    IModelOverrideService modelOverrides) : IRequestHandler<ImageGenerationCommand, ImageGenerationResponse>
 {
     public async Task<ImageGenerationResponse> Handle(ImageGenerationCommand request, CancellationToken cancellationToken)
     {
         //if (request.CustomerId is { } cid && await ledgerService.GetBalanceAsync(cid, cancellationToken) <= 0)
         //    throw new InsufficientCreditException();
 
-        var model = await modelResolver.ResolveAsync(request.CustomerId, UsageFeature.ImageGeneration, cancellationToken);
+        // An explicit model (admin only — the controller rejects it for customers) must be an active
+        // image-generation model; otherwise the assigned model for the feature is used.
+        var model = request.ModelId is null
+            ? await modelResolver.ResolveAsync(request.CustomerId, UsageFeature.ImageGeneration, cancellationToken)
+            : await modelOverrides.ResolveAsync(
+                request.CustomerId, request.ModelId, UsageFeature.ImageGeneration, AiModelKind.ImageGeneration, cancellationToken);
 
         var result = await agentService.GenerateAsync(
             request.Prompt, request.Images, model, request.Key, cancellationToken);
