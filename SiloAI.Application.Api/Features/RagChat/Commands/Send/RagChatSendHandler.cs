@@ -1,4 +1,4 @@
-﻿using SiloAI.Agent.Chat;
+using SiloAI.Agent.Chat;
 using SiloAI.Application.Shared.Contracts.AiModels;
 using System.Text;
 
@@ -42,6 +42,10 @@ public class RagChatSendHandler(
 
             //if (chatSession is null || chatSession.OwnerKey != ownerKey)
             //    throw new ConversationNotFoundException();
+
+            // An unknown id used to fail with a NullReferenceException below; report it properly.
+            if (chatSession is null)
+                throw new ConversationNotFoundException();
 
             existingSessionJson = chatSession.SessionState;
         }
@@ -118,16 +122,20 @@ public class RagChatSendHandler(
             messageText = request.Message;
         }
 
+        // The saved conversation history keeps the user's own message; the retrieved chunks are
+        // shown to the model for this turn only (messageText). Storing the augmented message made
+        // every turn add up to 20 chunks to the history, so after a handful of messages the prompt
+        // outgrew the model's usable context and it "forgot" the conversation.
         var query = new CopilotMessageRequest
         {
-            Text = messageText,
+            Text = request.Message,
             Username = request.Username,
             SiloChatId = Guid.NewGuid().ToString(),
             IsUser = true,
             Datetime = DateTime.Now
         };
 
-        var result = await agentService.SendWithAgentSessionAsync(existingSessionJson, query);
+        var result = await agentService.SendWithAgentSessionAsync(existingSessionJson, query, cancellationToken, modelText: messageText);
 
         var now = DateTime.Now;
 
