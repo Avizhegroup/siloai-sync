@@ -1,4 +1,5 @@
 using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection;
 using SiloAI.Application.Shared.Contracts.Rag;
 using SiloAI.Application.Shared.Features;
 
@@ -29,12 +30,14 @@ public sealed record RagSearchToolResult(string FileName, int ChunkIndex, string
 /// Only the search query itself, and optionally how many results to ask for, are left to the
 /// model.
 /// </summary>
-public class RagSearchToolFactory(IRagSearchService ragSearchService)
+public class RagSearchToolFactory(IServiceScopeFactory scopeFactory)
 {
     public const string ToolName = "search_knowledge_base";
 
     public AIFunction Create(RagDocType? docType, string? key, int defaultTopK = 5)
     {
+        var serviceScopeFactory = scopeFactory;
+
         async Task<IReadOnlyList<RagSearchToolResult>> SearchKnowledgeBase(
             string query,
             int? resultCount,
@@ -47,6 +50,8 @@ public class RagSearchToolFactory(IRagSearchService ragSearchService)
 
             var top = Math.Clamp(resultCount ?? defaultTopK, 1, 20);
 
+            using var scope = serviceScopeFactory.CreateScope();
+            var ragSearchService = scope.ServiceProvider.GetRequiredService<IRagSearchService>();
             var hits = await ragSearchService.SearchAsync(query, top, docType, key, cancellationToken);
 
             return hits

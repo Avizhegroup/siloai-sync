@@ -1,4 +1,4 @@
-﻿using System.ClientModel;
+using System.ClientModel;
 using System.Text.Json;
 using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.Agents.AI;
@@ -105,6 +105,9 @@ public class ChatAgentService(
                 .AsIChatClient()
                 .AsBuilder()
                 .UseFunctionInvocation()
+                // Innermost: swaps in the retrieval-augmented text for the current turn only, so
+                // the saved history keeps the plain question (see TurnMessageSubstitution).
+                .Use(inner => new TurnMessageSubstitutingChatClient(inner))
                 .Build();
 
             var contextProviders = includeAutoRagContext
@@ -138,7 +141,8 @@ public class ChatAgentService(
     }
 
     public async Task<ChatAgentResponse> SendWithAgentSessionAsync(
-        string? sessionJson, CopilotMessageRequest query, CancellationToken cancellationToken = default)
+        string? sessionJson, CopilotMessageRequest query, CancellationToken cancellationToken = default,
+        string? modelText = null)
     {
         AgentSession session;
 
@@ -157,6 +161,13 @@ public class ChatAgentService(
         {
             new(ChatRole.User, query.Text)
         };
+
+        // query.Text is what the conversation history stores. When the caller augmented the message
+        // for this turn (retrieved chunks), modelText is what the model sees now — the history
+        // keeps only query.Text, so older turns don't carry their chunks forever.
+        using var substitution = modelText is not null && !string.Equals(modelText, query.Text, StringComparison.Ordinal)
+            ? TurnMessageSubstitution.Begin(query.Text, modelText)
+            : null;
 
         var result = await writer.RunAsync(messages, session);
 

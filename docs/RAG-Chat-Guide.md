@@ -613,3 +613,13 @@ model. A text-to-speech model carries its own comma-separated **voices** (first 
 provider/model specific and are not guaranteed to work across models. The migration `AddSpeechModelsAndVoices`
 seeds the previously hard-coded models (`microsoft/mai-transcribe-2`, `openai/tts-1-hd` with the OpenAI voice set)
 as global defaults, so behaviour is unchanged until an admin changes it. Speech calls remain unmetered.
+
+
+### Conversation history and retrieved chunks
+
+For `send` (and the voice endpoint), the knowledge-base chunks retrieved for a message are shown to the model
+**for that turn only**. The saved conversation history keeps the user's own message and the model's answers, so the
+prompt does not grow by up to 20 chunks per turn. Follow-up questions are re-retrieved on their own text, and the
+model can call its knowledge-base search tool when it needs more. Conversations created before this change keep the
+chunks already stored in their history. An unknown `conversationId` now returns *conversation not found* instead of a
+server error.

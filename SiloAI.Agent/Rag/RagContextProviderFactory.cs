@@ -1,16 +1,21 @@
 using Microsoft.Agents.AI;
+using Microsoft.Extensions.DependencyInjection;
 using SiloAI.Application.Shared.Contracts.Rag;
 using SiloAI.Application.Shared.Features;
 
 namespace SiloAI.Agent.Rag;
 
-public class RagContextProviderFactory(IRagSearchService ragSearchService)
+public class RagContextProviderFactory(IServiceScopeFactory scopeFactory)
 {
     public TextSearchProvider Create(int topK = 5, RagDocType? docType = null, string? key = null)
     {
+        var serviceScopeFactory = scopeFactory;
+
         return new TextSearchProvider(
             async (query, cancellationToken) =>
             {
+                using var scope = serviceScopeFactory.CreateScope();
+                var ragSearchService = scope.ServiceProvider.GetRequiredService<IRagSearchService>();
                 var hits = await ragSearchService.SearchAsync(
                     query, topK, docType, key, cancellationToken);
 
