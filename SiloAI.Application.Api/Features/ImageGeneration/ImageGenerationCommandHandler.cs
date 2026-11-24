@@ -1,4 +1,5 @@
-﻿using SiloAI.Agent.ImageGeneration;
+using SiloAI.Application.Api.Services;
+using SiloAI.Agent.ImageGeneration;
 
 namespace SiloAI.Application.Api.Features;
 
@@ -10,8 +11,7 @@ public class ImageGenerationCommandHandler(
 {
     public async Task<ImageGenerationResponse> Handle(ImageGenerationCommand request, CancellationToken cancellationToken)
     {
-        //if (request.CustomerId is { } cid && await ledgerService.GetBalanceAsync(cid, cancellationToken) <= 0)
-        //    throw new InsufficientCreditException();
+        await ledgerService.EnsureCreditAsync(request.CustomerId, cancellationToken);
 
         var model = await modelResolver.ResolveAsync(request.CustomerId, UsageFeature.ImageGeneration, cancellationToken);
 
@@ -21,7 +21,8 @@ public class ImageGenerationCommandHandler(
         if (request.CustomerId is { } customerId)
         {
             var charge = await pricingEngine.CalculateAsync(
-                new TokenUsageInput(result.InputTokens, result.CachedInputTokens, result.OutputTokens),
+                new TokenUsageInput(result.InputTokens, result.CachedInputTokens, result.OutputTokens,
+                    ImageCount: result.Images.Count),
                 UsageFeature.ImageGeneration, model.AiModelId, cancellationToken);
 
             var usageRecord = new UsageRecord
@@ -30,9 +31,10 @@ public class ImageGenerationCommandHandler(
                 CustomerId = customerId,
                 Feature = UsageFeature.ImageGeneration,
                 Model = model.Identifier,
-                InputTokens = (int)Math.Min(int.MaxValue, result.InputTokens),
-                CachedTokens = (int)Math.Min(int.MaxValue, result.CachedInputTokens),
-                OutputTokens = (int)Math.Min(int.MaxValue, result.OutputTokens),
+                InputTokens = CreditGuard.ToInt(result.InputTokens),
+                CachedTokens = CreditGuard.ToInt(result.CachedInputTokens),
+                OutputTokens = CreditGuard.ToInt(result.OutputTokens),
+                ImageCount = result.Images.Count,
                 CostUsd = charge.CostUsd,
                 FxRateUsed = charge.FxRateUsed,
                 MultiplierUsed = charge.MultiplierUsed,

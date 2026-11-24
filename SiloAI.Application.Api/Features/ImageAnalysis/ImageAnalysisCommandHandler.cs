@@ -1,3 +1,4 @@
+using SiloAI.Application.Api.Services;
 using SiloAI.Agent.Tasks;
 
 namespace SiloAI.Application.Api.Features;
@@ -10,6 +11,8 @@ public class ImageAnalysisCommandHandler(
 {
     public async Task<ImageAnalysisResponse> Handle(ImageAnalysisCommand request, CancellationToken cancellationToken)
     {
+        await ledgerService.EnsureCreditAsync(request.CustomerId, cancellationToken);
+
         var model = await modelResolver.ResolveAsync(request.CustomerId, UsageFeature.ImageAnalysis, cancellationToken);
 
         var result = await analysisService.AnalyzeImagesAsync(

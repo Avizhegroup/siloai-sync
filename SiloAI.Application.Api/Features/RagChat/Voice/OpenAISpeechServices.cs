@@ -18,6 +18,10 @@ public sealed class OpenAISpeechToTextService : ISpeechToTextService
 
     public async Task<string> TranscribeAsync(
         Stream audio, string fileName, string? language, ResolvedAiModel model, CancellationToken cancellationToken)
+        => (await TranscribeWithUsageAsync(audio, fileName, language, model, cancellationToken)).Text;
+
+    public async Task<TranscriptionResult> TranscribeWithUsageAsync(
+        Stream audio, string fileName, string? language, ResolvedAiModel model, CancellationToken cancellationToken)
     {
         //var transcriptionOptions = new AudioTranscriptionOptions();
         //if (!string.IsNullOrWhiteSpace(language))
@@ -65,7 +69,34 @@ public sealed class OpenAISpeechToTextService : ISpeechToTextService
         response.EnsureSuccessStatusCode();
 
         using var doc = System.Text.Json.JsonDocument.Parse(body);
-        return doc.RootElement.TryGetProperty("text", out var text) ? text.GetString() ?? string.Empty : string.Empty;
+        var text = doc.RootElement.TryGetProperty("text", out var t) ? t.GetString() ?? string.Empty : string.Empty;
+        return new TranscriptionResult(text, TranscriptionUsageParser.Parse(doc.RootElement));
+    }
+}
+
+/// <summary>
+/// Reads the consumption an OpenAI-compatible transcription response reports: either
+/// <c>usage: {type:"tokens", input_tokens, output_tokens}</c>, <c>usage: {type:"duration", seconds}</c>,
+/// or a top-level <c>duration</c> (verbose_json). Anything missing is zero.
+/// </summary>
+public static class TranscriptionUsageParser
+{
+    public static SpeechUsage Parse(System.Text.Json.JsonElement root)
+    {
+        long input = 0, output = 0;
+        decimal seconds = 0m;
+
+        if (root.TryGetProperty("usage", out var usage) && usage.ValueKind == System.Text.Json.JsonValueKind.Object)
+        {
+            if (usage.TryGetProperty("input_tokens", out var i) && i.TryGetInt64(out var iv)) input = iv;
+            if (usage.TryGetProperty("output_tokens", out var o) && o.TryGetInt64(out var ov)) output = ov;
+            if (usage.TryGetProperty("seconds", out var s) && s.TryGetDecimal(out var sv)) seconds = sv;
+        }
+
+        if (seconds == 0m && root.TryGetProperty("duration", out var d) && d.ValueKind == System.Text.Json.JsonValueKind.Number && d.TryGetDecimal(out var dv))
+            seconds = dv;
+
+        return new SpeechUsage(input, output, seconds);
     }
 }
 

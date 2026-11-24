@@ -27,6 +27,9 @@ public class GetAiModelsQueryHandler(AiApiContext context) : IRequestHandler<Get
                 InputPricePerMillionTokens = m.InputPricePerMillionTokens,
                 OutputPricePerMillionTokens = m.OutputPricePerMillionTokens,
                 CachedInputPricePerMillionTokens = m.CachedInputPricePerMillionTokens,
+                PricePerImageUsd = m.PricePerImageUsd,
+                PricePerAudioMinuteUsd = m.PricePerAudioMinuteUsd,
+                PricePerMillionCharactersUsd = m.PricePerMillionCharactersUsd,
                 IsActive = m.IsActive,
                 CreatedAt = m.CreatedAt,
                 UpdatedAt = m.UpdatedAt

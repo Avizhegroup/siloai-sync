@@ -1,9 +1,8 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SiloAI.Shared;
 using SiloAI.Application.Api;
-using SiloAI.Application.Shared.Features;
 
 namespace SiloAI.Api.Controllers;
 
@@ -17,9 +16,9 @@ public class TranscribeForm
 }
 
 /// <summary>
-/// Standalone speech-to-text and text-to-speech for the admin panel's speech page. JWT only on
-/// purpose: these calls are not metered per customer (the voice-chat endpoint isn't either), so
-/// they are not exposed to customer API keys.
+/// Standalone speech-to-text and text-to-speech. JWT only on purpose (not exposed to customer API
+/// keys). Calls made by a customer are metered and charged to their credit; admin calls (no
+/// customer id) stay unmetered.
 /// </summary>
 [ApiController]
 [Route("api/speech")]
@@ -32,6 +31,7 @@ public class SpeechController : ControllerBase
         [FromForm] TranscribeForm form,
         [FromServices] ISpeechToTextService stt,
         [FromServices] ISpeechModelService speechModels,
+        [FromServices] ISpeechBillingService billing,
         CancellationToken cancellationToken)
     {
         var customerId = int.TryParse(User.GetCustomerId(), out var cid) ? cid : (int?)null;
@@ -52,9 +52,17 @@ public class SpeechController : ControllerBase
 
             var model = await speechModels.ResolveSpeechToTextAsync(customerId, form.ModelId, cancellationToken);
 
-            var text = (await stt.TranscribeAsync(stream, form.Audio.FileName, form.Language, model, cancellationToken)).Trim();
+            await billing.EnsureCreditAsync(customerId, cancellationToken);
 
-            return Ok(new TranscriptionResponse { Text = text });
+            var transcription = await stt.TranscribeWithUsageAsync(stream, form.Audio.FileName, form.Language, model, cancellationToken);
+
+            await billing.ChargeSpeechToTextAsync(customerId, model, transcription.Usage, Guid.NewGuid(), cancellationToken);
+
+            return Ok(new TranscriptionResponse { Text = transcription.Text.Trim() });
+        }
+        catch (InsufficientCreditException)
+        {
+            return StatusCode(402, new { message = "اعتبار مشتری به پایان رسیده است." });
         }
         catch (HttpRequestException ex)
         {
@@ -71,6 +79,7 @@ public class SpeechController : ControllerBase
         [FromBody] SynthesizeSpeechRequest request,
         [FromServices] ITextToSpeechService tts,
         [FromServices] ISpeechModelService speechModels,
+        [FromServices] ISpeechBillingService billing,
         CancellationToken cancellationToken)
     {
         var customerId = int.TryParse(User.GetCustomerId(), out var cid) ? cid : (int?)null;
@@ -86,9 +95,18 @@ public class SpeechController : ControllerBase
         {
             var model = await speechModels.ResolveTextToSpeechAsync(customerId, request.ModelId, cancellationToken);
 
-            var speech = await tts.SynthesizeAsync(request.Text!.Trim(), request.Voice?.Trim(), model, cancellationToken);
+            await billing.EnsureCreditAsync(customerId, cancellationToken);
+
+            var text = request.Text!.Trim();
+            var speech = await tts.SynthesizeAsync(text, request.Voice?.Trim(), model, cancellationToken);
+
+            await billing.ChargeTextToSpeechAsync(customerId, model, text.Length, Guid.NewGuid(), cancellationToken);
 
             return File(speech.Audio, speech.ContentType);
+        }
+        catch (InsufficientCreditException)
+        {
+            return StatusCode(402, new { message = "اعتبار مشتری به پایان رسیده است." });
         }
         catch (Exception ex) when (ex is System.ClientModel.ClientResultException or HttpRequestException)
         {

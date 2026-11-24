@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using SiloAI.Agent.Chat;
 using SiloAI.Application.Shared.Contracts.AiModels;
@@ -114,22 +114,10 @@ public class SendChatCommandHandler(
             if (chargeOutcome == ChargeOutcome.InsufficientBalance)
                 throw new InsufficientCreditException();
 
-            if (chargeOutcome == ChargeOutcome.Success)
-                chatSession.TurnIndex = turnIndex;
-
-            // Legacy credit cache (USD) — decrement by the same Toman amount that was
-            // actually charged, converted back with the same snapshot rate, so the two
-            // columns stay consistent until the legacy column is removed.
-            var chargeUsd = charge.FxRateUsed > 0
-                ? Math.Round(charge.ChargeToman / charge.FxRateUsed, 8)
-                : 0m;
-
-            await dbContext.Customers
-                .Where(c => c.Id == customerId)
-                .ExecuteUpdateAsync(s => s
-                    .SetProperty(c => c.RemainingCredit,
-                        c => Math.Max(0, c.RemainingCredit - chargeUsd)),
-                    cancellationToken);
+            // Also advance on DuplicateIgnored: the charge for this turn was already committed by an
+            // earlier attempt, so the index must move on or the same key would swallow every later turn.
+            // (The legacy Customer.RemainingCredit cache is now decremented inside the ledger service.)
+            chatSession.TurnIndex = turnIndex;
         }
 
         var updatedSessionJson = result.SerializedSession;

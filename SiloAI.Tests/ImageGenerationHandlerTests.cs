@@ -66,6 +66,38 @@ public class ImageGenerationHandlerTests
             () => handler.Handle(new ImageGenerationCommand { Prompt = "x", CustomerId = 1 }, default));
     }
 
+    [Fact]
+    public async Task Customer_without_credit_is_refused_before_the_provider_is_called()
+    {
+        var (handler, ledger, agent, _) = Create(balance: 0);
+
+        await Assert.ThrowsAsync<InsufficientCreditException>(
+            () => handler.Handle(new ImageGenerationCommand { Prompt = "x", CustomerId = 1 }, default));
+
+        Assert.Null(agent.LastPrompt);
+        Assert.Null(ledger.LastRecord);
+    }
+
+    [Fact]
+    public async Task Admin_calls_without_a_customer_skip_the_credit_check()
+    {
+        var (handler, _, agent, _) = Create(balance: 0);
+
+        await handler.Handle(new ImageGenerationCommand { Prompt = "x" }, default);
+
+        Assert.Equal("x", agent.LastPrompt);
+    }
+
+    [Fact]
+    public async Task The_number_of_generated_images_is_recorded_on_the_usage_record()
+    {
+        var (handler, ledger, _, _) = Create();
+
+        await handler.Handle(new ImageGenerationCommand { Prompt = "x", CustomerId = 3 }, default);
+
+        Assert.Equal(1, ledger.LastRecord!.ImageCount);
+    }
+
     private sealed class FakeAgent : IImageGenerationAgentService
     {
         public string? LastPrompt, LastKey;

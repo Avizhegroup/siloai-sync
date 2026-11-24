@@ -6,7 +6,24 @@ namespace SiloAI.Application.Api;
 public interface ISpeechToTextService
 {
     Task<string> TranscribeAsync(Stream audio, string fileName, string? language, ResolvedAiModel model, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Transcribes and also reports what the provider says was consumed, so the call can be billed.
+    /// The default keeps existing implementations working: usage is simply unknown (all zero) and the
+    /// call is billed at the feature's minimum charge.
+    /// </summary>
+    async Task<TranscriptionResult> TranscribeWithUsageAsync(
+        Stream audio, string fileName, string? language, ResolvedAiModel model, CancellationToken cancellationToken)
+        => new TranscriptionResult(await TranscribeAsync(audio, fileName, language, model, cancellationToken), SpeechUsage.Unknown);
 }
+
+/// <summary>Provider-reported consumption of one speech call.</summary>
+public sealed record SpeechUsage(long InputTokens, long OutputTokens, decimal AudioSeconds)
+{
+    public static readonly SpeechUsage Unknown = new(0, 0, 0m);
+}
+
+public sealed record TranscriptionResult(string Text, SpeechUsage Usage);
 
 public interface ITextToSpeechService
 {
@@ -58,7 +75,8 @@ public sealed class RagVoiceChatService(
     ISpeechToTextService stt,
     ITextToSpeechService tts,
     IMediator mediator,
-    ISpeechModelService speechModels) : IRagVoiceChatService
+    ISpeechModelService speechModels,
+    ISpeechBillingService? billing = null) : IRagVoiceChatService
 {
     public async Task<RagVoiceChatResult> SendAsync(RagVoiceChatRequest request, CancellationToken cancellationToken)
     {
@@ -68,8 +86,17 @@ public sealed class RagVoiceChatService(
         var ttsModel = await speechModels.ResolveTextToSpeechAsync(request.CustomerId, request.TtsModelId, cancellationToken);
         AiModelVoices.Choose(ttsModel.VoiceList, request.Voice);
 
-        var transcript = (await stt.TranscribeAsync(
-            request.Audio, request.FileName, request.Language, sttModel, cancellationToken)).Trim();
+        // No provider call at all for a customer without credit.
+        if (billing is not null)
+            await billing.EnsureCreditAsync(request.CustomerId, cancellationToken);
+
+        var transcription = await stt.TranscribeWithUsageAsync(
+            request.Audio, request.FileName, request.Language, sttModel, cancellationToken);
+        var transcript = transcription.Text.Trim();
+
+        // The provider call happened, so it is billed even when nothing was recognized.
+        if (billing is not null)
+            await billing.ChargeSpeechToTextAsync(request.CustomerId, sttModel, transcription.Usage, Guid.NewGuid(), cancellationToken);
 
         if (transcript.Length == 0)
             throw new InvalidOperationException("No speech could be recognized in the supplied audio.");
@@ -88,6 +115,9 @@ public sealed class RagVoiceChatService(
         }, cancellationToken);
 
         var speech = await tts.SynthesizeAsync(chat.ResponseText, request.Voice, ttsModel, cancellationToken);
+
+        if (billing is not null)
+            await billing.ChargeTextToSpeechAsync(request.CustomerId, ttsModel, chat.ResponseText.Length, Guid.NewGuid(), cancellationToken);
 
         return new RagVoiceChatResult
         {

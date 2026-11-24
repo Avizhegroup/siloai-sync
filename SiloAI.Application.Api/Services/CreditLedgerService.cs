@@ -1,4 +1,4 @@
-﻿using Microsoft.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.DependencyInjection;
 using SiloAI.Application.Shared.Contracts.Financial;
 
@@ -48,6 +48,14 @@ public class CreditLedgerService(IServiceScopeFactory scopeFactory) : ICreditLed
             await dbTransaction.RollbackAsync(cancellationToken);
             return ChargeOutcome.InsufficientBalance;
         }
+
+        // Legacy USD display cache (Customer.RemainingCredit): kept in step with the ledger inside the
+        // same transaction, so it can never drift from — or be double-decremented against — the ledger.
+        var chargeUsd = charge.FxRateUsed > 0 ? Math.Round(charge.ChargeToman / charge.FxRateUsed, 8) : 0m;
+        await dbContext.Customers
+            .Where(c => c.Id == customerId)
+            .ExecuteUpdateAsync(s => s.SetProperty(c => c.RemainingCredit,
+                c => c.RemainingCredit > chargeUsd ? c.RemainingCredit - chargeUsd : 0m), cancellationToken);
 
         var account = await dbContext.LedgerAccounts
             .AsNoTracking()

@@ -1,3 +1,4 @@
+using SiloAI.Application.Api.Services;
 using SiloAI.Agent.Chat;
 using SiloAI.Application.Shared.Contracts.AiModels;
 using System.Text;
@@ -25,10 +26,8 @@ public class RagChatSendHandler(
 
     public async Task<RagChatResponse> Handle(RagChatSendCommand request, CancellationToken cancellationToken)
     {
-        //if (!await HasCreditAsync(request.CustomerId, cancellationToken))
-        //{
-        //    throw new InsufficientCreditException();
-        //}
+        // Refuse before any provider call is made when the customer has no credit.
+        await ledgerService.EnsureCreditAsync(request.CustomerId, cancellationToken);
 
         var ownerKey = ChatSessionOwnerKey.ForOwnerId(request.OwnerId);
 
@@ -177,9 +176,9 @@ public class RagChatSendHandler(
                 CustomerId = customerId,
                 Feature = UsageFeature.SupportChat,
                 Model = resolvedModel.Identifier,
-                InputTokens = (int)Math.Min(int.MaxValue, result.TokenUsage.InputTokenCount),
-                CachedTokens = (int)Math.Min(int.MaxValue, result.TokenUsage.CachedInputTokenCount),
-                OutputTokens = (int)Math.Min(int.MaxValue, result.TokenUsage.OutputTokenCount),
+                InputTokens = CreditGuard.ToInt(result.TokenUsage.InputTokenCount),
+                CachedTokens = CreditGuard.ToInt(result.TokenUsage.CachedInputTokenCount),
+                OutputTokens = CreditGuard.ToInt(result.TokenUsage.OutputTokenCount),
                 CostUsd = charge.CostUsd,
                 FxRateUsed = charge.FxRateUsed,
                 MultiplierUsed = charge.MultiplierUsed,
@@ -194,25 +193,13 @@ public class RagChatSendHandler(
                 idempotencyKey: $"ragchat:{chatSession.Id}:{turnIndex}",
                 cancellationToken);
 
-            //if (chargeOutcome == ChargeOutcome.InsufficientBalance)
-            //    throw new InsufficientCreditException();
+            if (chargeOutcome == ChargeOutcome.InsufficientBalance)
+                throw new InsufficientCreditException();
 
-            //if (chargeOutcome == ChargeOutcome.Success)
-            //    chatSession.TurnIndex = turnIndex;
-
-            // Legacy credit cache (USD) — decrement by the same Toman amount that was
-            // actually charged, converted back with the same snapshot rate, so the two
-            // columns stay consistent until the legacy column is removed.
-            var chargeUsd = charge.FxRateUsed > 0
-                ? Math.Round(charge.ChargeToman / charge.FxRateUsed, 8)
-                : 0m;
-
-            //await dbContext.Customers
-            //    .Where(c => c.Id == customerId)
-            //    .ExecuteUpdateAsync(s => s
-            //        .SetProperty(c => c.RemainingCredit,
-            //            c => Math.Max(0, c.RemainingCredit - chargeUsd)),
-            //        cancellationToken);
+            // Advance on Success, and also on DuplicateIgnored: that means this turn's charge was
+            // already committed by an earlier attempt whose session save was lost, so the index
+            // must move on or every later turn would reuse (and be swallowed by) the same key.
+            chatSession.TurnIndex = turnIndex;
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -293,20 +280,5 @@ public class RagChatSendHandler(
     {
         if (string.IsNullOrEmpty(value)) return string.Empty;
         return value.Length <= maxLength ? value : value[..maxLength] + "…";
-    }
-
-    private async Task<bool> HasCreditAsync(
-    int? customerId,
-    CancellationToken cancellationToken)
-    {
-        if (customerId is null)
-            return true;
-
-        // The ledger is the single source of truth for balances; the legacy
-        // Customer.RemainingCredit column is only a display cache and must not
-        // gate real (paid) AI calls.
-        var balance = await ledgerService.GetBalanceAsync(customerId.Value, cancellationToken);
-
-        return balance > 0;
     }
 }

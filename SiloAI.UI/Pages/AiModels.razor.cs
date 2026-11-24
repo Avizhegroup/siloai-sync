@@ -94,6 +94,9 @@ public partial class AiModels
             InputPricePerMillionTokens = model.InputPricePerMillionTokens,
             OutputPricePerMillionTokens = model.OutputPricePerMillionTokens,
             CachedInputPricePerMillionTokens = model.CachedInputPricePerMillionTokens,
+            PricePerImageUsd = model.PricePerImageUsd,
+            PricePerAudioMinuteUsd = model.PricePerAudioMinuteUsd,
+            PricePerMillionCharactersUsd = model.PricePerMillionCharactersUsd,
             IsActive = model.IsActive
         };
 

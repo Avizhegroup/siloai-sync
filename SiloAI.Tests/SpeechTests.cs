@@ -1,6 +1,7 @@
-using SiloAI.Application.Api;
+﻿using SiloAI.Application.Api;
 using SiloAI.Application.Shared.Contracts.AiModels;
 using SiloAI.Application.Shared.Features;
+using SiloAI.Domains;
 using Xunit;
 
 namespace SiloAI.Tests;
@@ -94,6 +95,58 @@ public class RagVoiceChatServiceTests
 
         Assert.Equal(1, stt.Calls);
         Assert.Equal(0, tts.Calls);
+    }
+
+    [Fact]
+    public async Task Customer_without_credit_is_refused_before_any_provider_call()
+    {
+        var stt = new FakeStt("hello");
+        var billing = new FakeBilling { Refuse = true };
+        var service = new RagVoiceChatService(stt, new FakeTts(), mediator: null!, new FakeSpeechModels(), billing);
+
+        await Assert.ThrowsAsync<InsufficientCreditException>(() => service.SendAsync(new RagVoiceChatRequest
+        {
+            Audio = new MemoryStream([1, 2, 3]), FileName = "a.webm", Username = "u", OwnerId = "o", CustomerId = 9
+        }, default));
+
+        Assert.Equal(0, stt.Calls);
+    }
+
+    [Fact]
+    public async Task Transcription_is_billed_even_when_no_speech_is_recognized()
+    {
+        var stt = new FakeStt("   ");
+        var billing = new FakeBilling();
+        var service = new RagVoiceChatService(stt, new FakeTts(), mediator: null!, new FakeSpeechModels(), billing);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.SendAsync(new RagVoiceChatRequest
+        {
+            Audio = new MemoryStream([1, 2, 3]), FileName = "a.webm", Username = "u", OwnerId = "o", CustomerId = 9
+        }, default));
+
+        Assert.Equal(1, billing.SttCharges);
+        Assert.Equal(0, billing.TtsCharges);
+    }
+
+    private sealed class FakeBilling : ISpeechBillingService
+    {
+        public bool Refuse;
+        public int SttCharges, TtsCharges;
+
+        public Task EnsureCreditAsync(int? customerId, CancellationToken ct)
+            => Refuse && customerId is not null ? throw new InsufficientCreditException() : Task.CompletedTask;
+
+        public Task ChargeSpeechToTextAsync(int? customerId, ResolvedAiModel model, SpeechUsage usage, Guid requestId, CancellationToken ct)
+        {
+            SttCharges++;
+            return Task.CompletedTask;
+        }
+
+        public Task ChargeTextToSpeechAsync(int? customerId, ResolvedAiModel model, int characters, Guid requestId, CancellationToken ct)
+        {
+            TtsCharges++;
+            return Task.CompletedTask;
+        }
     }
 
     private static ResolvedAiModel Model(AiModelKind kind, string? voices = null) =>

@@ -9,6 +9,11 @@ public class UpsertAiModelCommandHandler(AiApiContext context) : IRequestHandler
         if (input.Kind == AiModelKind.Rag && (input.EmbeddingDimensions is null || input.EmbeddingDimensions <= 0))
             throw new InvalidOperationException("A RAG (embedding) model requires a positive EmbeddingDimensions value.");
 
+        if (input.InputPricePerMillionTokens < 0 || input.OutputPricePerMillionTokens < 0
+            || input.CachedInputPricePerMillionTokens < 0 || input.PricePerImageUsd < 0
+            || input.PricePerAudioMinuteUsd < 0 || input.PricePerMillionCharactersUsd < 0)
+            throw new InvalidOperationException("Prices cannot be negative.");
+
         string? voices = null;
         if (input.Kind == AiModelKind.TextToSpeech)
         {
@@ -81,6 +86,9 @@ public class UpsertAiModelCommandHandler(AiApiContext context) : IRequestHandler
         model.InputPricePerMillionTokens = input.InputPricePerMillionTokens;
         model.OutputPricePerMillionTokens = input.OutputPricePerMillionTokens;
         model.CachedInputPricePerMillionTokens = input.CachedInputPricePerMillionTokens;
+        model.PricePerImageUsd = input.PricePerImageUsd;
+        model.PricePerAudioMinuteUsd = input.PricePerAudioMinuteUsd;
+        model.PricePerMillionCharactersUsd = input.PricePerMillionCharactersUsd;
         model.IsActive = input.IsActive;
         model.UpdatedAt = now;
 
@@ -109,6 +117,9 @@ public class UpsertAiModelCommandHandler(AiApiContext context) : IRequestHandler
         InputPricePerMillionTokens = m.InputPricePerMillionTokens,
         OutputPricePerMillionTokens = m.OutputPricePerMillionTokens,
         CachedInputPricePerMillionTokens = m.CachedInputPricePerMillionTokens,
+        PricePerImageUsd = m.PricePerImageUsd,
+        PricePerAudioMinuteUsd = m.PricePerAudioMinuteUsd,
+        PricePerMillionCharactersUsd = m.PricePerMillionCharactersUsd,
         IsActive = m.IsActive,
         CreatedAt = m.CreatedAt,
         UpdatedAt = m.UpdatedAt

@@ -29,6 +29,15 @@ public class AiModelDto
     public decimal OutputPricePerMillionTokens { get; set; }
     public decimal CachedInputPricePerMillionTokens { get; set; }
 
+    /// <summary>Image-generation models: USD per generated image (0 = billed by tokens only).</summary>
+    public decimal PricePerImageUsd { get; set; }
+
+    /// <summary>Speech-to-text models: USD per minute of audio (0 = billed by tokens only).</summary>
+    public decimal PricePerAudioMinuteUsd { get; set; }
+
+    /// <summary>Text-to-speech models: USD per 1,000,000 characters.</summary>
+    public decimal PricePerMillionCharactersUsd { get; set; }
+
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
@@ -69,6 +78,15 @@ public class UpsertAiModelRequest
 
     [Range(0, double.MaxValue)]
     public decimal CachedInputPricePerMillionTokens { get; set; }
+
+    /// <summary>Image-generation models: USD per generated image (0 = billed by tokens only).</summary>
+    public decimal PricePerImageUsd { get; set; }
+
+    /// <summary>Speech-to-text models: USD per minute of audio (0 = billed by tokens only).</summary>
+    public decimal PricePerAudioMinuteUsd { get; set; }
+
+    /// <summary>Text-to-speech models: USD per 1,000,000 characters.</summary>
+    public decimal PricePerMillionCharactersUsd { get; set; }
 
     public bool IsActive { get; set; } = true;
 }

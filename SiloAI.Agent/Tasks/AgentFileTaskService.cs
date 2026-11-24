@@ -102,16 +102,24 @@ public class AgentFileTaskService(
         RagDocType docType,
         string key,
         CancellationToken cancellationToken = default)
+        => (await ExtractTextWithUsageAsync(fileData, fileMediaType, model, docType, key, cancellationToken)).Text;
+
+    /// <summary>
+    /// Same as <see cref="ExtractTextFromFileAsync"/> but also reports the provider's token usage
+    /// (input / cached / output) so OCR can be billed on its real cost instead of a flat floor.
+    /// </summary>
+    public async Task<ImageAnalysisResult> ExtractTextWithUsageAsync(
+        byte[] fileData,
+        string fileMediaType,
+        ResolvedAiModel model,
+        RagDocType docType,
+        string key,
+        CancellationToken cancellationToken = default)
     {
         if (fileData is null || fileData.Length == 0)
         {
             throw new ArgumentException("File data cannot be null or empty.", nameof(fileData));
         }
-
-        //if (!model.SupportsFileInput || !model.SupportsTextOutput)
-        //    throw new InvalidOperationException(
-        //        $"Model '{model.Identifier}' does not support file input with text output and " +
-        //        "cannot be used with AgentFileTaskService.");
 
         var instructions = await LoadInstructionsAsync(docType, key, cancellationToken);
 
@@ -123,9 +131,13 @@ public class AgentFileTaskService(
             new(ChatRole.User, new List<AIContent> { new DataContent(fileData, fileMediaType) })
         };
 
-        var response = await agent.RunAsync(messages);
+        var response = await agent.RunAsync(messages, cancellationToken: cancellationToken);
 
-        return response?.ToString() ?? string.Empty;
+        return new ImageAnalysisResult(
+            response?.ToString() ?? string.Empty,
+            response?.Usage?.InputTokenCount ?? 0,
+            response?.Usage?.CachedInputTokenCount ?? 0,
+            response?.Usage?.OutputTokenCount ?? 0);
     }
 
     private AIAgent GetOrCreateAgent(string modelIdentifier, string instructions)

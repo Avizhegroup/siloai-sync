@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using SiloAI.Agent.ImageGeneration;
 using SiloAI.Agent.Rag;
 using SiloAI.Application.Shared.Features;
@@ -108,7 +108,7 @@ public class HttpImageBackendTests
     [Fact]
     public void Response_usage_is_parsed()
     {
-        var json = $$"""{"data":[{"b64_json":"{{Convert.ToBase64String(Png)}}"}],"usage":{"input_tokens":120,"output_tokens":30,"input_tokens_details":{"cached_tokens":20}}}""";
+        var json = $$$$"""{"data":[{"b64_json":"{{{{Convert.ToBase64String(Png)}}}}"}],"usage":{"input_tokens":120,"output_tokens":30,"input_tokens_details":{"cached_tokens":20}}}""";
 
         var result = HttpImageBackend.ParseResponse(json);
 

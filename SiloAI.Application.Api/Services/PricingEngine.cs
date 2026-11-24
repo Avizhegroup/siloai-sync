@@ -1,4 +1,4 @@
-﻿using SiloAI.Application.Shared.Contracts.Financial;
+using SiloAI.Application.Shared.Contracts.Financial;
 
 namespace SiloAI.Application.Api.Services;
 
@@ -42,19 +42,16 @@ public class PricingEngine(AiApiContext dbContext) : IPricingEngine
         var modelPricing = await dbContext.AiModels
             .AsNoTracking()
             .Where(x => x.Id == aiModelId)
-            .Select(x => new { x.InputPricePerMillionTokens, x.OutputPricePerMillionTokens, x.CachedInputPricePerMillionTokens })
+            .Select(x => new ModelPriceList(
+                x.InputPricePerMillionTokens, x.OutputPricePerMillionTokens, x.CachedInputPricePerMillionTokens,
+                x.PricePerImageUsd, x.PricePerAudioMinuteUsd, x.PricePerMillionCharactersUsd))
             .FirstOrDefaultAsync(cancellationToken);
 
         if (modelPricing is null)
             throw new InvalidOperationException(
                 $"AiModel '{aiModelId}' was not found. It may have been deleted after being resolved for this call.");
 
-        var normalInputTokens = Math.Max(0, usage.InputTokens - usage.CachedTokens);
-
-        var costUsd =
-            (normalInputTokens / 1_000_000m * modelPricing.InputPricePerMillionTokens)
-            + (usage.CachedTokens / 1_000_000m * modelPricing.CachedInputPricePerMillionTokens)
-            + (usage.OutputTokens / 1_000_000m * modelPricing.OutputPricePerMillionTokens);
+        var costUsd = UsageCostCalculator.ComputeCostUsd(usage, modelPricing);
 
         var costToman = costUsd * fxRate;
 

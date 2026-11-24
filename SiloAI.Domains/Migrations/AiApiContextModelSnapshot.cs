@@ -246,6 +246,18 @@ namespace SiloAI.Domains.Migrations
                         .HasColumnType("decimal(18,8)")
                         .HasColumnName("fld_OutputPricePerMillionTokens");
 
+                    b.Property<decimal>("PricePerAudioMinuteUsd")
+                        .HasColumnType("decimal(18,8)")
+                        .HasColumnName("fld_PricePerAudioMinuteUsd");
+
+                    b.Property<decimal>("PricePerImageUsd")
+                        .HasColumnType("decimal(18,8)")
+                        .HasColumnName("fld_PricePerImageUsd");
+
+                    b.Property<decimal>("PricePerMillionCharactersUsd")
+                        .HasColumnType("decimal(18,8)")
+                        .HasColumnName("fld_PricePerMillionCharactersUsd");
+
                     b.Property<bool>("SupportsFileInput")
                         .HasColumnType("bit")
                         .HasColumnName("fld_SupportsFileInput");
@@ -748,9 +760,17 @@ namespace SiloAI.Domains.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("fld_Id");
 
+                    b.Property<decimal>("AudioSeconds")
+                        .HasColumnType("decimal(18,3)")
+                        .HasColumnName("fld_AudioSeconds");
+
                     b.Property<int>("CachedTokens")
                         .HasColumnType("int")
                         .HasColumnName("fld_CachedTokens");
+
+                    b.Property<int>("Characters")
+                        .HasColumnType("int")
+                        .HasColumnName("fld_Characters");
 
                     b.Property<decimal>("ChargeToman")
                         .HasColumnType("decimal(18,2)")
@@ -783,6 +803,10 @@ namespace SiloAI.Domains.Migrations
                     b.Property<decimal>("FxRateUsed")
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("fld_FxRateUsed");
+
+                    b.Property<int>("ImageCount")
+                        .HasColumnType("int")
+                        .HasColumnName("fld_ImageCount");
 
                     b.Property<int>("InputTokens")
                         .HasColumnType("int")

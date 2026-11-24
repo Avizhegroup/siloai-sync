@@ -81,6 +81,9 @@
                                     ورودی: @m.InputPricePerMillionTokens.ToString("0.####") |
                                     خروجی: @m.OutputPricePerMillionTokens.ToString("0.####") |
                                     کش: @m.CachedInputPricePerMillionTokens.ToString("0.####")
+                                    @if (m.PricePerImageUsd > 0) { <text> | هر تصویر: @m.PricePerImageUsd.ToString("0.####")</text> }
+                                    @if (m.PricePerAudioMinuteUsd > 0) { <text> | هر دقیقه صوت: @m.PricePerAudioMinuteUsd.ToString("0.####")</text> }
+                                    @if (m.PricePerMillionCharactersUsd > 0) { <text> | هر میلیون نویسه: @m.PricePerMillionCharactersUsd.ToString("0.####")</text> }
                                 </span>
                             </Template>
                         </GridColumn>
@@ -220,6 +223,18 @@
                     <div class="col-md-3">
                         <label class="form-label small">کش‌شده</label>
                         <input type="number" step="0.0001" class="form-control" @bind="_form.CachedInputPricePerMillionTokens" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">هر تصویر (دلار)</label>
+                        <input type="number" step="0.0001" min="0" class="form-control" @bind="_form.PricePerImageUsd" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">هر دقیقه صوت (دلار)</label>
+                        <input type="number" step="0.0001" min="0" class="form-control" @bind="_form.PricePerAudioMinuteUsd" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small">هر میلیون نویسه (دلار)</label>
+                        <input type="number" step="0.0001" min="0" class="form-control" @bind="_form.PricePerMillionCharactersUsd" />
                     </div>
                     <div class="col-md-3 d-flex align-items-end">
                         <div class="form-check">

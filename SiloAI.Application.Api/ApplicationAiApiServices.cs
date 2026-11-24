@@ -21,6 +21,8 @@ public static class ApplicationAiApiServices
 
         services.AddScoped<ITextToSpeechService, OpenAITextToSpeechService>();
 
+        services.AddScoped<ISpeechBillingService, SpeechBillingService>();
+
         services.AddScoped<IRagVoiceChatService, RagVoiceChatService>();
 
         return services;

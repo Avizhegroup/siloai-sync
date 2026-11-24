@@ -107,6 +107,21 @@ public class AiModel
     [Column("fld_CachedInputPricePerMillionTokens")]
     public decimal CachedInputPricePerMillionTokens { get; set; }
 
+    // --- Non-token pricing (USD), for providers that bill media by unit instead of by token.
+    // Zero means "not billed this way"; the cost calculator adds these on top of token cost. ---
+
+    /// <summary>Image-generation models: flat USD price per generated image.</summary>
+    [Column("fld_PricePerImageUsd", TypeName = "decimal(18,8)")]
+    public decimal PricePerImageUsd { get; set; }
+
+    /// <summary>Speech-to-text models: USD price per minute of audio transcribed.</summary>
+    [Column("fld_PricePerAudioMinuteUsd", TypeName = "decimal(18,8)")]
+    public decimal PricePerAudioMinuteUsd { get; set; }
+
+    /// <summary>Text-to-speech models: USD price per 1,000,000 input characters synthesized.</summary>
+    [Column("fld_PricePerMillionCharactersUsd", TypeName = "decimal(18,8)")]
+    public decimal PricePerMillionCharactersUsd { get; set; }
+
     /// <summary>Soft toggle — retire a model without breaking historical UsageRecords that reference it by name.</summary>
     [Column("fld_IsActive")]
     public bool IsActive { get; set; } = true;
