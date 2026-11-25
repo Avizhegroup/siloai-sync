@@ -1,6 +1,7 @@
+using SiloAI.Application.Shared.Contracts.Customers;
 namespace SiloAI.Application.Shared.Features;
 
-public class RagChatNewSessionCommand : IRequest<RagChatResponse>
+public class RagChatNewSessionCommand : IRequest<RagChatResponse>, ICustomerBound, IOwnerBound
 {
     public RagDocType DocType { get; set; } = RagDocType.GeneralChat;
 
@@ -10,6 +11,6 @@ public class RagChatNewSessionCommand : IRequest<RagChatResponse>
     /// </summary>
     public bool UseRag { get; set; } = true;
 
-    public string OwnerId { get; set; }
+    public string? OwnerId { get; set; }
     public int? CustomerId { get; set; }
 }

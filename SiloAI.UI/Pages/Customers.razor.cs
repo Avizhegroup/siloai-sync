@@ -1,13 +1,24 @@
-﻿namespace SiloAI.UI.Pages;
+using SiloAI.Domains;
+
+namespace SiloAI.UI.Pages;
 
 public partial class Customers
 {
     public bool IsLoading;
     public string _newName = string.Empty;
     public decimal _newCredit = 0;
+    public decimal _newMultiplier = CustomerPricingDefaults.Multiplier;
+    public decimal _newTomanPerUsd = CustomerPricingDefaults.TomanPerUsd;
+    public decimal _newFloorToman = CustomerPricingDefaults.FloorToman;
+    public decimal _newFloorUsd = CustomerPricingDefaults.FloorUsd;
+    public bool _newStopOnInsufficientCredit = true;
     public int? _editingId;
     public string _editName = string.Empty;
-    public decimal _editCredit;
+    public decimal _editMultiplier;
+    public decimal _editTomanPerUsd;
+    public decimal _editFloorToman;
+    public decimal _editFloorUsd;
+    public bool _editStopOnInsufficientCredit = true;
     public bool _showApiKeys;
     public string _newKeyLabel = string.Empty;
     public DateTime _newKeyExpiresAt = DateTime.Today.AddYears(1);
@@ -51,7 +62,12 @@ public partial class Customers
         var response = await ApiClient.PostAsJsonAsync("admin/customers", new CreateCustomerRequest
            {
               Name = _newName,
-              RemainingCredit = _newCredit
+              InitialCreditToman = _newCredit,
+              TomanPerUsd = _newTomanPerUsd,
+              Multiplier = _newMultiplier,
+              FloorToman = _newFloorToman,
+              FloorUsd = _newFloorUsd,
+              StopOnInsufficientCredit = _newStopOnInsufficientCredit
            });
 
          response.EnsureSuccessStatusCode();
@@ -59,6 +75,13 @@ public partial class Customers
         _newName = string.Empty;
 
         _newCredit = 0;
+
+        _newMultiplier = CustomerPricingDefaults.Multiplier;
+        _newTomanPerUsd = CustomerPricingDefaults.TomanPerUsd;
+        _newFloorToman = CustomerPricingDefaults.FloorToman;
+        _newFloorUsd = CustomerPricingDefaults.FloorUsd;
+
+        _newStopOnInsufficientCredit = true;
 
         await LoadCustomers();
        
@@ -71,7 +94,15 @@ public partial class Customers
 
         _editName = customer.Name;
 
-        _editCredit = Math.Round(customer.RemainingCredit, 2);
+        _editMultiplier = customer.Multiplier;
+
+        _editTomanPerUsd = customer.TomanPerUsd;
+
+        _editFloorToman = customer.FloorToman;
+
+        _editFloorUsd = customer.FloorUsd;
+
+        _editStopOnInsufficientCredit = customer.StopOnInsufficientCredit;
     }
 
     private void CancelEdit()
@@ -86,7 +117,11 @@ public partial class Customers
         var response = await ApiClient.PutAsJsonAsync($"admin/customers/{id}", new UpdateCustomerRequest
            {
                Name = _editName,
-               RemainingCredit = _editCredit
+               TomanPerUsd = _editTomanPerUsd,
+               Multiplier = _editMultiplier,
+               FloorToman = _editFloorToman,
+               FloorUsd = _editFloorUsd,
+               StopOnInsufficientCredit = _editStopOnInsufficientCredit
            });
 
         response.EnsureSuccessStatusCode();

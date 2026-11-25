@@ -1,4 +1,4 @@
-﻿using global::SiloAI.Application.Shared;
+using global::SiloAI.Application.Shared;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Data.SqlClient;
 using Microsoft.Data.Sqlite;
@@ -209,19 +209,47 @@ public class AppExceptionHandlerMiddleware
 
                 break;  
             
-            case InsufficientCreditException insufficientCreditException:
+            case InsufficientCreditException:
 
                 httpStatusCode = HttpStatusCode.PaymentRequired;
 
-                result = JsonConvert.SerializeObject(new ApiResponse()
-                {
-                    Successful = false,
-                    Value = null,
-                    Messages =
-                    [
-                       "اعتبار کافی نیست"
-                    ],
-                });
+                // Same body the AI endpoints returned before: { "message": ... }.
+                result = JsonConvert.SerializeObject(new { message = "اعتبار مشتری به پایان رسیده است." });
+
+                break;
+
+            case BadRequestException badRequestException:
+
+                httpStatusCode = HttpStatusCode.BadRequest;
+
+                result = JsonConvert.SerializeObject(new { message = badRequestException.Message });
+
+                break;
+
+            case ForbiddenException forbiddenException:
+
+                httpStatusCode = HttpStatusCode.Forbidden;
+
+                result = JsonConvert.SerializeObject(new { message = forbiddenException.Message });
+
+                break;
+
+            case HttpRequestException or System.ClientModel.ClientResultException:
+
+                // The AI provider (speech / image / chat backend) failed or was unreachable.
+                httpStatusCode = HttpStatusCode.BadGateway;
+
+                result = JsonConvert.SerializeObject(new { message = $"AI provider error: {exception.Message}" });
+
+                break;
+
+            case InvalidOperationException invalidOperationException:
+
+                // Misconfiguration or a rule the request cannot satisfy (no model assigned, wrong
+                // capabilities, no image returned, ...).
+                httpStatusCode = HttpStatusCode.UnprocessableEntity;
+
+                result = JsonConvert.SerializeObject(new { message = invalidOperationException.Message });
 
                 break;
 

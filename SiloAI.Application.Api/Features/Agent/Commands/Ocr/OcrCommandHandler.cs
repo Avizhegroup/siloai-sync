@@ -26,6 +26,7 @@ public class OcrCommandHandler(
             var customerId = request.CustomerId.Value;
 
             var charge = await pricingEngine.CalculateAsync(
+                customerId,
                 new TokenUsageInput(extraction.InputTokens, extraction.CachedInputTokens, extraction.OutputTokens),
                 UsageFeature.Ocr,
                 resolvedModel.AiModelId,

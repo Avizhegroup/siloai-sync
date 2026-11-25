@@ -332,9 +332,25 @@ namespace SiloAI.Domains.Migrations
                         .HasColumnType("nvarchar(200)")
                         .HasColumnName("fld_Name");
 
-                    b.Property<decimal>("RemainingCredit")
-                        .HasColumnType("decimal(18,8)")
-                        .HasColumnName("fld_RemainingCredit");
+                    b.Property<bool>("StopOnInsufficientCredit")
+                        .HasColumnType("bit")
+                        .HasColumnName("fld_StopOnInsufficientCredit");
+
+                    b.Property<decimal>("FloorToman")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("fld_FloorToman");
+
+                    b.Property<decimal>("FloorUsd")
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("fld_FloorUsd");
+
+                    b.Property<decimal>("Multiplier")
+                        .HasColumnType("decimal(18,4)")
+                        .HasColumnName("fld_Multiplier");
+
+                    b.Property<decimal>("TomanPerUsd")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("fld_TomanPerUsd");
 
                     b.HasKey("Id");
 
@@ -384,29 +400,6 @@ namespace SiloAI.Domains.Migrations
                         .HasFilter("[fld_CustomerId] IS NULL");
 
                     b.ToTable("tbl_CustomerModelAssignments");
-                });
-
-            modelBuilder.Entity("SiloAI.Domains.FxRateSetting", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("fld_Id");
-
-                    b.Property<DateTime>("EffectiveFrom")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("fld_EffectiveFrom");
-
-                    b.Property<decimal>("TomanPerUsd")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("fld_TomanPerUsd");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("EffectiveFrom")
-                        .HasDatabaseName("IX_tbl_FxRateSettings_fld_EffectiveFrom");
-
-                    b.ToTable("tbl_FxRateSettings");
                 });
 
             modelBuilder.Entity("SiloAI.Domains.LedgerAccount", b =>
@@ -505,41 +498,6 @@ namespace SiloAI.Domains.Migrations
                     b.HasIndex("UsageRecordId");
 
                     b.ToTable("tbl_LedgerTransactions");
-                });
-
-            modelBuilder.Entity("SiloAI.Domains.PricingSetting", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("fld_Id");
-
-                    b.Property<DateTime>("EffectiveFrom")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("fld_EffectiveFrom");
-
-                    b.Property<int>("Feature")
-                        .HasColumnType("int")
-                        .HasColumnName("fld_Feature");
-
-                    b.Property<decimal>("FloorToman")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("fld_FloorToman");
-
-                    b.Property<decimal>("FloorUsd")
-                        .HasColumnType("decimal(18,4)")
-                        .HasColumnName("fld_FloorUsd");
-
-                    b.Property<decimal>("Multiplier")
-                        .HasColumnType("decimal(18,4)")
-                        .HasColumnName("fld_Multiplier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Feature", "EffectiveFrom")
-                        .HasDatabaseName("IX_tbl_PricingSettings_fld_Feature_fld_EffectiveFrom");
-
-                    b.ToTable("tbl_PricingSettings");
                 });
 
             modelBuilder.Entity("SiloAI.Domains.RagDocument", b =>

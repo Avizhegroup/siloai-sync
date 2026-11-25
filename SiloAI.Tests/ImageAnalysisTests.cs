@@ -123,7 +123,7 @@ public class ImageAnalysisHandlerTests
 
     private sealed class FakePricing : IPricingEngine
     {
-        public Task<ChargeResult> CalculateAsync(TokenUsageInput usage, UsageFeature feature, Guid aiModelId, CancellationToken ct)
+        public Task<ChargeResult> CalculateAsync(int customerId, TokenUsageInput usage, UsageFeature feature, Guid aiModelId, CancellationToken ct)
             => Task.FromResult(new ChargeResult(0.01m, 60000m, 600m, 2m, 100m, 1200m));
     }
 

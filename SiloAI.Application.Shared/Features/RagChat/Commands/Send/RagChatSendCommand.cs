@@ -1,6 +1,7 @@
+using SiloAI.Application.Shared.Contracts.Customers;
 namespace SiloAI.Application.Shared.Features;
 
-public class RagChatSendCommand : IRequest<RagChatResponse>
+public class RagChatSendCommand : IRequest<RagChatResponse>, ICustomerBound, IOwnerBound, IUsernameBound
 {
     public Guid? ConversationId { get; set; }
     public string Message { get; set; }
@@ -17,8 +18,8 @@ public class RagChatSendCommand : IRequest<RagChatResponse>
     /// </summary>
     public bool UseRag { get; set; } = true;
 
-    public string AugmentedMessageTemplate { get; set; }
-    public string Username { get; set; }
-    public string OwnerId { get; set; }
+    public string? AugmentedMessageTemplate { get; set; }
+    public string? Username { get; set; }
+    public string? OwnerId { get; set; }
     public int? CustomerId { get; set; }
 }

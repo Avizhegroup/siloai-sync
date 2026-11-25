@@ -24,6 +24,10 @@ public static partial class Program
                 ApiKeyAuthenticationHandler.SchemeName,
                 _ => { });
 
+        // One source of truth for "who is calling" (customer id / owner key / username).
+        services.AddHttpContextAccessor();
+        services.AddScoped<SiloAI.Application.Shared.Contracts.Customers.ICustomerContext, SiloAI.Api.Infrastructure.HttpCustomerContext>();
+
         services.AddScoped<ChatAgentService>();
 
         services.AddScoped<AgentFileTaskService>();

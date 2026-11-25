@@ -1,37 +1,29 @@
-﻿namespace SiloAI.Application.Api.Features;
+namespace SiloAI.Application.Api.Features;
 
 public class CreateCustomerCommandHandler(AiApiContext context, ICreditLedgerService ledgerService)
     : IRequestHandler<CreateCustomerCommand, CustomerDto>
 {
     public async Task<CustomerDto> Handle(CreateCustomerCommand request, CancellationToken cancellationToken)
     {
-        // The legacy RemainingCredit field (and its admin UI) is denominated in USD.
-        // The ledger stores Toman, so the initial credit must be converted with the
-        // active exchange rate instead of copying the raw number across units.
-        var initialBalanceToman = 0m;
+        if (string.IsNullOrWhiteSpace(request.Name))
+            throw new BadRequestException("نام مشتری الزامی است.");
 
-        if (request.RemainingCredit > 0)
-        {
-            var now = DateTime.Now;
+        if (request.InitialCreditToman < 0)
+            throw new BadRequestException("اعتبار اولیه نمی‌تواند منفی باشد.");
 
-            var fxRate = await context.FxRateSettings
-                .AsNoTracking()
-                .Where(x => x.EffectiveFrom <= now)
-                .OrderByDescending(x => x.EffectiveFrom)
-                .Select(x => x.TomanPerUsd)
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (fxRate <= 0)
-                throw new InvalidOperationException(
-                    "No active FX rate found. Seed tbl_FxRateSettings with a row whose EffectiveFrom <= now before creating customers with initial credit.");
-
-            initialBalanceToman = request.RemainingCredit * fxRate;
-        }
+        var problem = CustomerPricingProfile.Validate(
+            request.TomanPerUsd, request.Multiplier, request.FloorToman, request.FloorUsd);
+        if (problem is not null)
+            throw new BadRequestException(problem);
 
         var customer = new Customer
         {
-            Name = request.Name,
-            RemainingCredit = request.RemainingCredit,
+            Name = request.Name.Trim(),
+            StopOnInsufficientCredit = request.StopOnInsufficientCredit,
+            TomanPerUsd = request.TomanPerUsd,
+            Multiplier = request.Multiplier,
+            FloorToman = request.FloorToman,
+            FloorUsd = request.FloorUsd,
             CreatedAt = DateTime.Now
         };
 
@@ -52,26 +44,23 @@ public class CreateCustomerCommandHandler(AiApiContext context, ICreditLedgerSer
 
         await context.SaveChangesAsync(cancellationToken);
 
-        if (initialBalanceToman > 0)
+        var balance = 0m;
+
+        if (request.InitialCreditToman > 0)
         {
             // The initial credit goes through the ledger so SUM(transactions) == balance.
             var outcome = await ledgerService.TopUpAsync(
-                customer.Id, initialBalanceToman,
+                customer.Id, request.InitialCreditToman,
                 reference: $"customer-create:{customer.Id}",
                 description: "اعتبار اولیه",
                 cancellationToken);
 
             if (outcome == ChargeOutcome.InsufficientBalance)
                 throw new InvalidOperationException("Failed to record the initial credit of the new customer.");
+
+            balance = request.InitialCreditToman;
         }
 
-        return new CustomerDto
-        {
-            Id = customer.Id,
-            Name = customer.Name,
-            RemainingCredit = customer.RemainingCredit,
-            CreatedAt = customer.CreatedAt
-        };
+        return CustomerMapping.ToDto(customer, balance);
     }
 }
-

@@ -9,6 +9,9 @@ public static class ApplicationAiApiServices
     {
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(ApplicationAiApiServices).Assembly));
 
+        // Fills CustomerId / OwnerId / Username from the authenticated caller (ICustomerContext).
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(Behaviors.CallerBindingBehavior<,>));
+
         services.AddScoped<IPricingEngine, PricingEngine>();
 
         services.AddScoped<ICreditLedgerService, CreditLedgerService>();

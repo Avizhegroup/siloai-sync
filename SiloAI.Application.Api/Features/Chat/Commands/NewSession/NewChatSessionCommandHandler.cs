@@ -43,8 +43,7 @@ public class NewChatSessionCommandHandler(
     {
         if (customerId is null) return true;
 
-        // The ledger is the single source of truth for balances; the legacy
-        // Customer.RemainingCredit column is only a display cache and must not gate this.
+        // The ledger is the single source of truth for balances.
         var balance = await ledgerService.GetBalanceAsync(customerId.Value, cancellationToken);
 
         return balance > 0;

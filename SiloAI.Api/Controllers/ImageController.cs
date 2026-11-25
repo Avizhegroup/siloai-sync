@@ -1,9 +1,7 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
-using SiloAI.Agent.Rag;
 using SiloAI.Api.Auth;
-using SiloAI.Application.Api;
+using SiloAI.Application.Api.Features;
 
 namespace SiloAI.Api.Controllers;
 
@@ -13,38 +11,6 @@ namespace SiloAI.Api.Controllers;
 public class ImageController(IMediator mediator) : ControllerBase
 {
     [HttpPost("ocr")]
-    public async Task<IActionResult> Ocr([FromForm] IFormFile imageData
-        , [FromForm] string mediaType
-        , [FromForm] RagDocType docType
-        , [FromForm] string key)
-    {
-        if (imageData is null || imageData.Length == 0)
-            return BadRequest("Image data is required.");
-
-        using var ms = new MemoryStream();
-        await imageData.CopyToAsync(ms);
-
-        try
-        {
-            var result = await mediator.Send(new OcrCommand
-            {
-                ImageData = ms.ToArray(),
-                MediaType = mediaType,
-                DocType = docType,
-                CustomerId = GetCustomerId(),
-                Key = key
-            });
-            return Ok(result);
-        }
-        catch (InsufficientCreditException)
-        {
-            return StatusCode(402, new { Message = "اعتبار مشتری به پایان رسیده است." });
-        }
-    }
-
-    private int? GetCustomerId()
-    {
-        var claim = User.Claims.FirstOrDefault(c => c.Type == "CustomerId");
-        return claim is not null && int.TryParse(claim.Value, out var id) ? id : null;
-    }
+    public async Task<IActionResult> Ocr([FromForm] OcrFormCommand command, CancellationToken cancellationToken)
+        => Ok(await mediator.Send(command, cancellationToken));
 }

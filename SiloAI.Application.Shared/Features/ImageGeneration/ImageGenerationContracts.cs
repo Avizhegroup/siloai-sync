@@ -1,3 +1,4 @@
+using SiloAI.Application.Shared.Contracts.Customers;
 namespace SiloAI.Application.Shared.Features;
 
 /// <summary>An input image sent with an image-generation request.</summary>
@@ -12,7 +13,7 @@ public class ImageGenerationInputImage
 /// <see cref="Key"/>) + a text request + optional input images in, generated image(s) out.
 /// No knowledge-base retrieval is involved.
 /// </summary>
-public class ImageGenerationCommand : IRequest<ImageGenerationResponse>
+public class ImageGenerationCommand : IRequest<ImageGenerationResponse>, ICustomerBound
 {
     public string Prompt { get; set; } = string.Empty;
     public List<ImageGenerationInputImage> Images { get; set; } = [];

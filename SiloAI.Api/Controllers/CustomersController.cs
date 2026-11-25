@@ -21,25 +21,13 @@ public class CustomersController(IMediator mediator) : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateCustomerRequest request, CancellationToken cancellationToken)
-    {
-        var result = await mediator.Send(new CreateCustomerCommand
-        {
-            Name = request.Name,
-            RemainingCredit = request.RemainingCredit
-        }, cancellationToken);
-        return Ok(result);
-    }
+    public async Task<IActionResult> Create([FromBody] CreateCustomerCommand command, CancellationToken cancellationToken)
+        => Ok(await mediator.Send(command, cancellationToken));
 
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateCustomerRequest request, CancellationToken cancellationToken)
     {
-        var result = await mediator.Send(new UpdateCustomerCommand
-        {
-            Id = id,
-            Name = request.Name,
-            RemainingCredit = request.RemainingCredit
-        }, cancellationToken);
+        var result = await mediator.Send(UpdateCustomerCommand.From(id, request), cancellationToken);
         return result is null ? NotFound() : Ok(result);
     }
 

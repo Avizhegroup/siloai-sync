@@ -13,6 +13,10 @@ public class FinancialController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> GetAccounts(CancellationToken cancellationToken)
         => Ok(await mediator.Send(new GetLedgerAccountsQuery(), cancellationToken));
 
+    [HttpGet("negative-balances")]
+    public async Task<IActionResult> GetNegativeBalances(CancellationToken cancellationToken)
+        => Ok(await mediator.Send(new GetNegativeCreditCustomersQuery(), cancellationToken));
+
     [HttpGet("transactions")]
     public async Task<IActionResult> GetTransactions(
         [FromQuery] int? customerId, [FromQuery] int take, CancellationToken cancellationToken)
@@ -30,24 +34,6 @@ public class FinancialController(IMediator mediator) : ControllerBase
             CustomerId = customerId,
             Take = take <= 0 ? 100 : take
         }, cancellationToken));
-
-    [HttpGet("pricing")]
-    public async Task<IActionResult> GetPricingSettings(CancellationToken cancellationToken)
-        => Ok(await mediator.Send(new GetPricingSettingsQuery(), cancellationToken));
-
-    [HttpPost("pricing")]
-    public async Task<IActionResult> AddPricingSetting(
-        [FromBody] AddPricingSettingCommand command, CancellationToken cancellationToken)
-        => Ok(await mediator.Send(command, cancellationToken));
-
-    [HttpGet("fx-rates")]
-    public async Task<IActionResult> GetFxRates(CancellationToken cancellationToken)
-        => Ok(await mediator.Send(new GetFxRateSettingsQuery(), cancellationToken));
-
-    [HttpPost("fx-rates")]
-    public async Task<IActionResult> AddFxRate(
-        [FromBody] AddFxRateSettingCommand command, CancellationToken cancellationToken)
-        => Ok(await mediator.Send(command, cancellationToken));
 
     [HttpPost("topup")]
     public async Task<IActionResult> TopUp(

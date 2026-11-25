@@ -15,12 +15,19 @@ public class SpeechBillingTests
         Guid.NewGuid(), "stt-model", AiModelKind.SpeechToText, null,
         false, false, false, false, false, false, false, false, 0m, 0m, 0m);
 
+    /// <summary>Exposes a no-op pricing engine to other test classes.</summary>
+    public sealed class RecordingPricingForPolicy : IPricingEngine
+    {
+        public Task<ChargeResult> CalculateAsync(int customerId, TokenUsageInput usage, UsageFeature feature, Guid aiModelId, CancellationToken ct)
+            => Task.FromResult(new ChargeResult(0m, 1m, 0m, 1m, 0m, 0m));
+    }
+
     private sealed class RecordingPricing : IPricingEngine
     {
         public TokenUsageInput? LastUsage;
         public UsageFeature? LastFeature;
 
-        public Task<ChargeResult> CalculateAsync(TokenUsageInput usage, UsageFeature feature, Guid aiModelId, CancellationToken ct)
+        public Task<ChargeResult> CalculateAsync(int customerId, TokenUsageInput usage, UsageFeature feature, Guid aiModelId, CancellationToken ct)
         {
             (LastUsage, LastFeature) = (usage, feature);
             return Task.FromResult(new ChargeResult(0.01m, 60000m, 600m, 2m, 100m, 1200m));

@@ -1,7 +1,3 @@
 namespace SiloAI.Application.Shared.Features;
 
-public class CreateCustomerCommand : IRequest<CustomerDto>
-{
-    public string Name { get; set; }
-    public decimal RemainingCredit { get; set; }
-}
+public class CreateCustomerCommand : CreateCustomerRequest, IRequest<CustomerDto>;

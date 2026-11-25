@@ -3,42 +3,29 @@ using SiloAI.Application.Shared.Contracts.Financial;
 namespace SiloAI.Application.Api.Services;
 
 /// <summary>
-/// Implements the pricing formula:
-/// costUsd from the resolved AiModel's price list, costToman = costUsd × fxRate,
-/// chargeToman = max(costToman × M, floorToman, fxRate × floorUsd).
-/// Rates and multipliers come from the latest row with EffectiveFrom &lt;= now.
-/// Missing configuration fails fast instead of silently falling back to a default.
+/// Implements the pricing formula for one customer: costUsd from the resolved AiModel's price list,
+/// then <see cref="PricingFormula"/> with the customer's own exchange rate, multiplier and floors.
+/// There is no global pricing configuration; a customer with an unusable profile fails fast
+/// instead of being billed with made-up numbers.
 /// </summary>
 public class PricingEngine(AiApiContext dbContext) : IPricingEngine
 {
-    public async Task<ChargeResult> CalculateAsync(TokenUsageInput usage, UsageFeature feature, Guid aiModelId, CancellationToken cancellationToken)
+    public async Task<ChargeResult> CalculateAsync(
+        int customerId, TokenUsageInput usage, UsageFeature feature, Guid aiModelId, CancellationToken cancellationToken)
     {
-        var now = DateTime.Now;
-
-        var fxRate = await dbContext.FxRateSettings
+        var profile = await dbContext.Customers
             .AsNoTracking()
-            .Where(x => x.EffectiveFrom <= now)
-            .OrderByDescending(x => x.EffectiveFrom)
-            .Select(x => x.TomanPerUsd)
-            .FirstOrDefaultAsync(cancellationToken);
+            .Where(c => c.Id == customerId)
+            .Select(c => new CustomerPricingProfile(c.TomanPerUsd, c.Multiplier, c.FloorToman, c.FloorUsd))
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new InvalidOperationException($"Customer '{customerId}' was not found, so it cannot be priced.");
 
-        if (fxRate <= 0)
-            throw new InvalidOperationException(
-                "No active FX rate found. Seed tbl_FxRateSettings with a row whose EffectiveFrom <= now.");
+        var problem = CustomerPricingProfile.Validate(profile.TomanPerUsd, profile.Multiplier, profile.FloorToman, profile.FloorUsd);
+        if (problem is not null)
+            throw new InvalidOperationException($"Customer '{customerId}' has an invalid pricing profile: {problem}");
 
-        var pricing = await dbContext.PricingSettings
-            .AsNoTracking()
-            .Where(x => x.Feature == feature && x.EffectiveFrom <= now)
-            .OrderByDescending(x => x.EffectiveFrom)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (pricing is null)
-            throw new InvalidOperationException(
-                $"No active pricing setting found for feature '{feature}'. Seed tbl_PricingSettings with a row whose EffectiveFrom <= now.");
-
-        // Per-token prices now come from the resolved AiModel record (admin-entered on the AI
-        // Models page), not from appsettings — a model's price list travels with the model
-        // itself, so different customers/features using different models are priced correctly.
+        // Per-token / per-unit prices come from the resolved AiModel record (admin-entered on the AI
+        // Models page): a model's price list travels with the model itself.
         var modelPricing = await dbContext.AiModels
             .AsNoTracking()
             .Where(x => x.Id == aiModelId)
@@ -51,20 +38,6 @@ public class PricingEngine(AiApiContext dbContext) : IPricingEngine
             throw new InvalidOperationException(
                 $"AiModel '{aiModelId}' was not found. It may have been deleted after being resolved for this call.");
 
-        var costUsd = UsageCostCalculator.ComputeCostUsd(usage, modelPricing);
-
-        var costToman = costUsd * fxRate;
-
-        var chargeToman = Math.Max(
-            costToman * pricing.Multiplier,
-            Math.Max(pricing.FloorToman, fxRate * pricing.FloorUsd));
-
-        return new ChargeResult(
-            costUsd,
-            fxRate,
-            costToman,
-            pricing.Multiplier,
-            pricing.FloorToman,
-            chargeToman);
+        return PricingFormula.Compute(UsageCostCalculator.ComputeCostUsd(usage, modelPricing), profile);
     }
 }

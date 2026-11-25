@@ -1,3 +1,4 @@
+using SiloAI.Application.Shared.Contracts.Customers;
 namespace SiloAI.Application.Shared.Features;
 
 public class ImageAnalysisInputImage
@@ -11,7 +12,7 @@ public class ImageAnalysisInputImage
 /// <see cref="Key"/>) + an optional text request + one or more images in, a text analysis out.
 /// No knowledge-base retrieval is involved.
 /// </summary>
-public class ImageAnalysisCommand : IRequest<ImageAnalysisResponse>
+public class ImageAnalysisCommand : IRequest<ImageAnalysisResponse>, ICustomerBound
 {
     /// <summary>Optional per-request question/task. May be empty when the instructions say it all.</summary>
     public string? Prompt { get; set; }

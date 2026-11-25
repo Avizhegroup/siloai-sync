@@ -21,6 +21,7 @@ public class ImageGenerationCommandHandler(
         if (request.CustomerId is { } customerId)
         {
             var charge = await pricingEngine.CalculateAsync(
+                customerId,
                 new TokenUsageInput(result.InputTokens, result.CachedInputTokens, result.OutputTokens,
                     ImageCount: result.Images.Count),
                 UsageFeature.ImageGeneration, model.AiModelId, cancellationToken);

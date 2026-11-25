@@ -1316,6 +1316,18 @@ blockquote {
   --silo-green-tint: #E6F5EE;
   --silo-red: #C23B3B;
   --silo-red-tint: #FBEAEA;
+  --silo-ink-deep: #141C36;
+  --silo-on-ink: var(--silo-surface);
+  --silo-on-ink-muted: rgba(255, 255, 255, .72);
+  --silo-on-ink-line: rgba(255, 255, 255, .12);
+  --chart-1: #2F5AA8;
+  --chart-2: #2A9D8F;
+  --chart-3: #7A5FB5;
+  --chart-4: #3C9DBF;
+  --chart-5: #B5547A;
+  --chart-6: #5C6B8A;
+  --chart-7: #8A9A3B;
+  --chart-8: #8E6B4E;
   --font-sans: "IRANSans", Tahoma, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, "JetBrains Mono", "Cascadia Code", Consolas, "Courier New", monospace;
   --fs-xs: .76rem;
@@ -1340,6 +1352,22 @@ blockquote {
   --shadow-sm: 0 1px 2px rgba(18, 21, 28, .04);
   --shadow-md: 0 8px 24px rgba(18, 21, 28, .08);
   --shadow-login: 0 20px 60px rgba(18, 21, 28, .25);
+  --control-h-sm: 30px;
+  --control-h: 38px;
+  --control-h-lg: 48px;
+  --tile-sm: 32px;
+  --tile-md: 40px;
+  --tile-lg: 68px;
+  --ring-focus: 0 0 0 2px var(--silo-accent-tint);
+  --ring-danger: 0 0 0 2px var(--silo-red-tint);
+  --dur-fast: .15s;
+  --dur-base: .2s;
+  --ease: ease;
+  --z-sidebar: 1020;
+  --z-modal: 1055;
+  --z-notification: 1080;
+  --z-popup: 1090;
+  --z-loader: 1100;
   --sidebar-width: 240px;
   --accent: var(--silo-accent);
 }
@@ -4559,8 +4587,6 @@ code {
     transition: none;
   }
 }
-
-@charset "UTF-8";
 /* =========================================================
    SiloAI — Image generation page
    Tokens: abstracts/_tokens.scss (no new hex values here)

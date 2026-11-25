@@ -1,4 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <!-- IFormFile: upload commands convert and validate their own files, so controllers stay empty. -->
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="MediatR" />
@@ -8,6 +13,13 @@
         <ProjectReference Include="..\SiloAI.Agent\SiloAI.Agent.csproj" />
         <ProjectReference Include="..\SiloAI.Application.Shared\SiloAI.Application.Shared.csproj" />
         <ProjectReference Include="..\SiloAI.Identity.Server\SiloAI.Identity.Server.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Features\Financial\Commands\AddFxRate\" />
+      <Folder Include="Features\Financial\Commands\AddPricingSetting\" />
+      <Folder Include="Features\Financial\Queries\GetFxRates\" />
+      <Folder Include="Features\Financial\Queries\GetPricingSettings\" />
     </ItemGroup>
 
 </Project>

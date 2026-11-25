@@ -162,6 +162,7 @@ public class RagChatSendHandler(
             var turnIndex = chatSession.TurnIndex + 1;
 
             var charge = await pricingEngine.CalculateAsync(
+                customerId,
                 new TokenUsageInput(
                     result.TokenUsage.InputTokenCount,
                     result.TokenUsage.CachedInputTokenCount,

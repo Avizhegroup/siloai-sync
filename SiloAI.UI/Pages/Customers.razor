@@ -185,7 +185,7 @@
             </div>
             <div class="p-4">
                 <div class="row g-3 align-items-end">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <label class="form-label fw-semibold">
                             نام مشتری
                         </label>
@@ -196,14 +196,57 @@
                     </div>
                     <div class="col-md-3">
                         <label class="form-label fw-semibold">
-                            اعتبار اولیه
+                            اعتبار اولیه (تومان)
                         </label>
-                        <input type="number"
-                               class="form-control"
-                               placeholder="0"
-                               @bind="_newCredit" />
+                        <TelerikNumericTextBox @bind-Value="_newCredit"
+                                               Min="0m"
+                                               Format="N0"
+                                               Width="100%" />
+                        <small class="text-muted">
+                            از طریق دفتر مالی ثبت می‌شود؛ بعداً فقط در صفحه مالی تغییر می‌کند.
+                        </small>
                     </div>
                     <div class="col-md-3">
+                        <label class="form-label fw-semibold">
+                            در صورت اتمام اعتبار
+                        </label>
+                        <div>
+                            <TelerikCheckBox @bind-Value="_newStopOnInsufficientCredit"
+                                             Id="newStopOnInsufficientCredit" />
+                            <label for="newStopOnInsufficientCredit" class="ms-2">
+                                توقف استفاده
+                            </label>
+                        </div>
+                        <small class="text-muted">
+                            اگر فعال نباشد، اعتبار این مشتری می‌تواند منفی شود.
+                        </small>
+                    </div>
+                    <div class="col-12">
+                        <hr class="my-1" />
+                        <span class="fw-semibold">
+                            قیمت‌گذاری این مشتری
+                        </span>
+                        <small class="text-muted ms-2">
+                            هیچ تنظیم قیمت‌گذاری عمومی وجود ندارد؛ همه‌ی این مقادیر مخصوص همین مشتری است.
+                        </small>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">ضریب</label>
+                        <TelerikNumericTextBox @bind-Value="_newMultiplier" Min="0m" Format="N2" Width="100%" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">نرخ دلار (تومان)</label>
+                        <TelerikNumericTextBox @bind-Value="_newTomanPerUsd" Min="0m" Format="N0" Width="100%" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">حداقل هر درخواست (تومان)</label>
+                        <TelerikNumericTextBox @bind-Value="_newFloorToman" Min="0m" Format="N0" Width="100%" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">حداقل هر درخواست (دلار)</label>
+                        <TelerikNumericTextBox @bind-Value="_newFloorUsd" Min="0m" Format="N4" Width="100%" />
+                    </div>
+                    <div class="col-md-2">
                         <button class="btn btn-primary w-100"
                                 @onclick="CreateCustomer"
                                 disabled="@IsLoading">
@@ -275,9 +318,95 @@
                                 }
                             </Template>
                         </GridColumn>
-                        <GridColumn Field="@nameof(CustomerDto.RemainingCredit)"
-                                    Title="اعتبار باقیمانده (دلار)"
+                        <GridColumn Field="@nameof(CustomerDto.BalanceToman)"
+                                    Title="اعتبار باقیمانده (تومان)"
                                     Width="220px">
+                            <Template Context="context">
+                                @{
+                                    var customer = (CustomerDto)context;
+                                }
+                                @* Read-only on purpose: the ledger is the one place a balance lives. *@
+                                <a href="/financial" class="text-decoration-none" title="مدیریت اعتبار در صفحه مالی">
+                                    <span class="mono customer-credit @(customer.BalanceToman <= 0
+                                                                          ? "customer-credit-negative"
+                                                                          : "")"
+                                          dir="ltr">
+                                        @customer.BalanceToman.ToString("N0")
+                                    </span>
+                                </a>
+                            </Template>
+                        </GridColumn>
+                        <GridColumn Field="@nameof(CustomerDto.Multiplier)"
+                                    Title="ضریب"
+                                    Width="130px">
+                            <Template Context="context">
+                                @{
+                                    var customer = (CustomerDto)context;
+                                }
+                                @if (_editingId == customer.Id)
+                                {
+                                    <TelerikNumericTextBox @bind-Value="_editMultiplier" Min="0m" Format="N2" Width="100%" />
+                                }
+                                else
+                                {
+                                    <span class="mono" dir="ltr">@customer.Multiplier.ToString("0.##")</span>
+                                }
+                            </Template>
+                        </GridColumn>
+                        <GridColumn Field="@nameof(CustomerDto.TomanPerUsd)"
+                                    Title="نرخ دلار (تومان)"
+                                    Width="170px">
+                            <Template Context="context">
+                                @{
+                                    var customer = (CustomerDto)context;
+                                }
+                                @if (_editingId == customer.Id)
+                                {
+                                    <TelerikNumericTextBox @bind-Value="_editTomanPerUsd" Min="0m" Format="N0" Width="100%" />
+                                }
+                                else
+                                {
+                                    <span class="mono" dir="ltr">@customer.TomanPerUsd.ToString("N0")</span>
+                                }
+                            </Template>
+                        </GridColumn>
+                        <GridColumn Field="@nameof(CustomerDto.FloorToman)"
+                                    Title="حداقل (تومان)"
+                                    Width="160px">
+                            <Template Context="context">
+                                @{
+                                    var customer = (CustomerDto)context;
+                                }
+                                @if (_editingId == customer.Id)
+                                {
+                                    <TelerikNumericTextBox @bind-Value="_editFloorToman" Min="0m" Format="N0" Width="100%" />
+                                }
+                                else
+                                {
+                                    <span class="mono" dir="ltr">@customer.FloorToman.ToString("N0")</span>
+                                }
+                            </Template>
+                        </GridColumn>
+                        <GridColumn Field="@nameof(CustomerDto.FloorUsd)"
+                                    Title="حداقل (دلار)"
+                                    Width="150px">
+                            <Template Context="context">
+                                @{
+                                    var customer = (CustomerDto)context;
+                                }
+                                @if (_editingId == customer.Id)
+                                {
+                                    <TelerikNumericTextBox @bind-Value="_editFloorUsd" Min="0m" Format="N4" Width="100%" />
+                                }
+                                else
+                                {
+                                    <span class="mono" dir="ltr">@customer.FloorUsd.ToString("0.####")</span>
+                                }
+                            </Template>
+                        </GridColumn>
+                        <GridColumn Field="@nameof(CustomerDto.StopOnInsufficientCredit)"
+                                    Title="توقف در نبود اعتبار"
+                                    Width="190px">
                             <Template Context="context">
                                 @{
                                     var customer = (CustomerDto)context;
@@ -285,18 +414,15 @@
 
                                 @if (_editingId == customer.Id)
                                 {
-                                    <input type="number"
-                                           class="form-control form-control-sm customer-edit-credit"
-                                           @bind="_editCredit" />
+                                    <TelerikCheckBox @bind-Value="_editStopOnInsufficientCredit" />
+                                }
+                                else if (customer.StopOnInsufficientCredit)
+                                {
+                                    <span class="badge-revoked">توقف می‌شود</span>
                                 }
                                 else
                                 {
-                                    <span class="mono customer-credit @(customer.RemainingCredit <= 0
-                                                                          ? "customer-credit-negative"
-                                                                          : "")"
-                                          dir="ltr">
-                                        $ @customer.RemainingCredit.ToString("N2")
-                                    </span>
+                                    <span class="badge-active">اعتبار منفی مجاز</span>
                                 }
                             </Template>
                         </GridColumn>

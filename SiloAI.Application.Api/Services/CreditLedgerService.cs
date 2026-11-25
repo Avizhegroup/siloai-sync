@@ -32,13 +32,25 @@ public class CreditLedgerService(IServiceScopeFactory scopeFactory) : ICreditLed
         if (alreadyCharged)
             return ChargeOutcome.DuplicateIgnored;
 
+        // Credit policy of this customer: stop when credit runs out (default) or keep serving and let
+        // the balance go negative. An unknown customer is treated as "stop" (safe default).
+        var stopOnInsufficientCredit = await dbContext.Customers
+            .AsNoTracking()
+            .Where(c => c.Id == customerId)
+            .Select(c => (bool?)c.StopOnInsufficientCredit)
+            .SingleOrDefaultAsync(cancellationToken)
+            is not false;
+
         await using var dbTransaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
         var now = DateTime.Now;
 
-        // Atomic conditional debit — no read-then-write.
+        // Atomic debit — no read-then-write. Customers who stop on insufficient credit are debited
+        // only while the balance covers the charge (the row lock makes this race-free); the others
+        // are debited unconditionally, so their balance can go below zero.
         var updatedRows = await dbContext.LedgerAccounts
-            .Where(a => a.CustomerId == customerId && a.BalanceToman >= charge.ChargeToman)
+            .Where(a => a.CustomerId == customerId
+                && (!stopOnInsufficientCredit || a.BalanceToman >= charge.ChargeToman))
             .ExecuteUpdateAsync(s => s
                 .SetProperty(a => a.BalanceToman, a => a.BalanceToman - charge.ChargeToman)
                 .SetProperty(a => a.UpdatedAt, now), cancellationToken);
@@ -48,14 +60,6 @@ public class CreditLedgerService(IServiceScopeFactory scopeFactory) : ICreditLed
             await dbTransaction.RollbackAsync(cancellationToken);
             return ChargeOutcome.InsufficientBalance;
         }
-
-        // Legacy USD display cache (Customer.RemainingCredit): kept in step with the ledger inside the
-        // same transaction, so it can never drift from — or be double-decremented against — the ledger.
-        var chargeUsd = charge.FxRateUsed > 0 ? Math.Round(charge.ChargeToman / charge.FxRateUsed, 8) : 0m;
-        await dbContext.Customers
-            .Where(c => c.Id == customerId)
-            .ExecuteUpdateAsync(s => s.SetProperty(c => c.RemainingCredit,
-                c => c.RemainingCredit > chargeUsd ? c.RemainingCredit - chargeUsd : 0m), cancellationToken);
 
         var account = await dbContext.LedgerAccounts
             .AsNoTracking()
@@ -154,6 +158,27 @@ public class CreditLedgerService(IServiceScopeFactory scopeFactory) : ICreditLed
             await dbTransaction.RollbackAsync(cancellationToken);
             return ChargeOutcome.DuplicateIgnored;
         }
+    }
+
+    public async Task<CreditStatus> GetCreditStatusAsync(int customerId, CancellationToken cancellationToken)
+    {
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AiApiContext>();
+
+        var row = await dbContext.Customers
+            .AsNoTracking()
+            .Where(c => c.Id == customerId)
+            .Select(c => new
+            {
+                Balance = c.LedgerAccount != null ? c.LedgerAccount.BalanceToman : 0m,
+                c.StopOnInsufficientCredit
+            })
+            .SingleOrDefaultAsync(cancellationToken);
+
+        // Unknown customer: no balance, stop policy.
+        return row is null
+            ? new CreditStatus(0m, StopOnInsufficientCredit: true)
+            : new CreditStatus(row.Balance, row.StopOnInsufficientCredit);
     }
 
     public async Task<decimal> GetBalanceAsync(int customerId, CancellationToken cancellationToken)

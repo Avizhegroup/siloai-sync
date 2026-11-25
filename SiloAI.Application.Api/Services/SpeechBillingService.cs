@@ -32,7 +32,7 @@ public sealed class SpeechBillingService(IPricingEngine pricingEngine, ICreditLe
         if (customerId is not { } id)
             return;
 
-        var charge = await pricingEngine.CalculateAsync(usage, feature, model.AiModelId, cancellationToken);
+        var charge = await pricingEngine.CalculateAsync(id, usage, feature, model.AiModelId, cancellationToken);
 
         var record = new UsageRecord
         {

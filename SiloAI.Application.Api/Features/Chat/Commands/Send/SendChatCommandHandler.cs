@@ -80,6 +80,7 @@ public class SendChatCommandHandler(
             var turnIndex = chatSession.TurnIndex + 1;
 
             var charge = await pricingEngine.CalculateAsync(
+                customerId,
                 new TokenUsageInput(
                     result.TokenUsage.InputTokenCount,
                     result.TokenUsage.CachedInputTokenCount,
@@ -116,7 +117,6 @@ public class SendChatCommandHandler(
 
             // Also advance on DuplicateIgnored: the charge for this turn was already committed by an
             // earlier attempt, so the index must move on or the same key would swallow every later turn.
-            // (The legacy Customer.RemainingCredit cache is now decremented inside the ledger service.)
             chatSession.TurnIndex = turnIndex;
         }
 
@@ -171,9 +171,7 @@ public class SendChatCommandHandler(
             return true; 
         }
 
-        // The ledger is the single source of truth for balances; the legacy
-        // Customer.RemainingCredit column is only a display cache and must not
-        // gate real (paid) AI calls.
+        // The ledger is the single source of truth for balances.
         var balance = await ledgerService.GetBalanceAsync(customerId.Value, cancellationToken);
 
         return balance > 0;

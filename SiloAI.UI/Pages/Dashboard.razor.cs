@@ -3,6 +3,7 @@ namespace SiloAI.UI.Pages;
 public partial class Dashboard
 {
     private List<ApiKeyDto>? _recentKeys;
+    private List<NegativeCreditCustomerDto>? _negativeCustomers;
     private int _activeKeys;
     private int _totalKeys;
     private int _revokedKeys;
@@ -36,6 +37,18 @@ public partial class Dashboard
         {
             _errorMessage = $"Could not load stats: {ex.Message}";
             _recentKeys = [];
+        }
+
+        // Customers allowed to go below zero, so they can be collected. Loaded separately: a failure
+        // here must not hide the key statistics (and vice versa).
+        try
+        {
+            _negativeCustomers = await ApiClient.GetFromJsonAsync<List<NegativeCreditCustomerDto>>("admin/financial/negative-balances") ?? [];
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = $"{_errorMessage} Could not load negative-credit customers: {ex.Message}".Trim();
+            _negativeCustomers = [];
         }
         finally
         {

@@ -60,3 +60,36 @@ public enum ChargeOutcome
     InsufficientBalance,
     DuplicateIgnored
 }
+
+
+/// <summary>How one customer is billed (their own columns on the customer record — nothing global).</summary>
+public record CustomerPricingProfile(decimal TomanPerUsd, decimal Multiplier, decimal FloorToman, decimal FloorUsd)
+{
+    /// <summary>Returns a human-readable reason when the profile can't be used to bill, else null.</summary>
+    public static string? Validate(decimal tomanPerUsd, decimal multiplier, decimal floorToman, decimal floorUsd)
+    {
+        if (tomanPerUsd <= 0) return "نرخ تبدیل دلار به تومان باید بزرگ‌تر از صفر باشد.";
+        if (multiplier <= 0) return "ضریب باید بزرگ‌تر از صفر باشد.";
+        if (floorToman < 0 || floorUsd < 0) return "حداقل مبلغ نمی‌تواند منفی باشد.";
+        return null;
+    }
+}
+
+/// <summary>
+/// The pricing formula, in one place and free of I/O:
+/// costToman = costUsd × rate; charge = max(costToman × M, floorToman, rate × floorUsd).
+/// </summary>
+public static class PricingFormula
+{
+    public static ChargeResult Compute(decimal costUsd, CustomerPricingProfile pricing)
+    {
+        var costToman = costUsd * pricing.TomanPerUsd;
+
+        var chargeToman = Math.Max(
+            costToman * pricing.Multiplier,
+            Math.Max(pricing.FloorToman, pricing.TomanPerUsd * pricing.FloorUsd));
+
+        return new ChargeResult(
+            costUsd, pricing.TomanPerUsd, costToman, pricing.Multiplier, pricing.FloorToman, chargeToman);
+    }
+}

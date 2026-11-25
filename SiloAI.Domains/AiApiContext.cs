@@ -13,8 +13,6 @@ public class AiApiContext(DbContextOptions<AiApiContext> options) : DbContext(op
     public DbSet<LedgerAccount> LedgerAccounts { get; set; }
     public DbSet<LedgerTransaction> LedgerTransactions { get; set; }
     public DbSet<UsageRecord> UsageRecords { get; set; }
-    public DbSet<PricingSetting> PricingSettings { get; set; }
-    public DbSet<FxRateSetting> FxRateSettings { get; set; }
     public DbSet<AiModel> AiModels { get; set; }
     public DbSet<CustomerModelAssignment> CustomerModelAssignments { get; set; }
 
@@ -52,14 +50,6 @@ public class AiApiContext(DbContextOptions<AiApiContext> options) : DbContext(op
         {
             b.HasKey(x => x.Id);
             b.HasIndex(x => x.OwnerKey).HasDatabaseName("IX_tbl_AiChatSessions_fld_OwnerKey");
-        });
-
-        modelBuilder.Entity<Customer>(entity =>
-        {
-            entity.Property(x => x.RemainingCredit)
-                .HasColumnName("fld_RemainingCredit")
-                .HasColumnType("decimal(18,8)")
-                .IsRequired();
         });
 
         modelBuilder.Entity<LedgerAccount>(b =>
@@ -104,20 +94,6 @@ public class AiApiContext(DbContextOptions<AiApiContext> options) : DbContext(op
                 .OnDelete(DeleteBehavior.Cascade);
             b.HasIndex(x => x.CustomerId).HasDatabaseName("IX_tbl_UsageRecords_fld_CustomerId");
             b.HasIndex(x => x.CreatedAt).HasDatabaseName("IX_tbl_UsageRecords_fld_CreatedAt");
-        });
-
-        modelBuilder.Entity<PricingSetting>(b =>
-        {
-            b.HasKey(x => x.Id);
-            b.HasIndex(x => new { x.Feature, x.EffectiveFrom })
-                .HasDatabaseName("IX_tbl_PricingSettings_fld_Feature_fld_EffectiveFrom");
-        });
-
-        modelBuilder.Entity<FxRateSetting>(b =>
-        {
-            b.HasKey(x => x.Id);
-            b.HasIndex(x => x.EffectiveFrom)
-                .HasDatabaseName("IX_tbl_FxRateSettings_fld_EffectiveFrom");
         });
 
         modelBuilder.Entity<AiModel>(b =>
