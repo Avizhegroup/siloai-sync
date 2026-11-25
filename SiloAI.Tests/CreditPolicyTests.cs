@@ -68,10 +68,11 @@ public class CreditPolicyTests
     [Fact]
     public async Task A_ledger_that_only_reports_balances_keeps_the_stop_behaviour()
     {
-        var status = await new BalanceOnlyLedger(0).GetCreditStatusAsync(1, default);
+        ICreditLedgerService ledger = new BalanceOnlyLedger(0);
+        var status = await ledger.GetCreditStatusAsync(1, default);
 
-        Assert.True(status.StopOnInsufficientCredit);
-        await Assert.ThrowsAsync<InsufficientCreditException>(() => new BalanceOnlyLedger(0).EnsureCreditAsync(1, default));
+        Assert.True(status.MustBlock);
+        await Assert.ThrowsAsync<InsufficientCreditException>(() => ledger.EnsureCreditAsync(1, default));
         await new BalanceOnlyLedger(5).EnsureCreditAsync(1, default);
     }
 
