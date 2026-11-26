@@ -2529,3 +2529,32 @@ code {
         transition: none;
     }
 }
+
+/* Customers page */
+.customers-hint {
+    padding: .75rem 1.25rem;
+    font-size: .85rem;
+    color: var(--silo-text-muted, #6c757d);
+    border-bottom: 1px solid var(--silo-border, #e5e7eb);
+}
+
+.customers-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+}
+
+.customer-credit {
+    font-weight: 600;
+}
+
+.customer-credit-negative {
+    color: #dc3545;
+}
+
+.customer-form-section {
+    font-weight: 700;
+    margin: .25rem 0 .75rem;
+    padding-bottom: .35rem;
+    border-bottom: 1px solid var(--silo-border, #e5e7eb);
+}

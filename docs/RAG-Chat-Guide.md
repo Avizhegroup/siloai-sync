@@ -1,7 +1,7 @@
 # RAG Chat — External Integration Guide - SILO
 
 This document is for **external clients** integrating with SiloAI's Retrieval-Augmented
-Generation (RAG) chat feature and its companion AI endpoints (image OCR, image analysis and image generation).
+Generation (RAG) chat feature (text questions, **optionally with file attachments**) and its companion AI endpoints (image OCR, image analysis and image generation).
 It explains how the features work end-to-end and describes every public HTTP endpoint,
 including the input payloads and the responses each one returns.
 
@@ -73,6 +73,20 @@ deletes the old chunks/embeddings first and re-runs the same pipeline.
 7. **Return the answer.** The response text, conversation id, citations (empty when
    `isMainChat` is `true`), and token usage are returned to the client.
 
+**Optional file attachments.** A message can carry up to 5 files (images, PDFs and plain-text
+files) when it is sent to `POST /api/rag/chat/send-with-files` (section 5.1). Only the message
+text is required; the files are optional. The retrieval, instructions and answer steps above work
+exactly the same way, and the model additionally reads the attached files **for that one turn**:
+
+- Text files (`.txt`, `.md`, `.csv`, `.json`, ...) are decoded and added to the message.
+- Images and PDFs are passed to the model as image/file inputs. This needs a chat model that
+  supports image input / file input (set on the AI Models page); otherwise the call fails with `400`.
+- Attachments are **not stored**. The saved conversation keeps your message text plus the names of the
+  files (`[Attached files: a.pdf, b.png]`), so later turns know files were sent but cannot re-read
+  them. Attach the file again if a later question needs its content.
+- Retrieval searches the knowledge base with the question text only; the attached files are
+  context for the answer, not search input.
+
 If a client passes a `conversationId` that doesn't exist or doesn't belong to the caller, the
 API returns `404 Not Found`.
 
@@ -116,7 +130,7 @@ Wherever an endpoint takes `docType`: in **JSON bodies send the number** (e.g. `
 
 | Status | Meaning                                                                                   |
 |-------:|-------------------------------------------------------------------------------------------|
-| 400    | Invalid input (the body is `{ "message": "..." }` on the image endpoints).                |
+| 400    | Invalid input (the body is `{ "message": "..." }` on the image endpoints and on `send-with-files`). |
 | 401    | Missing/invalid credentials.                                                              |
 | 402    | The customer's credit is exhausted (`{ "message": "..." }`).                              |
 | 422    | Server-side configuration or model problem (image generation), message explains why.      |
@@ -199,6 +213,66 @@ Token usage object (`ChatTokenUsageDto`):
 
 - `400 Bad Request` — `message` is missing/blank.
 - `404 Not Found` — `conversationId` does not exist or does not belong to the caller.
+
+> This JSON endpoint is text-only. Any `attachments` field in the JSON body is ignored; to send
+> files use `send-with-files` below.
+
+#### `POST /api/rag/chat/send-with-files`
+
+Same as `send`, but the message can carry **optional file attachments**. The user's text is the only
+required field. Use this endpoint whenever you want to attach files; for text-only chat the plain
+`send` endpoint keeps working unchanged.
+
+**Input** (`multipart/form-data`, max request size 26 MB):
+
+| Field            | Type    | Required | Default       | Description                                                                 |
+|------------------|---------|----------|---------------|-------------------------------------------------------------------------------|
+| `message`        | string  | **yes**  | —             | The user's question / request.                                                |
+| `files`          | file[]  | no       | none          | Attachments. Repeat the `files` field once per file (rules below).            |
+| `conversationId` | guid?   | no       | `null`        | Existing conversation to continue.                                            |
+| `topK`           | int     | no       | `5`           | Same as `send`.                                                               |
+| `isMainChat`     | bool    | no       | `false`       | Same as `send`.                                                               |
+| `docType`        | enum    | no       | `GeneralChat` | Same as `send` (name or number in multipart fields).                          |
+| `key`            | string? | no       | `null`        | Same as `send`.                                                               |
+| `useRag`         | bool    | no       | `true`        | Same as `send` (only read when the call creates the conversation).            |
+
+**Attachment rules** (enforced by the server; the Chat page reads the same limits):
+
+| Rule                     | Value                                                                                 |
+|--------------------------|---------------------------------------------------------------------------------------|
+| Files per message        | at most **5**                                                                         |
+| Size of one file         | at most **10 MB** (and not empty)                                                     |
+| Combined size            | at most **25 MB**                                                                     |
+| Images                   | `.png`, `.jpg`, `.jpeg`, `.webp` — the real format is detected from the bytes         |
+| PDF                      | `.pdf` — must really be a PDF                                                         |
+| Text                     | `.txt`, `.md`, `.csv`, `.json`, `.xml`, `.yaml`, `.yml`, `.log` — must be valid UTF-8 text; a file longer than 100,000 characters is cut and the model is told |
+| Anything else            | rejected (`.docx`, `.xlsx`, `.zip`, `.exe`, ...)                                      |
+
+A file whose content does not match its extension (for example a text file renamed to `.png`) is rejected.
+
+**How the model receives them:** text files are added to your message; images and PDFs are passed as
+image/file inputs and need a chat model that supports them. When the chat model cannot read images
+(or PDFs), the request fails with `400` and a message naming the model. Text files work with every model.
+
+**Output:** the same `RagChatResponse` as `send`. Billing is unchanged: the call is priced from the
+provider's real token usage (files and images included) and debited from the customer's credit.
+
+**Error responses:**
+
+- `400 Bad Request` — `message` missing/blank; more than 5 files; a file is empty, too large, of an unsupported type, or its content does not match its type; the combined size is over the limit; or the chat model cannot read the attached image/PDF. Body: `{ "message": "..." }`.
+- `402 Payment Required` — insufficient credit.
+- `404 Not Found` — `conversationId` does not exist.
+
+**Example (curl):**
+
+```bash
+curl -X POST https://<host>/api/rag/chat/send-with-files \
+  -H "X-Api-Key: <key>" \
+  -F "message=Summarize the attached report and compare it with our policy" \
+  -F "files=@report.pdf" \
+  -F "files=@figures.png" \
+  -F "files=@notes.md"
+```
 
 #### `POST /api/rag/chat/voice`
 

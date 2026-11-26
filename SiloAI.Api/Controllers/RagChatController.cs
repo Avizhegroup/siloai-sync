@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using SiloAI.Api.Auth;
 using SiloAI.Api.Infrastructure;
 using SiloAI.Application.Api.Features;
+using SiloAI.Application.Shared.Features;
 
 namespace SiloAI.Api.Controllers;
 
@@ -25,6 +26,11 @@ public class RagChatController(IMediator mediator) : ControllerBase
     [RequestSizeLimit(25 * 1024 * 1024)]
     public async Task<IActionResult> Voice([FromForm] RagVoiceChatCommand command, CancellationToken cancellationToken)
         => new VoiceChatActionResult(await mediator.Send(command, cancellationToken));
+
+    [HttpPost("send-with-files")]
+    [RequestSizeLimit(RagChatAttachmentRules.MaxRequestBytes)]
+    public async Task<IActionResult> SendWithFiles([FromForm] RagChatSendFormCommand command, CancellationToken cancellationToken)
+        => Ok(await mediator.Send(command, cancellationToken));
 
     [HttpPost("send")]
     public async Task<IActionResult> Send([FromBody] RagChatSendCommand command, CancellationToken cancellationToken)
