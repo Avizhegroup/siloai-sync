@@ -1,8 +1,10 @@
 @page "/customers"
 @attribute [Authorize]
 
-@using Telerik.Blazor.Components
 @using SiloAI.Shared.Tools
+@using Telerik.Blazor
+@using Telerik.Blazor.Components
+@using Telerik.SvgIcons
 
 <PageTitle>مشتریان — پنل مدیریت هوش مصنوعی سیلو</PageTitle>
 
@@ -176,106 +178,19 @@
     }
     else
     {
-        <div class="card-ai mb-4">
-            <div class="card-ai-header">
-                <span>
-                    <i class="bi bi-plus-circle me-2"></i>
-                    افزودن مشتری جدید
-                </span>
-            </div>
-            <div class="p-4">
-                <div class="row g-3 align-items-end">
-                    <div class="col-md-4">
-                        <label class="form-label fw-semibold">
-                            نام مشتری
-                        </label>
-                        <input type="text"
-                               class="form-control"
-                               placeholder="نام مشتری را وارد کنید"
-                               @bind="_newName" />
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label fw-semibold">
-                            اعتبار اولیه (تومان)
-                        </label>
-                        <TelerikNumericTextBox @bind-Value="_newCredit"
-                                               Min="0m"
-                                               Format="N0"
-                                               Width="100%" />
-                        <small class="text-muted">
-                            از طریق دفتر مالی ثبت می‌شود؛ بعداً فقط در صفحه مالی تغییر می‌کند.
-                        </small>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label fw-semibold">
-                            در صورت اتمام اعتبار
-                        </label>
-                        <div>
-                            <TelerikCheckBox @bind-Value="_newStopOnInsufficientCredit"
-                                             Id="newStopOnInsufficientCredit" />
-                            <label for="newStopOnInsufficientCredit" class="ms-2">
-                                توقف استفاده
-                            </label>
-                        </div>
-                        <small class="text-muted">
-                            اگر فعال نباشد، اعتبار این مشتری می‌تواند منفی شود.
-                        </small>
-                    </div>
-                    <div class="col-12">
-                        <hr class="my-1" />
-                        <span class="fw-semibold">
-                            قیمت‌گذاری این مشتری
-                        </span>
-                        <small class="text-muted ms-2">
-                            هیچ تنظیم قیمت‌گذاری عمومی وجود ندارد؛ همه‌ی این مقادیر مخصوص همین مشتری است.
-                        </small>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">ضریب</label>
-                        <TelerikNumericTextBox @bind-Value="_newMultiplier" Min="0m" Format="N2" Width="100%" />
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">نرخ دلار (تومان)</label>
-                        <TelerikNumericTextBox @bind-Value="_newTomanPerUsd" Min="0m" Format="N0" Width="100%" />
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">حداقل هر درخواست (تومان)</label>
-                        <TelerikNumericTextBox @bind-Value="_newFloorToman" Min="0m" Format="N0" Width="100%" />
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">حداقل هر درخواست (دلار)</label>
-                        <TelerikNumericTextBox @bind-Value="_newFloorUsd" Min="0m" Format="N4" Width="100%" />
-                    </div>
-                    <div class="col-md-2">
-                        <button class="btn btn-primary w-100"
-                                @onclick="CreateCustomer"
-                                disabled="@IsLoading">
-
-                            @if (IsLoading)
-                            {
-                                <TelerikLoader Type="@LoaderType.InfiniteSpinner" />
-                            }
-                            else
-                            {
-                                <i class="bi bi-plus-lg me-1"></i>
-                            }
-                            ثبت مشتری
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
         <div class="card-ai">
             <div class="card-ai-header">
                 <span>
                     <i class="bi bi-people me-2"></i>
-                    لیست مشتریان
-               </span>
-                <span class="text-muted small">
-                    @(_customers?.Count ?? 0) مشتری
+                    مشتریان
+                    <span class="text-muted small ms-2">@(_customers?.Count ?? 0) مشتری</span>
                 </span>
+                <TelerikButton ThemeColor="primary"
+                               Icon="@SvgIcon.Plus"
+                               OnClick="OpenCreate">
+                    مشتری جدید
+                </TelerikButton>
             </div>
-
             @if (IsLoading && _customers is null)
             {
                 <div class="p-4">
@@ -297,25 +212,16 @@
                              Navigable="true">
                     <GridColumns>
                         <GridColumn Field="@nameof(CustomerDto.Name)"
-                                    Title="نام"
-                                    Width="250px">
+                                    Title="مشتری"
+                                    Width="260px">
                             <Template Context="context">
                                 @{
                                     var customer = (CustomerDto)context;
                                 }
-
-                                @if (_editingId == customer.Id)
-                                {
-                                    <input type="text"
-                                           class="form-control form-control-sm customer-edit-name"
-                                           @bind="_editName" />
-                                }
-                                else
-                                {
-                                    <span class="fw-semibold">
-                                        @customer.Name
-                                    </span>
-                                }
+                                <div class="fw-semibold">@customer.Name</div>
+                                <div class="text-muted small mono" dir="ltr">
+                                    @DateTimeTools.GetUnixPersianTime(customer.CreatedAt).ToNormalPersianDateTime()
+                                </div>
                             </Template>
                         </GridColumn>
                         <GridColumn Field="@nameof(CustomerDto.BalanceToman)"
@@ -325,11 +231,8 @@
                                 @{
                                     var customer = (CustomerDto)context;
                                 }
-                                @* Read-only on purpose: the ledger is the one place a balance lives. *@
                                 <a href="/financial" class="text-decoration-none" title="مدیریت اعتبار در صفحه مالی">
-                                    <span class="mono customer-credit @(customer.BalanceToman <= 0
-                                                                          ? "customer-credit-negative"
-                                                                          : "")"
+                                    <span class="mono customer-credit @(customer.BalanceToman < 0 ? "customer-credit-negative" : "")"
                                           dir="ltr">
                                         @customer.BalanceToman.ToString("N0")
                                     </span>
@@ -338,87 +241,24 @@
                         </GridColumn>
                         <GridColumn Field="@nameof(CustomerDto.Multiplier)"
                                     Title="ضریب"
-                                    Width="130px">
+                                    Width="120px">
                             <Template Context="context">
                                 @{
                                     var customer = (CustomerDto)context;
                                 }
-                                @if (_editingId == customer.Id)
-                                {
-                                    <TelerikNumericTextBox @bind-Value="_editMultiplier" Min="0m" Format="N2" Width="100%" />
-                                }
-                                else
-                                {
-                                    <span class="mono" dir="ltr">@customer.Multiplier.ToString("0.##")</span>
-                                }
-                            </Template>
-                        </GridColumn>
-                        <GridColumn Field="@nameof(CustomerDto.TomanPerUsd)"
-                                    Title="نرخ دلار (تومان)"
-                                    Width="170px">
-                            <Template Context="context">
-                                @{
-                                    var customer = (CustomerDto)context;
-                                }
-                                @if (_editingId == customer.Id)
-                                {
-                                    <TelerikNumericTextBox @bind-Value="_editTomanPerUsd" Min="0m" Format="N0" Width="100%" />
-                                }
-                                else
-                                {
-                                    <span class="mono" dir="ltr">@customer.TomanPerUsd.ToString("N0")</span>
-                                }
-                            </Template>
-                        </GridColumn>
-                        <GridColumn Field="@nameof(CustomerDto.FloorToman)"
-                                    Title="حداقل (تومان)"
-                                    Width="160px">
-                            <Template Context="context">
-                                @{
-                                    var customer = (CustomerDto)context;
-                                }
-                                @if (_editingId == customer.Id)
-                                {
-                                    <TelerikNumericTextBox @bind-Value="_editFloorToman" Min="0m" Format="N0" Width="100%" />
-                                }
-                                else
-                                {
-                                    <span class="mono" dir="ltr">@customer.FloorToman.ToString("N0")</span>
-                                }
-                            </Template>
-                        </GridColumn>
-                        <GridColumn Field="@nameof(CustomerDto.FloorUsd)"
-                                    Title="حداقل (دلار)"
-                                    Width="150px">
-                            <Template Context="context">
-                                @{
-                                    var customer = (CustomerDto)context;
-                                }
-                                @if (_editingId == customer.Id)
-                                {
-                                    <TelerikNumericTextBox @bind-Value="_editFloorUsd" Min="0m" Format="N4" Width="100%" />
-                                }
-                                else
-                                {
-                                    <span class="mono" dir="ltr">@customer.FloorUsd.ToString("0.####")</span>
-                                }
+                                <span class="mono" dir="ltr">× @customer.Multiplier.ToString("0.##")</span>
                             </Template>
                         </GridColumn>
                         <GridColumn Field="@nameof(CustomerDto.StopOnInsufficientCredit)"
-                                    Title="توقف در نبود اعتبار"
+                                    Title="در صورت اتمام اعتبار"
                                     Width="190px">
                             <Template Context="context">
                                 @{
                                     var customer = (CustomerDto)context;
                                 }
-
-                                @if (_editingId == customer.Id)
+                                @if (customer.StopOnInsufficientCredit)
                                 {
-                                    <TelerikCheckBox @bind-Value="_editStopOnInsufficientCredit" />
-                                }
-                                else if (customer.StopOnInsufficientCredit)
-                                {
-                                    <span class="badge-revoked">توقف می‌شود</span>
+                                    <span class="badge-revoked">توقف استفاده</span>
                                 }
                                 else
                                 {
@@ -426,62 +266,36 @@
                                 }
                             </Template>
                         </GridColumn>
-                        <GridColumn Field="@nameof(CustomerDto.CreatedAt)"
-                                    Title="تاریخ ثبت"
-                                    Width="190px">
-                            <Template Context="context">
-                                @{
-                                    var customer = (CustomerDto)context;
-                                }
-                                <span class="text-muted mono">
-                                    @DateTimeTools.GetUnixPersianTime(customer.CreatedAt).ToNormalPersianDateTime()
-                                </span>
-                            </Template>
-                        </GridColumn>
                         <GridColumn Title="عملیات"
-                                    Width="320px">
+                                    Width="300px">
                             <Template Context="context">
                                 @{
                                     var customer = (CustomerDto)context;
                                 }
-
-                                @if (_editingId == customer.Id)
-                                {
-                                    <button class="btn btn-sm btn-success me-1"
-                                            @onclick="() => SaveEdit(customer.Id)"
-                                            disabled="@IsLoading">
-
-                                        <i class="bi bi-check-lg me-1"></i>
-                                        ذخیره
-
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-secondary"
-                                            @onclick="CancelEdit">
-                                        <i class="bi bi-x me-1"></i>
-                                        لغو
-                                    </button>
-                                }
-                                else
-                                {
-                                    <button class="btn btn-sm btn-outline-primary me-1"
-                                            @onclick="() => StartEdit(customer)">
-
-                                        <i class="bi bi-pencil me-1"></i>
+                                <div class="customers-actions">
+                                    <TelerikButton Size="@ThemeConstants.Button.Size.Small"
+                                                   FillMode="@ThemeConstants.Button.FillMode.Outline"
+                                                   ThemeColor="primary"
+                                                   Icon="@SvgIcon.Pencil"
+                                                   OnClick="() => StartEdit(customer)">
                                         ویرایش
-                                    </button>
-                                   <button class="btn btn-sm btn-outline-info me-1"
-                                            @onclick="() => ShowApiKeys(customer)">
-
-                                        <i class="bi bi-key me-1"></i>
+                                    </TelerikButton>
+                                    <TelerikButton Size="@ThemeConstants.Button.Size.Small"
+                                                   FillMode="@ThemeConstants.Button.FillMode.Outline"
+                                                   ThemeColor="info"
+                                                   Icon="@SvgIcon.Lock"
+                                                   OnClick="() => ShowApiKeys(customer)">
                                         کلیدهای API
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger"
-                                            @onclick="() => DeleteCustomer(customer.Id)"
-                                            disabled="@IsLoading">
-                                        <i class="bi bi-trash me-1"></i>
-                                         حذف  
-                                    </button>
-                                }
+                                    </TelerikButton>
+                                    <TelerikButton Size="@ThemeConstants.Button.Size.Small"
+                                                   FillMode="@ThemeConstants.Button.FillMode.Outline"
+                                                   ThemeColor="error"
+                                                   Icon="@SvgIcon.Trash"
+                                                   Enabled="@(!IsLoading)"
+                                                   OnClick="() => DeleteCustomer(customer.Id)">
+                                        حذف
+                                    </TelerikButton>
+                                </div>
                             </Template>
                         </GridColumn>
                     </GridColumns>
@@ -490,3 +304,61 @@
         </div>
     }
 
+<TelerikDialog @bind-Visible="_showCreate"
+               Title="مشتری جدید"
+               Width="520px">
+    <DialogContent>
+        <div class="customer-form">
+            <div class="customer-form-section">اطلاعات پایه</div>
+            <label class="form-label fw-semibold">نام مشتری</label>
+            <input type="text"
+                   class="form-control mb-3"
+                   placeholder="نام مشتری را وارد کنید"
+                   @bind="_newName" />
+
+            <div class="customer-form-section">اعتبار و قیمت‌گذاری</div>
+            <label class="form-label fw-semibold">اعتبار اولیه (تومان)</label>
+            <TelerikNumericTextBox @bind-Value="_newCredit" Min="0m" Format="N0" Width="100%" />
+            <small class="text-muted d-block mb-3">به‌عنوان اولین شارژ در دفتر مالی ثبت می‌شود.</small>
+
+            <label class="form-label fw-semibold">ضریب</label>
+            <TelerikNumericTextBox @bind-Value="_newMultiplier" Min="0m" Format="N2" Width="100%" />
+            <small class="text-muted d-block mb-3">هزینه‌ی هر درخواست = هزینه‌ی دلاری × نرخ دلار × ضریب.</small>
+
+            <div class="d-flex align-items-center gap-2">
+                <TelerikCheckBox @bind-Value="_newStopOnInsufficientCredit" Id="newStopOnInsufficientCredit" />
+                <label for="newStopOnInsufficientCredit">با اتمام اعتبار، استفاده متوقف شود</label>
+            </div>
+            <small class="text-muted d-block">اگر فعال نباشد، اعتبار این مشتری می‌تواند منفی شود.</small>
+        </div>
+    </DialogContent>
+    <DialogButtons>
+        <TelerikButton ThemeColor="primary" Enabled="@(!IsLoading)" OnClick="CreateCustomer">ثبت مشتری</TelerikButton>
+        <TelerikButton OnClick="() => _showCreate = false">انصراف</TelerikButton>
+    </DialogButtons>
+</TelerikDialog>
+
+<TelerikDialog @bind-Visible="_showEdit"
+               Title="ویرایش مشتری"
+               Width="520px">
+    <DialogContent>
+        <div class="customer-form">
+            <label class="form-label fw-semibold">نام مشتری</label>
+            <input type="text" class="form-control mb-3" @bind="_editName" />
+
+            <label class="form-label fw-semibold">ضریب</label>
+            <TelerikNumericTextBox @bind-Value="_editMultiplier" Min="0m" Format="N2" Width="100%" />
+            <small class="text-muted d-block mb-3">هزینه‌ی هر درخواست = هزینه‌ی دلاری × نرخ دلار × ضریب.</small>
+
+            <div class="d-flex align-items-center gap-2">
+                <TelerikCheckBox @bind-Value="_editStopOnInsufficientCredit" Id="editStopOnInsufficientCredit" />
+                <label for="editStopOnInsufficientCredit">با اتمام اعتبار، استفاده متوقف شود</label>
+            </div>
+            <small class="text-muted d-block">اگر فعال نباشد، اعتبار این مشتری می‌تواند منفی شود.</small>
+        </div>
+    </DialogContent>
+    <DialogButtons>
+        <TelerikButton ThemeColor="primary" Enabled="@(!IsLoading)" OnClick="SaveEdit">ذخیره</TelerikButton>
+        <TelerikButton OnClick="CancelEdit">انصراف</TelerikButton>
+    </DialogButtons>
+</TelerikDialog>

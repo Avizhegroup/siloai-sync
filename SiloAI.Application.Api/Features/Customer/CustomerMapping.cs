@@ -8,10 +8,7 @@ internal static class CustomerMapping
         Name = customer.Name,
         BalanceToman = balanceToman,
         StopOnInsufficientCredit = customer.StopOnInsufficientCredit,
-        TomanPerUsd = customer.TomanPerUsd,
         Multiplier = customer.Multiplier,
-        FloorToman = customer.FloorToman,
-        FloorUsd = customer.FloorUsd,
         CreatedAt = customer.CreatedAt
     };
 }

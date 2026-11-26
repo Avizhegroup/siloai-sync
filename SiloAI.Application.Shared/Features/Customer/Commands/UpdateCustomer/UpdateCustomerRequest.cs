@@ -9,8 +9,5 @@ public class UpdateCustomerRequest
     public string Name { get; set; }
     public bool StopOnInsufficientCredit { get; set; } = true;
 
-    public decimal TomanPerUsd { get; set; } = CustomerPricingDefaults.TomanPerUsd;
     public decimal Multiplier { get; set; } = CustomerPricingDefaults.Multiplier;
-    public decimal FloorToman { get; set; } = CustomerPricingDefaults.FloorToman;
-    public decimal FloorUsd { get; set; } = CustomerPricingDefaults.FloorUsd;
 }

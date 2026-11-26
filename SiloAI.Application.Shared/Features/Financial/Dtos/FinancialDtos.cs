@@ -51,3 +51,10 @@ public class NegativeCreditCustomerDto
     public bool StopOnInsufficientCredit { get; set; }
     public DateTime UpdatedAt { get; set; }
 }
+
+public class FxRateSettingDto
+{
+    public Guid Id { get; set; }
+    public decimal TomanPerUsd { get; set; }
+    public DateTime EffectiveFrom { get; set; }
+}

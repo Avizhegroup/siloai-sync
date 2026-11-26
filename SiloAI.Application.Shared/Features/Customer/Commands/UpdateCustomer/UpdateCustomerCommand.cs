@@ -9,9 +9,6 @@ public class UpdateCustomerCommand : UpdateCustomerRequest, IRequest<CustomerDto
         Id = id,
         Name = request.Name,
         StopOnInsufficientCredit = request.StopOnInsufficientCredit,
-        TomanPerUsd = request.TomanPerUsd,
-        Multiplier = request.Multiplier,
-        FloorToman = request.FloorToman,
-        FloorUsd = request.FloorUsd
+        Multiplier = request.Multiplier
     };
 }

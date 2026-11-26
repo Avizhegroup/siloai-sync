@@ -8,16 +8,12 @@ public partial class Customers
     public string _newName = string.Empty;
     public decimal _newCredit = 0;
     public decimal _newMultiplier = CustomerPricingDefaults.Multiplier;
-    public decimal _newTomanPerUsd = CustomerPricingDefaults.TomanPerUsd;
-    public decimal _newFloorToman = CustomerPricingDefaults.FloorToman;
-    public decimal _newFloorUsd = CustomerPricingDefaults.FloorUsd;
     public bool _newStopOnInsufficientCredit = true;
     public int? _editingId;
+    public bool _showCreate;
+    public bool _showEdit;
     public string _editName = string.Empty;
     public decimal _editMultiplier;
-    public decimal _editTomanPerUsd;
-    public decimal _editFloorToman;
-    public decimal _editFloorUsd;
     public bool _editStopOnInsufficientCredit = true;
     public bool _showApiKeys;
     public string _newKeyLabel = string.Empty;
@@ -48,6 +44,15 @@ public partial class Customers
         IsLoading = false;     
     }
 
+    private void OpenCreate()
+    {
+        _newName = string.Empty;
+        _newCredit = 0;
+        _newMultiplier = CustomerPricingDefaults.Multiplier;
+        _newStopOnInsufficientCredit = true;
+        _showCreate = true;
+    }
+
     private async Task CreateCustomer()
     {
         if (string.IsNullOrWhiteSpace(_newName))
@@ -63,10 +68,7 @@ public partial class Customers
            {
               Name = _newName,
               InitialCreditToman = _newCredit,
-              TomanPerUsd = _newTomanPerUsd,
               Multiplier = _newMultiplier,
-              FloorToman = _newFloorToman,
-              FloorUsd = _newFloorUsd,
               StopOnInsufficientCredit = _newStopOnInsufficientCredit
            });
 
@@ -77,11 +79,10 @@ public partial class Customers
         _newCredit = 0;
 
         _newMultiplier = CustomerPricingDefaults.Multiplier;
-        _newTomanPerUsd = CustomerPricingDefaults.TomanPerUsd;
-        _newFloorToman = CustomerPricingDefaults.FloorToman;
-        _newFloorUsd = CustomerPricingDefaults.FloorUsd;
 
         _newStopOnInsufficientCredit = true;
+
+        _showCreate = false;
 
         await LoadCustomers();
        
@@ -96,37 +97,38 @@ public partial class Customers
 
         _editMultiplier = customer.Multiplier;
 
-        _editTomanPerUsd = customer.TomanPerUsd;
 
-        _editFloorToman = customer.FloorToman;
-
-        _editFloorUsd = customer.FloorUsd;
 
         _editStopOnInsufficientCredit = customer.StopOnInsufficientCredit;
+
+        _showEdit = true;
     }
 
     private void CancelEdit()
     {
         _editingId = null;
+
+        _showEdit = false;
     }
 
-    private async Task SaveEdit(int id)
+    private async Task SaveEdit()
     {
+        if (_editingId is not { } id) return;
+
         IsLoading = true;
          
         var response = await ApiClient.PutAsJsonAsync($"admin/customers/{id}", new UpdateCustomerRequest
            {
                Name = _editName,
-               TomanPerUsd = _editTomanPerUsd,
                Multiplier = _editMultiplier,
-               FloorToman = _editFloorToman,
-               FloorUsd = _editFloorUsd,
                StopOnInsufficientCredit = _editStopOnInsufficientCredit
            });
 
         response.EnsureSuccessStatusCode();
 
         _editingId = null;
+
+        _showEdit = false;
 
         await LoadCustomers();
        

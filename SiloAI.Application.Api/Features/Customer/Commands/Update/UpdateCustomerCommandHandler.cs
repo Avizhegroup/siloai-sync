@@ -11,8 +11,7 @@ public class UpdateCustomerCommandHandler(AiApiContext context) : IRequestHandle
         if (string.IsNullOrWhiteSpace(request.Name))
             throw new BadRequestException("نام مشتری الزامی است.");
 
-        var problem = CustomerPricingProfile.Validate(
-            request.TomanPerUsd, request.Multiplier, request.FloorToman, request.FloorUsd);
+        var problem = PricingFormula.ValidateMultiplier(request.Multiplier);
         if (problem is not null)
             throw new BadRequestException(problem);
 
@@ -23,10 +22,7 @@ public class UpdateCustomerCommandHandler(AiApiContext context) : IRequestHandle
 
         customer.Name = request.Name.Trim();
         customer.StopOnInsufficientCredit = request.StopOnInsufficientCredit;
-        customer.TomanPerUsd = request.TomanPerUsd;
         customer.Multiplier = request.Multiplier;
-        customer.FloorToman = request.FloorToman;
-        customer.FloorUsd = request.FloorUsd;
 
         await context.SaveChangesAsync(cancellationToken);
 

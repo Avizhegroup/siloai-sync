@@ -15,7 +15,11 @@ public partial class Financial
     public List<LedgerAccountDto>? _accounts;
     public List<LedgerTransactionDto>? _transactions;
     public List<UsageRecordDto>? _usageRecords;
+    public List<FxRateSettingDto>? _fxRates;
     public List<CustomerDto>? _customers;
+
+    // FX form (the dollar rate is one global setting)
+    public decimal _fxTomanPerUsd;
 
     public static readonly UsageFeature[] _features = Enum.GetValues<UsageFeature>();
 
@@ -38,15 +42,19 @@ public partial class Financial
 
         var usageTask = ApiClient.GetFromJsonAsync<List<UsageRecordDto>>("admin/financial/usage?take=100");
 
+        var fxTask = ApiClient.GetFromJsonAsync<List<FxRateSettingDto>>("admin/financial/fx-rates");
+
         var customersTask = ApiClient.GetFromJsonAsync<List<CustomerDto>>("admin/customers");
 
-        await Task.WhenAll(accountsTask, transactionsTask, usageTask, customersTask);
+        await Task.WhenAll(accountsTask, transactionsTask, usageTask, fxTask, customersTask);
 
         _accounts = accountsTask.Result;
 
         _transactions = transactionsTask.Result;
 
         _usageRecords = usageTask.Result;
+
+        _fxRates = fxTask.Result;
 
         _customers = customersTask.Result;
      
@@ -112,5 +120,32 @@ public partial class Financial
       
          _isSaving = false;
         
+    }
+
+    private async Task SubmitFxRate()
+    {
+        if (_fxTomanPerUsd <= 0)
+        {
+            Notification.Show("نرخ ارز باید بزرگ‌تر از صفر باشد.", "error");
+
+            return;
+        }
+
+        _isSaving = true;
+        
+         var response = await ApiClient.PostAsJsonAsync("admin/financial/fx-rates", new AddFxRateSettingCommand
+            {
+                TomanPerUsd = _fxTomanPerUsd
+            });
+
+         response.EnsureSuccessStatusCode();
+
+         Notification.Show("نرخ ارز جدید ثبت شد.", "success");
+
+        _fxTomanPerUsd = 0;
+
+         await LoadAll();
+      
+         _isSaving = false;
     }
 }

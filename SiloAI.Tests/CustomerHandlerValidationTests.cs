@@ -12,10 +12,7 @@ public class CustomerHandlerValidationTests
     private static CreateCustomerCommand Valid() => new()
     {
         Name = "c", InitialCreditToman = 0,
-        TomanPerUsd = CustomerPricingDefaults.TomanPerUsd,
-        Multiplier = CustomerPricingDefaults.Multiplier,
-        FloorToman = CustomerPricingDefaults.FloorToman,
-        FloorUsd = CustomerPricingDefaults.FloorUsd
+        Multiplier = CustomerPricingDefaults.Multiplier
     };
 
     [Fact]
@@ -43,10 +40,18 @@ public class CustomerHandlerValidationTests
     }
 
     [Fact]
-    public async Task Create_RejectsZeroRate()
+    public async Task Update_RejectsBlankName()
     {
-        var c = Valid(); c.TomanPerUsd = 0;
+        var c = UpdateCustomerCommand.From(1, new UpdateCustomerRequest { Name = "", Multiplier = 2m });
         await Assert.ThrowsAsync<BadRequestException>(() =>
-            new CreateCustomerCommandHandler(null!, null!).Handle(c, default));
+            new UpdateCustomerCommandHandler(null!).Handle(c, default));
+    }
+
+    [Fact]
+    public async Task Update_RejectsZeroMultiplier()
+    {
+        var c = UpdateCustomerCommand.From(1, new UpdateCustomerRequest { Name = "n", Multiplier = 0m });
+        await Assert.ThrowsAsync<BadRequestException>(() =>
+            new UpdateCustomerCommandHandler(null!).Handle(c, default));
     }
 }

@@ -13,6 +13,7 @@ public class AiApiContext(DbContextOptions<AiApiContext> options) : DbContext(op
     public DbSet<LedgerAccount> LedgerAccounts { get; set; }
     public DbSet<LedgerTransaction> LedgerTransactions { get; set; }
     public DbSet<UsageRecord> UsageRecords { get; set; }
+    public DbSet<FxRateSetting> FxRateSettings { get; set; }
     public DbSet<AiModel> AiModels { get; set; }
     public DbSet<CustomerModelAssignment> CustomerModelAssignments { get; set; }
 
@@ -94,6 +95,13 @@ public class AiApiContext(DbContextOptions<AiApiContext> options) : DbContext(op
                 .OnDelete(DeleteBehavior.Cascade);
             b.HasIndex(x => x.CustomerId).HasDatabaseName("IX_tbl_UsageRecords_fld_CustomerId");
             b.HasIndex(x => x.CreatedAt).HasDatabaseName("IX_tbl_UsageRecords_fld_CreatedAt");
+        });
+
+        modelBuilder.Entity<FxRateSetting>(b =>
+        {
+            b.HasKey(x => x.Id);
+            b.HasIndex(x => x.EffectiveFrom)
+                .HasDatabaseName("IX_tbl_FxRateSettings_fld_EffectiveFrom");
         });
 
         modelBuilder.Entity<AiModel>(b =>

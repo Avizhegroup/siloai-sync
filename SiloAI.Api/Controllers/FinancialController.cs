@@ -35,6 +35,15 @@ public class FinancialController(IMediator mediator) : ControllerBase
             Take = take <= 0 ? 100 : take
         }, cancellationToken));
 
+    [HttpGet("fx-rates")]
+    public async Task<IActionResult> GetFxRates(CancellationToken cancellationToken)
+        => Ok(await mediator.Send(new GetFxRateSettingsQuery(), cancellationToken));
+
+    [HttpPost("fx-rates")]
+    public async Task<IActionResult> AddFxRate(
+        [FromBody] AddFxRateSettingCommand command, CancellationToken cancellationToken)
+        => Ok(await mediator.Send(command, cancellationToken));
+
     [HttpPost("topup")]
     public async Task<IActionResult> TopUp(
         [FromBody] TopUpLedgerCommand command, CancellationToken cancellationToken)

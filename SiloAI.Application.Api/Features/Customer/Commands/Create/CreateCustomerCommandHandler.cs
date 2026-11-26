@@ -11,8 +11,7 @@ public class CreateCustomerCommandHandler(AiApiContext context, ICreditLedgerSer
         if (request.InitialCreditToman < 0)
             throw new BadRequestException("اعتبار اولیه نمی‌تواند منفی باشد.");
 
-        var problem = CustomerPricingProfile.Validate(
-            request.TomanPerUsd, request.Multiplier, request.FloorToman, request.FloorUsd);
+        var problem = PricingFormula.ValidateMultiplier(request.Multiplier);
         if (problem is not null)
             throw new BadRequestException(problem);
 
@@ -20,10 +19,7 @@ public class CreateCustomerCommandHandler(AiApiContext context, ICreditLedgerSer
         {
             Name = request.Name.Trim(),
             StopOnInsufficientCredit = request.StopOnInsufficientCredit,
-            TomanPerUsd = request.TomanPerUsd,
             Multiplier = request.Multiplier,
-            FloorToman = request.FloorToman,
-            FloorUsd = request.FloorUsd,
             CreatedAt = DateTime.Now
         };
 
