@@ -1,4 +1,4 @@
-﻿using DocumentFormat.OpenXml.Spreadsheet;
+using DocumentFormat.OpenXml.Spreadsheet;
 using System.Security.Claims;
 
 namespace SiloAI.Shared;
@@ -15,37 +15,6 @@ public static class ClaimsPrincipalExtensions
         }
 
         return null;
-    }
-
-    public static string GetCustomerId(this ClaimsPrincipal principal)
-    {
-        var claims = ((ClaimsIdentity)principal.Identity).Claims;
-
-        if (claims.Any())
-        {
-            return claims.FirstOrDefault(c => c.Type == "CustomerId")?.Value;
-        }
-
-        return null;
-    }
-
-    public static string GetOwnerId(this ClaimsPrincipal principal)
-    {
-        var customerId = principal.Claims.FirstOrDefault(c => c.Type == "CustomerId")?.Value;
-
-        if (customerId.HasValue())
-        {
-            return $"customer:{customerId}";
-        }
-
-        var userId = principal.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-
-        if (userId.HasValue())
-        {
-            return $"user:{userId}";
-        }
-
-        return principal?.Identity?.Name;
     }
 
     public static string GetUsername(this ClaimsPrincipal principal)

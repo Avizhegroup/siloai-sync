@@ -1,4 +1,4 @@
-﻿@charset "UTF-8";
+@charset "UTF-8";
 @import 'libraries/bootstrap.rtl.css';
 @font-face {
   font-family: IRANSans;
@@ -4658,4 +4658,160 @@ code {
 }
 .imggen-empty i {
   font-size: 32px;
+}
+
+/* Customers page */
+.customers-hint {
+  padding: .75rem 1.25rem;
+  font-size: .85rem;
+  color: var(--silo-text-muted, #6c757d);
+  border-bottom: 1px solid var(--silo-border, #e5e7eb);
+}
+
+.customers-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+}
+
+.customer-credit {
+  font-weight: 600;
+}
+
+.customer-credit-negative {
+  color: #dc3545;
+}
+
+.customer-form-section {
+  font-weight: 700;
+  margin: .25rem 0 .75rem;
+  padding-bottom: .35rem;
+  border-bottom: 1px solid var(--silo-border, #e5e7eb);
+}
+
+/* Chat attachments */
+.rag-attach-btn {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--silo-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--silo-surface);
+  color: var(--silo-text-muted);
+  cursor: pointer;
+  margin: 0;
+}
+
+.rag-attach-btn:hover:not(.disabled) {
+  border-color: var(--silo-accent);
+  color: var(--silo-accent);
+}
+
+.rag-attach-btn.disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.rag-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2, 8px);
+  margin-bottom: var(--space-2, 8px);
+}
+
+.rag-attachment {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+  max-width: 260px;
+  padding: 4px 6px 4px 10px;
+  border: 1px solid var(--silo-border);
+  border-radius: var(--radius-md);
+  background: var(--silo-bg);
+  font-size: var(--fs-xs);
+}
+
+.rag-attachment-thumb {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+}
+
+.rag-attachment-icon {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  background: var(--silo-accent-tint);
+  color: var(--silo-accent);
+}
+
+.rag-attachment-info {
+  min-width: 0;
+}
+
+.rag-attachment-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: ltr;
+  text-align: right;
+  font-weight: 600;
+}
+
+.rag-attachment-size {
+  color: var(--silo-text-muted);
+}
+
+.rag-attachment-remove {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--silo-text-muted);
+}
+
+.rag-attachment-remove:hover:not(:disabled) {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.chat-bubble-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: var(--space-2, 8px);
+}
+
+.chat-bubble-attachment {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  font-size: var(--fs-xs);
+  direction: ltr;
+}
+
+.rag-attach-hint {
+  color: var(--silo-text-faint);
+  font-size: var(--fs-xs);
+}
+
+.chat-bubble-price {
+  margin-top: var(--space-2, 8px);
+  font-size: var(--fs-xs);
+  color: var(--silo-text-muted);
 }

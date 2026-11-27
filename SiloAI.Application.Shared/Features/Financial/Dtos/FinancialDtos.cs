@@ -42,14 +42,14 @@ public class UsageRecordDto
     public DateTime CreatedAt { get; set; }
 }
 
-public class PricingSettingDto
+/// <summary>A customer whose ledger balance is below zero (allowed only when they are not stopped on insufficient credit).</summary>
+public class NegativeCreditCustomerDto
 {
-    public Guid Id { get; set; }
-    public UsageFeature Feature { get; set; }
-    public decimal Multiplier { get; set; }
-    public decimal FloorToman { get; set; }
-    public decimal FloorUsd { get; set; }
-    public DateTime EffectiveFrom { get; set; }
+    public int CustomerId { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public decimal BalanceToman { get; set; }
+    public bool StopOnInsufficientCredit { get; set; }
+    public DateTime UpdatedAt { get; set; }
 }
 
 public class FxRateSettingDto

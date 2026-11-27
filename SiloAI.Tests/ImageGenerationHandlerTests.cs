@@ -44,6 +44,11 @@ public class ImageGenerationHandlerTests
         Assert.Equal(7, ledger.LastRecord.CustomerId);
         Assert.Equal(10, ledger.LastRecord.InputTokens);
         Assert.Equal(5, ledger.LastRecord.OutputTokens);
+
+        // The response announces what the request cost: 1200 Toman at 60000 Toman/USD = $0.02.
+        Assert.Equal(1200m, response.Price!.Toman);
+        Assert.Equal(0.02m, response.Price.Usd);
+        Assert.Equal(60000m, response.Price.ExchangeRate);
     }
 
     [Fact]
@@ -51,9 +56,10 @@ public class ImageGenerationHandlerTests
     {
         var (handler, ledger, _, _) = Create();
 
-        await handler.Handle(new ImageGenerationCommand { Prompt = "x" }, default);
+        var response = await handler.Handle(new ImageGenerationCommand { Prompt = "x" }, default);
 
         Assert.Null(ledger.LastRecord);
+        Assert.Null(response.Price);
     }
 
     [Fact]
@@ -127,7 +133,7 @@ public class ImageGenerationHandlerTests
 
     private sealed class FakePricing : IPricingEngine
     {
-        public Task<ChargeResult> CalculateAsync(TokenUsageInput usage, UsageFeature feature, Guid aiModelId, CancellationToken ct)
+        public Task<ChargeResult> CalculateAsync(int customerId, TokenUsageInput usage, UsageFeature feature, Guid aiModelId, CancellationToken ct)
             => Task.FromResult(new ChargeResult(0.01m, 60000m, 600m, 2m, 100m, 1200m));
     }
 

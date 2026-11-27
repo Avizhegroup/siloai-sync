@@ -1,6 +1,8 @@
 @page "/dashboard"
 @attribute [Authorize]
 
+@using Telerik.Blazor.Components
+
 <PageTitle>Dashboard — Silo AI Admin</PageTitle>
 
 @if (_isLoading)
@@ -40,6 +42,63 @@ else
                 <i class="bi bi-shield-x stat-icon text-danger"></i>
             </div>
         </div>
+    </div>
+
+    <div class="card-ai mb-4">
+        <div class="card-ai-header">
+            <span>
+                <i class="bi bi-exclamation-triangle-fill me-2 text-danger"></i>
+                مشتریان با اعتبار منفی
+            </span>
+            <span class="text-muted small">@(_negativeCustomers?.Count ?? 0) مشتری</span>
+        </div>
+        @if (_negativeCustomers is { Count: 0 })
+        {
+            <div class="p-4 text-center text-muted">
+                <i class="bi bi-check-circle me-2 text-success"></i>
+                هیچ مشتری‌ای اعتبار منفی ندارد.
+            </div>
+        }
+        else
+        {
+            <TelerikGrid Class="grid-center"
+                         Data="@(_negativeCustomers ?? [])"
+                         TItem="NegativeCreditCustomerDto"
+                         Pageable="true"
+                         PageSize="5"
+                         Sortable="true"
+                         Resizable="true"
+                         Navigable="true">
+                <GridColumns>
+                    <GridColumn Field="@nameof(NegativeCreditCustomerDto.CustomerName)"
+                                Title="مشتری"
+                                Width="250px" />
+                    <GridColumn Field="@nameof(NegativeCreditCustomerDto.BalanceToman)"
+                                Title="بدهی (تومان)"
+                                Width="200px">
+                        <Template Context="row">
+                            @{ var item = (NegativeCreditCustomerDto)row; }
+                            <span class="mono text-danger" dir="ltr">@item.BalanceToman.ToString("N0")</span>
+                        </Template>
+                    </GridColumn>
+                    <GridColumn Field="@nameof(NegativeCreditCustomerDto.UpdatedAt)"
+                                Title="آخرین تغییر"
+                                Width="200px">
+                        <Template Context="row">
+                            @{ var item = (NegativeCreditCustomerDto)row; }
+                            <span class="text-muted mono">@item.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</span>
+                        </Template>
+                    </GridColumn>
+                    <GridColumn Title="عملیات" Width="160px">
+                        <Template Context="row">
+                            <a href="/financial" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-cash-coin me-1"></i>شارژ حساب
+                            </a>
+                        </Template>
+                    </GridColumn>
+                </GridColumns>
+            </TelerikGrid>
+        }
     </div>
 
     <div class="card-ai">

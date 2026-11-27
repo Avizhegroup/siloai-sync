@@ -18,9 +18,12 @@ public class ImageGenerationCommandHandler(
         var result = await agentService.GenerateAsync(
             request.Prompt, request.Images, model, request.Key, cancellationToken);
 
+        RequestPriceDto? price = null;
+
         if (request.CustomerId is { } customerId)
         {
             var charge = await pricingEngine.CalculateAsync(
+                customerId,
                 new TokenUsageInput(result.InputTokens, result.CachedInputTokens, result.OutputTokens,
                     ImageCount: result.Images.Count),
                 UsageFeature.ImageGeneration, model.AiModelId, cancellationToken);
@@ -53,8 +56,10 @@ public class ImageGenerationCommandHandler(
 
             if (outcome == ChargeOutcome.InsufficientBalance)
                 throw new InsufficientCreditException();
+
+            price = RequestPriceDto.From(charge);
         }
 
-        return new ImageGenerationResponse { Images = [.. result.Images], Text = result.Text };
+        return new ImageGenerationResponse { Images = [.. result.Images], Text = result.Text, Price = price };
     }
 }

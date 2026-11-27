@@ -1,5 +1,6 @@
 @page "/chat"
 @using Telerik.Blazor.Components
+@using Microsoft.AspNetCore.Components.Forms
 @attribute [Authorize]
 
 <div class="rag-chat-page">
@@ -138,6 +139,29 @@
                                 @msg.Text
                             </div>
 
+                            @if (!msg.IsUser && msg.Price is { } price)
+                            {
+                                <div class="chat-bubble-price" title="هزینه‌ی این پاسخ">
+                                    <i class="bi bi-coin me-1"></i>
+                                    هزینه:
+                                    <span class="mono" dir="ltr">@price.Toman.ToString("N0") تومان</span>
+                                    <span class="text-muted">(<span class="mono" dir="ltr">$@price.Usd.ToString("0.####")</span>)</span>
+                                </div>
+                            }
+
+                            @if (msg.IsUser && msg.AttachmentNames is { Count: > 0 })
+                            {
+                                <div class="chat-bubble-attachments">
+                                    @foreach (var name in msg.AttachmentNames)
+                                    {
+                                        <span class="chat-bubble-attachment" title="@name">
+                                            <i class="bi bi-paperclip"></i>
+                                            <span>@name</span>
+                                        </span>
+                                    }
+                                </div>
+                            }
+
                             @if (!msg.IsUser && msg.Citations is { Count: > 0 })
                             {
                                 <div class="chat-citations">
@@ -207,10 +231,47 @@
             }
         </div>
         <div class="rag-input-area">
-            <div class="rag-input-wrapper">
-                <div class="rag-input-icon">
-                    <i class="bi bi-chat-text"></i>
+            @if (_attachments.Count > 0)
+            {
+                <div class="rag-attachments">
+                    @foreach (var attachment in _attachments)
+                    {
+                        <div class="rag-attachment">
+                            @if (attachment.Preview is not null)
+                            {
+                                <img class="rag-attachment-thumb" src="@attachment.Preview" alt="@attachment.Name" />
+                            }
+                            else
+                            {
+                                <span class="rag-attachment-icon">
+                                    <i class="bi @AttachmentIcon(attachment.Kind)"></i>
+                                </span>
+                            }
+                            <div class="rag-attachment-info">
+                                <div class="rag-attachment-name" title="@attachment.Name">@attachment.Name</div>
+                                <div class="rag-attachment-size mono" dir="ltr">@FormatBytes(attachment.Size)</div>
+                            </div>
+                            <button type="button"
+                                    class="rag-attachment-remove"
+                                    title="حذف فایل"
+                                    @onclick="() => RemoveAttachment(attachment)"
+                                    disabled="@_isSending">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                    }
                 </div>
+            }
+            <div class="rag-input-wrapper">
+                <label class="rag-attach-btn @(_isSending || _attachments.Count >= MaxFiles ? "disabled" : "")"
+                       title="پیوست فایل (حداکثر @MaxFiles فایل)">
+                    <i class="bi bi-paperclip"></i>
+                    <InputFile OnChange="OnFilesSelected"
+                               class="d-none"
+                               multiple
+                               accept="@AcceptAttribute"
+                               disabled="@(_isSending || _attachments.Count >= MaxFiles)" />
+                </label>
                 <textarea class="form-control rag-textarea"
                           rows="2"
                           placeholder="پرسش خود را درباره پایگاه دانش بنویسید..."
@@ -239,6 +300,11 @@
                 <span>
                     <kbd>Shift</kbd> + <kbd>Enter</kbd>
                     خط جدید
+                </span>
+                <span class="rag-attach-hint">
+                    <i class="bi bi-paperclip me-1"></i>
+                    پیوست اختیاری: حداکثر @MaxFiles فایل، هر فایل تا @MaxFileMegabytes مگابایت
+                    (<span class="mono" dir="ltr">@AllowedExtensionsText</span>)
                 </span>
                 <span class="rag-input-security">
                     <i class="bi bi-shield-check me-1"></i>

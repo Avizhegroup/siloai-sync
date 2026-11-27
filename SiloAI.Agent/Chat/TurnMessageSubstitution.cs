@@ -14,15 +14,19 @@ namespace SiloAI.Agent.Chat;
 /// </summary>
 public static class TurnMessageSubstitution
 {
-    private sealed record Substitution(string StoredText, string ModelText);
+    private sealed record Substitution(string StoredText, string ModelText, IReadOnlyList<AIContent> ExtraContents);
 
     private static readonly AsyncLocal<Substitution?> Current = new();
 
-    /// <summary>Starts a substitution for the current async flow; dispose to end it.</summary>
-    public static IDisposable Begin(string storedText, string modelText)
+    /// <summary>
+    /// Starts a substitution for the current async flow; dispose to end it.
+    /// <paramref name="extraContents"/> (images, files) are shown to the model together with the text
+    /// for this turn only; they are never written to the saved conversation.
+    /// </summary>
+    public static IDisposable Begin(string storedText, string modelText, IReadOnlyList<AIContent>? extraContents = null)
     {
         var previous = Current.Value;
-        Current.Value = new Substitution(storedText, modelText);
+        Current.Value = new Substitution(storedText, modelText, extraContents ?? []);
         return new Scope(previous);
     }
 
@@ -45,7 +49,7 @@ public static class TurnMessageSubstitution
             {
                 var copy = new List<ChatMessage>(list)
                 {
-                    [i] = new ChatMessage(ChatRole.User, substitution.ModelText)
+                    [i] = BuildModelMessage(substitution)
                 };
 
                 return copy;
@@ -53,6 +57,17 @@ public static class TurnMessageSubstitution
         }
 
         return list;
+    }
+
+    private static ChatMessage BuildModelMessage(Substitution substitution)
+    {
+        if (substitution.ExtraContents.Count == 0)
+            return new ChatMessage(ChatRole.User, substitution.ModelText);
+
+        var contents = new List<AIContent> { new TextContent(substitution.ModelText) };
+        contents.AddRange(substitution.ExtraContents);
+
+        return new ChatMessage(ChatRole.User, contents);
     }
 
     private sealed class Scope(Substitution? previous) : IDisposable

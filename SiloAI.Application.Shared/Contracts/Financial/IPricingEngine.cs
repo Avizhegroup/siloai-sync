@@ -1,11 +1,12 @@
 namespace SiloAI.Application.Shared.Contracts.Financial;
 
 /// <summary>
-/// Computes the charge for a single AI call from the active pricing settings.
+/// Computes the charge for a single AI call from the paying customer's own pricing profile (exchange rate, multiplier,
+/// floors — all per customer, nothing global) and the resolved model's price list.
 /// Pure calculation only — never touches balances. Missing configuration is a
 /// fail-fast error (no silent fallback numbers).
 /// </summary>
 public interface IPricingEngine
 {
-    Task<ChargeResult> CalculateAsync(TokenUsageInput usage, UsageFeature feature, Guid aiModelId, CancellationToken cancellationToken);
+    Task<ChargeResult> CalculateAsync(int customerId, TokenUsageInput usage, UsageFeature feature, Guid aiModelId, CancellationToken cancellationToken);
 }

@@ -60,3 +60,23 @@ public enum ChargeOutcome
     InsufficientBalance,
     DuplicateIgnored
 }
+
+
+/// <summary>
+/// The pricing formula, in one place and free of I/O:
+/// costToman = costUsd × global rate; charge = costToman × the customer's multiplier.
+/// </summary>
+public static class PricingFormula
+{
+    /// <summary>Returns a human-readable reason when the multiplier can't be used to bill, else null.</summary>
+    public static string? ValidateMultiplier(decimal multiplier)
+        => multiplier <= 0 ? "ضریب باید بزرگ‌تر از صفر باشد." : null;
+
+    public static ChargeResult Compute(decimal costUsd, decimal tomanPerUsd, decimal multiplier)
+    {
+        var costToman = costUsd * tomanPerUsd;
+
+        // FloorTomanUsed is kept on the result (and usage record) only for history; there is no minimum charge any more.
+        return new ChargeResult(costUsd, tomanPerUsd, costToman, multiplier, 0m, costToman * multiplier);
+    }
+}

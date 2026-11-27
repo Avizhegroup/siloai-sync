@@ -2,6 +2,8 @@ using SiloAI.Application.Api.Services;
 using SiloAI.Agent.Chat;
 using SiloAI.Application.Shared.Contracts.AiModels;
 using System.Text;
+using Microsoft.Extensions.AI;
+using SiloAI.Application.Shared;
 
 namespace SiloAI.Application.Api.Features;
 
@@ -73,6 +75,13 @@ public class RagChatSendHandler(
         // otherwise the global default for that feature.
         var resolvedModel = await modelResolver.ResolveAsync(request.CustomerId, UsageFeature.SupportChat, cancellationToken);
 
+        // Attachments are optional. Re-check the limits here as well (the multipart handler already
+        // did) so no other caller can bypass them, then make sure the model can actually read them.
+        var attachments = request.Attachments ?? [];
+
+        RagChatAttachmentReader.ValidateSet(attachments);
+        EnsureModelCanReadAttachments(resolvedModel, attachments);
+
         // This handler already performs its own, DocType/Key-filtered retrieval below and
         // augments the message itself, so the agent's built-in auto-RAG context provider is
         // disabled here to avoid a second, unfiltered retrieval pass (extra embedding call,
@@ -121,20 +130,31 @@ public class RagChatSendHandler(
             messageText = request.Message;
         }
 
+        // Text files are inlined into this turn's message; images and PDFs travel as separate
+        // contents. Like the retrieved chunks, none of it is saved in the conversation.
+        var textSection = RagChatAttachmentReader.BuildTextSection(attachments);
+
+        if (textSection.Length > 0)
+            messageText = $"{messageText}\n\n{textSection}";
+
+        var modelExtraContents = BuildModelContents(attachments);
+
         // The saved conversation history keeps the user's own message; the retrieved chunks are
         // shown to the model for this turn only (messageText). Storing the augmented message made
         // every turn add up to 20 chunks to the history, so after a handful of messages the prompt
         // outgrew the model's usable context and it "forgot" the conversation.
         var query = new CopilotMessageRequest
         {
-            Text = request.Message,
+            // The history keeps the user's words plus the names of any attached files.
+            Text = request.Message + RagChatAttachmentReader.BuildHistoryNote(attachments),
             Username = request.Username,
             SiloChatId = Guid.NewGuid().ToString(),
             IsUser = true,
             Datetime = DateTime.Now
         };
 
-        var result = await agentService.SendWithAgentSessionAsync(existingSessionJson, query, cancellationToken, modelText: messageText);
+        var result = await agentService.SendWithAgentSessionAsync(existingSessionJson, query, cancellationToken, modelText: messageText,
+            modelExtraContents: modelExtraContents);
 
         var now = DateTime.Now;
 
@@ -153,6 +173,8 @@ public class RagChatSendHandler(
         chatSession.SessionState = result.SerializedSession;
         chatSession.UpdatedAt = now;
 
+        RequestPriceDto? price = null;
+
         if (request.CustomerId.HasValue)
         {
             var customerId = request.CustomerId.Value;
@@ -162,6 +184,7 @@ public class RagChatSendHandler(
             var turnIndex = chatSession.TurnIndex + 1;
 
             var charge = await pricingEngine.CalculateAsync(
+                customerId,
                 new TokenUsageInput(
                     result.TokenUsage.InputTokenCount,
                     result.TokenUsage.CachedInputTokenCount,
@@ -200,6 +223,8 @@ public class RagChatSendHandler(
             // already committed by an earlier attempt whose session save was lost, so the index
             // must move on or every later turn would reuse (and be swallowed by) the same key.
             chatSession.TurnIndex = turnIndex;
+
+            price = RequestPriceDto.From(charge);
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -223,9 +248,27 @@ public class RagChatSendHandler(
             ConversationId = chatSession.Id,
             TokenUsage = result.TokenUsage,
             Citations = citations,
-            PriceUsage = result.PriceUsage
+            PriceUsage = result.PriceUsage,
+            Price = price
         };
     }
+
+    /// <summary>Images need an image-capable model and PDFs a file-capable one; text files work with any model.</summary>
+    public static void EnsureModelCanReadAttachments(ResolvedAiModel model, IReadOnlyCollection<RagChatAttachment> attachments)
+    {
+        if (attachments.Any(a => a.Kind == RagChatAttachmentKind.Image) && !model.SupportsImageInput)
+            throw new BadRequestException(
+                $"The chat model '{model.Identifier}' cannot read images. Remove the image attachments or ask an admin to enable image input for the model.");
+
+        if (attachments.Any(a => a.Kind == RagChatAttachmentKind.Pdf) && !model.SupportsFileInput)
+            throw new BadRequestException(
+                $"The chat model '{model.Identifier}' cannot read PDF files. Remove the PDF attachments or ask an admin to enable file input for the model.");
+    }
+
+    public static IReadOnlyList<AIContent> BuildModelContents(IEnumerable<RagChatAttachment> attachments)
+        => [.. attachments
+            .Where(a => a.Kind != RagChatAttachmentKind.Text)
+            .Select(a => (AIContent)new DataContent(a.Data, a.MediaType) { Name = a.FileName })];
 
     /// <param name="includeSystematic">
     /// true (default, RAG chat): every active instruction is included, exactly as before.

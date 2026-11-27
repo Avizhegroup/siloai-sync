@@ -21,11 +21,14 @@ public class OcrCommandHandler(
         var extraction = await agentFileTaskService.ExtractTextWithUsageAsync(
             request.ImageData, request.MediaType, resolvedModel, request.DocType, request.Key, cancellationToken);
 
+        RequestPriceDto? price = null;
+
         if (request.CustomerId.HasValue)
         {
             var customerId = request.CustomerId.Value;
 
             var charge = await pricingEngine.CalculateAsync(
+                customerId,
                 new TokenUsageInput(extraction.InputTokens, extraction.CachedInputTokens, extraction.OutputTokens),
                 UsageFeature.Ocr,
                 resolvedModel.AiModelId,
@@ -58,8 +61,10 @@ public class OcrCommandHandler(
 
             if (outcome == ChargeOutcome.InsufficientBalance)
                 throw new InsufficientCreditException();
+
+            price = RequestPriceDto.From(charge);
         }
 
-        return new OcrResponse { ExtractedText = extraction.Text };
+        return new OcrResponse { ExtractedText = extraction.Text, Price = price };
     }
 }

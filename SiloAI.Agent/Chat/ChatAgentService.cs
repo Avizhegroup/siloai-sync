@@ -142,7 +142,7 @@ public class ChatAgentService(
 
     public async Task<ChatAgentResponse> SendWithAgentSessionAsync(
         string? sessionJson, CopilotMessageRequest query, CancellationToken cancellationToken = default,
-        string? modelText = null)
+        string? modelText = null, IReadOnlyList<AIContent>? modelExtraContents = null)
     {
         AgentSession session;
 
@@ -165,8 +165,12 @@ public class ChatAgentService(
         // query.Text is what the conversation history stores. When the caller augmented the message
         // for this turn (retrieved chunks), modelText is what the model sees now — the history
         // keeps only query.Text, so older turns don't carry their chunks forever.
-        using var substitution = modelText is not null && !string.Equals(modelText, query.Text, StringComparison.Ordinal)
-            ? TurnMessageSubstitution.Begin(query.Text, modelText)
+        // modelExtraContents (images / PDFs sent with this turn) are likewise shown to the model for
+        // this turn only and never stored in the session.
+        var hasExtras = modelExtraContents is { Count: > 0 };
+
+        using var substitution = hasExtras || (modelText is not null && !string.Equals(modelText, query.Text, StringComparison.Ordinal))
+            ? TurnMessageSubstitution.Begin(query.Text, modelText ?? query.Text, modelExtraContents)
             : null;
 
         var result = await writer.RunAsync(messages, session);

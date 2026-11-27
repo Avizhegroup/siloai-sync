@@ -15,12 +15,19 @@ public class SpeechBillingTests
         Guid.NewGuid(), "stt-model", AiModelKind.SpeechToText, null,
         false, false, false, false, false, false, false, false, 0m, 0m, 0m);
 
+    /// <summary>Exposes a no-op pricing engine to other test classes.</summary>
+    public sealed class RecordingPricingForPolicy : IPricingEngine
+    {
+        public Task<ChargeResult> CalculateAsync(int customerId, TokenUsageInput usage, UsageFeature feature, Guid aiModelId, CancellationToken ct)
+            => Task.FromResult(new ChargeResult(0m, 1m, 0m, 1m, 0m, 0m));
+    }
+
     private sealed class RecordingPricing : IPricingEngine
     {
         public TokenUsageInput? LastUsage;
         public UsageFeature? LastFeature;
 
-        public Task<ChargeResult> CalculateAsync(TokenUsageInput usage, UsageFeature feature, Guid aiModelId, CancellationToken ct)
+        public Task<ChargeResult> CalculateAsync(int customerId, TokenUsageInput usage, UsageFeature feature, Guid aiModelId, CancellationToken ct)
         {
             (LastUsage, LastFeature) = (usage, feature);
             return Task.FromResult(new ChargeResult(0.01m, 60000m, 600m, 2m, 100m, 1200m));
@@ -91,6 +98,27 @@ public class SpeechBillingTests
         await billing.EnsureCreditAsync(null, default);
 
         Assert.Null(ledger.LastRecord);
+    }
+
+    [Fact]
+    public async Task The_charge_is_returned_so_the_response_can_announce_the_price()
+    {
+        var billing = new SpeechBillingService(new RecordingPricing(), new Ledger());
+
+        var stt = await billing.ChargeSpeechToTextAsync(5, Model, new SpeechUsage(1, 1, 1m), Guid.NewGuid(), default);
+        var tts = await billing.ChargeTextToSpeechAsync(5, Model, 10, Guid.NewGuid(), default);
+
+        Assert.Equal(1200m, RequestPriceDto.From(stt!).Toman);
+        Assert.Equal(1200m, RequestPriceDto.From(tts!).Toman);
+    }
+
+    [Fact]
+    public async Task Admin_calls_return_no_charge_and_therefore_no_price()
+    {
+        var billing = new SpeechBillingService(new RecordingPricing(), new Ledger());
+
+        Assert.Null(await billing.ChargeSpeechToTextAsync(null, Model, SpeechUsage.Unknown, Guid.NewGuid(), default));
+        Assert.Null(await billing.ChargeTextToSpeechAsync(null, Model, 10, Guid.NewGuid(), default));
     }
 
     [Fact]

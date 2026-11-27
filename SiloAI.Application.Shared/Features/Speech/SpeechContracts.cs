@@ -3,6 +3,9 @@ namespace SiloAI.Application.Shared.Features;
 public class TranscriptionResponse
 {
     public string Text { get; set; } = string.Empty;
+
+    /// <summary>What this request cost, in Toman and USD. Null when the call was not billed.</summary>
+    public RequestPriceDto? Price { get; set; }
 }
 
 public class SynthesizeSpeechRequest

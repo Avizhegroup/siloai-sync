@@ -23,4 +23,21 @@ public interface ICreditLedgerService
         int customerId, decimal amountToman, string reference, string? description, CancellationToken cancellationToken);
 
     Task<decimal> GetBalanceAsync(int customerId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Balance plus the customer's credit policy. The default (kept so simple implementations and
+    /// test fakes still work) treats every customer as "stop on insufficient credit".
+    /// </summary>
+    async Task<CreditStatus> GetCreditStatusAsync(int customerId, CancellationToken cancellationToken)
+        => new CreditStatus(await GetBalanceAsync(customerId, cancellationToken), StopOnInsufficientCredit: true);
+}
+
+/// <summary>
+/// A customer's spendable position. <see cref="StopOnInsufficientCredit"/> false means usage is
+/// never refused for lack of credit and the balance may go negative.
+/// </summary>
+public record CreditStatus(decimal BalanceToman, bool StopOnInsufficientCredit)
+{
+    /// <summary>True when the customer must be refused before any (paid) provider call is made.</summary>
+    public bool MustBlock => StopOnInsufficientCredit && BalanceToman <= 0;
 }

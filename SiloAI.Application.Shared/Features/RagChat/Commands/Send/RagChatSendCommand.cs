@@ -1,6 +1,8 @@
+using System.Text.Json.Serialization;
+using SiloAI.Application.Shared.Contracts.Customers;
 namespace SiloAI.Application.Shared.Features;
 
-public class RagChatSendCommand : IRequest<RagChatResponse>
+public class RagChatSendCommand : IRequest<RagChatResponse>, ICustomerBound, IOwnerBound, IUsernameBound
 {
     public Guid? ConversationId { get; set; }
     public string Message { get; set; }
@@ -17,8 +19,15 @@ public class RagChatSendCommand : IRequest<RagChatResponse>
     /// </summary>
     public bool UseRag { get; set; } = true;
 
-    public string AugmentedMessageTemplate { get; set; }
-    public string Username { get; set; }
-    public string OwnerId { get; set; }
+    /// <summary>
+    /// Files sent with this message, already validated. Never read from a JSON body (it is ignored
+    /// there, so a client can't skip validation): they come only from <c>send-with-files</c>.
+    /// </summary>
+    [JsonIgnore]
+    public List<RagChatAttachment> Attachments { get; set; } = [];
+
+    public string? AugmentedMessageTemplate { get; set; }
+    public string? Username { get; set; }
+    public string? OwnerId { get; set; }
     public int? CustomerId { get; set; }
 }

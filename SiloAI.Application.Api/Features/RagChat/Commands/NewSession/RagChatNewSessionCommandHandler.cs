@@ -61,7 +61,9 @@ public class RagChatNewSessionCommandHandler(
         {
             ResponseText = string.Empty,
             ConversationId = chatSession.Id,
-            Citations = new()
+            Citations = new(),
+            // Creating a session never reaches a model, so it costs nothing (null for admin calls, which are never billed).
+            Price = request.CustomerId is null ? null : RequestPriceDto.Free
         };
     }
 }

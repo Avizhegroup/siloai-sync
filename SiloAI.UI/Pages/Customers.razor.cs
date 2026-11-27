@@ -1,13 +1,20 @@
-﻿namespace SiloAI.UI.Pages;
+using SiloAI.Domains;
+
+namespace SiloAI.UI.Pages;
 
 public partial class Customers
 {
     public bool IsLoading;
     public string _newName = string.Empty;
     public decimal _newCredit = 0;
+    public decimal _newMultiplier = CustomerPricingDefaults.Multiplier;
+    public bool _newStopOnInsufficientCredit = true;
     public int? _editingId;
+    public bool _showCreate;
+    public bool _showEdit;
     public string _editName = string.Empty;
-    public decimal _editCredit;
+    public decimal _editMultiplier;
+    public bool _editStopOnInsufficientCredit = true;
     public bool _showApiKeys;
     public string _newKeyLabel = string.Empty;
     public DateTime _newKeyExpiresAt = DateTime.Today.AddYears(1);
@@ -37,6 +44,15 @@ public partial class Customers
         IsLoading = false;     
     }
 
+    private void OpenCreate()
+    {
+        _newName = string.Empty;
+        _newCredit = 0;
+        _newMultiplier = CustomerPricingDefaults.Multiplier;
+        _newStopOnInsufficientCredit = true;
+        _showCreate = true;
+    }
+
     private async Task CreateCustomer()
     {
         if (string.IsNullOrWhiteSpace(_newName))
@@ -51,7 +67,9 @@ public partial class Customers
         var response = await ApiClient.PostAsJsonAsync("admin/customers", new CreateCustomerRequest
            {
               Name = _newName,
-              RemainingCredit = _newCredit
+              InitialCreditToman = _newCredit,
+              Multiplier = _newMultiplier,
+              StopOnInsufficientCredit = _newStopOnInsufficientCredit
            });
 
          response.EnsureSuccessStatusCode();
@@ -59,6 +77,12 @@ public partial class Customers
         _newName = string.Empty;
 
         _newCredit = 0;
+
+        _newMultiplier = CustomerPricingDefaults.Multiplier;
+
+        _newStopOnInsufficientCredit = true;
+
+        _showCreate = false;
 
         await LoadCustomers();
        
@@ -71,27 +95,40 @@ public partial class Customers
 
         _editName = customer.Name;
 
-        _editCredit = Math.Round(customer.RemainingCredit, 2);
+        _editMultiplier = customer.Multiplier;
+
+
+
+        _editStopOnInsufficientCredit = customer.StopOnInsufficientCredit;
+
+        _showEdit = true;
     }
 
     private void CancelEdit()
     {
         _editingId = null;
+
+        _showEdit = false;
     }
 
-    private async Task SaveEdit(int id)
+    private async Task SaveEdit()
     {
+        if (_editingId is not { } id) return;
+
         IsLoading = true;
          
         var response = await ApiClient.PutAsJsonAsync($"admin/customers/{id}", new UpdateCustomerRequest
            {
                Name = _editName,
-               RemainingCredit = _editCredit
+               Multiplier = _editMultiplier,
+               StopOnInsufficientCredit = _editStopOnInsufficientCredit
            });
 
         response.EnsureSuccessStatusCode();
 
         _editingId = null;
+
+        _showEdit = false;
 
         await LoadCustomers();
        

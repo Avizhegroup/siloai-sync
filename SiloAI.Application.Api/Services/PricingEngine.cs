@@ -3,15 +3,15 @@ using SiloAI.Application.Shared.Contracts.Financial;
 namespace SiloAI.Application.Api.Services;
 
 /// <summary>
-/// Implements the pricing formula:
-/// costUsd from the resolved AiModel's price list, costToman = costUsd × fxRate,
-/// chargeToman = max(costToman × M, floorToman, fxRate × floorUsd).
-/// Rates and multipliers come from the latest row with EffectiveFrom &lt;= now.
+/// Implements the pricing formula: costUsd from the resolved AiModel's price list,
+/// costToman = costUsd × the GLOBAL exchange rate (latest row of tbl_FxRateSettings with
+/// EffectiveFrom &lt;= now), charge = costToman × the paying customer's multiplier.
 /// Missing configuration fails fast instead of silently falling back to a default.
 /// </summary>
 public class PricingEngine(AiApiContext dbContext) : IPricingEngine
 {
-    public async Task<ChargeResult> CalculateAsync(TokenUsageInput usage, UsageFeature feature, Guid aiModelId, CancellationToken cancellationToken)
+    public async Task<ChargeResult> CalculateAsync(
+        int customerId, TokenUsageInput usage, UsageFeature feature, Guid aiModelId, CancellationToken cancellationToken)
     {
         var now = DateTime.Now;
 
@@ -24,21 +24,21 @@ public class PricingEngine(AiApiContext dbContext) : IPricingEngine
 
         if (fxRate <= 0)
             throw new InvalidOperationException(
-                "No active FX rate found. Seed tbl_FxRateSettings with a row whose EffectiveFrom <= now.");
+                "No active FX rate found. Add a rate on the Financial page (tbl_FxRateSettings needs a row whose EffectiveFrom <= now).");
 
-        var pricing = await dbContext.PricingSettings
+        var multiplier = await dbContext.Customers
             .AsNoTracking()
-            .Where(x => x.Feature == feature && x.EffectiveFrom <= now)
-            .OrderByDescending(x => x.EffectiveFrom)
-            .FirstOrDefaultAsync(cancellationToken);
+            .Where(c => c.Id == customerId)
+            .Select(c => (decimal?)c.Multiplier)
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new InvalidOperationException($"Customer '{customerId}' was not found, so it cannot be priced.");
 
-        if (pricing is null)
-            throw new InvalidOperationException(
-                $"No active pricing setting found for feature '{feature}'. Seed tbl_PricingSettings with a row whose EffectiveFrom <= now.");
+        var problem = PricingFormula.ValidateMultiplier(multiplier);
+        if (problem is not null)
+            throw new InvalidOperationException($"Customer '{customerId}' has an invalid multiplier: {problem}");
 
-        // Per-token prices now come from the resolved AiModel record (admin-entered on the AI
-        // Models page), not from appsettings — a model's price list travels with the model
-        // itself, so different customers/features using different models are priced correctly.
+        // Per-token / per-unit prices come from the resolved AiModel record (admin-entered on the AI
+        // Models page): a model's price list travels with the model itself.
         var modelPricing = await dbContext.AiModels
             .AsNoTracking()
             .Where(x => x.Id == aiModelId)
@@ -51,20 +51,6 @@ public class PricingEngine(AiApiContext dbContext) : IPricingEngine
             throw new InvalidOperationException(
                 $"AiModel '{aiModelId}' was not found. It may have been deleted after being resolved for this call.");
 
-        var costUsd = UsageCostCalculator.ComputeCostUsd(usage, modelPricing);
-
-        var costToman = costUsd * fxRate;
-
-        var chargeToman = Math.Max(
-            costToman * pricing.Multiplier,
-            Math.Max(pricing.FloorToman, fxRate * pricing.FloorUsd));
-
-        return new ChargeResult(
-            costUsd,
-            fxRate,
-            costToman,
-            pricing.Multiplier,
-            pricing.FloorToman,
-            chargeToman);
+        return PricingFormula.Compute(UsageCostCalculator.ComputeCostUsd(usage, modelPricing), fxRate, multiplier);
     }
 }

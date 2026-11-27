@@ -11,7 +11,9 @@ public class GetAllCustomersQueryHandler(AiApiContext context) : IRequestHandler
             {
                 Id = c.Id,
                 Name = c.Name,
-                RemainingCredit = c.RemainingCredit,
+                BalanceToman = c.LedgerAccount != null ? c.LedgerAccount.BalanceToman : 0m,
+                StopOnInsufficientCredit = c.StopOnInsufficientCredit,
+                Multiplier = c.Multiplier,
                 CreatedAt = c.CreatedAt
             })
             .ToListAsync(cancellationToken);

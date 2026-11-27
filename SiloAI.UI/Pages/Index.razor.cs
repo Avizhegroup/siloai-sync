@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 
 namespace SiloAI.UI.Pages;
 
@@ -11,7 +11,7 @@ public partial class Index
     public string _rangeTitle = string.Empty;
     public decimal _totalToman;
     public decimal _totalUsd;
-    public decimal _totalCreditUsd;
+    public decimal _totalCreditToman;
     public int _activeCustomers;
     public int _customerCount;
 
@@ -110,7 +110,7 @@ public partial class Index
 
         var names = _customers.ToDictionary(c => c.Id, c => c.Name);
 
-        var credits = _customers.ToDictionary(c => c.Id, c => c.RemainingCredit);
+        var credits = _customers.ToDictionary(c => c.Id, c => c.BalanceToman);
 
         foreach (var g in inMonth.GroupBy(r => r.CustomerId))
             names.TryAdd(g.Key, g.First().CustomerName);
@@ -124,7 +124,7 @@ public partial class Index
 
         _totalUsd = inMonth.Sum(x => x.Usd);
 
-        _totalCreditUsd = credits.Values.Sum();
+        _totalCreditToman = credits.Values.Sum();
 
         _activeCustomers = byCustomer.Count;
 
