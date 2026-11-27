@@ -139,6 +139,16 @@
                                 @msg.Text
                             </div>
 
+                            @if (!msg.IsUser && msg.Price is { } price)
+                            {
+                                <div class="chat-bubble-price" title="هزینه‌ی این پاسخ">
+                                    <i class="bi bi-coin me-1"></i>
+                                    هزینه:
+                                    <span class="mono" dir="ltr">@price.Toman.ToString("N0") تومان</span>
+                                    <span class="text-muted">(<span class="mono" dir="ltr">$@price.Usd.ToString("0.####")</span>)</span>
+                                </div>
+                            }
+
                             @if (msg.IsUser && msg.AttachmentNames is { Count: > 0 })
                             {
                                 <div class="chat-bubble-attachments">

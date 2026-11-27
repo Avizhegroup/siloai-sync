@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SiloAI.Api.Infrastructure;
 using SiloAI.Application.Api.Features;
 
 namespace SiloAI.Api.Controllers;
@@ -24,6 +25,9 @@ public class SpeechController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> Synthesize([FromBody] SynthesizeSpeechCommand command, CancellationToken cancellationToken)
     {
         var speech = await mediator.Send(command, cancellationToken);
+
+        VoiceChatActionResult.AddPriceHeaders(Response.Headers, speech.Price);
+        Response.Headers.AccessControlExposeHeaders = "X-Price-Toman,X-Price-Usd,X-Exchange-Rate";
 
         return File(speech.Audio, speech.ContentType);
     }

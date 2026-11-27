@@ -170,7 +170,8 @@ public partial class Chat
                 IsUser = false,
                 Text = string.IsNullOrWhiteSpace(result.ResponseText) ? "—" : result.ResponseText,
                 Time = DateTime.Now,
-                Citations = result.Citations
+                Citations = result.Citations,
+                Price = result.Price
             });
 
             succeeded = true;

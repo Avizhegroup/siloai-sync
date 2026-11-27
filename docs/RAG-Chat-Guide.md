@@ -126,6 +126,41 @@ Wherever an endpoint takes `docType`: in **JSON bodies send the number** (e.g. `
 | `ImageGeneration` | 5      | Image generation (`/api/image-generation`) — instructions only, no RAG.|
 | `ImageAnalysis`   | 6      | Image analysis (`/api/image-analysis`) — instructions only, no RAG.    |
 
+### Request price (`price`)
+
+Every request that uses an AI model is billed to the calling customer, and **its response announces the
+price of that request in both Toman and US dollars**, in a `price` object:
+
+```json
+"price": { "toman": 1250.5, "usd": 0.012505, "exchangeRate": 100000 }
+```
+
+| Field          | Type    | Description                                                                                                  |
+|----------------|---------|----------------------------------------------------------------------------------------------------------------|
+| `toman`        | decimal | The amount debited from the customer's credit for this request, in Toman (rounded to 2 decimals like the ledger). |
+| `usd`          | decimal | The same amount in US dollars: `toman ÷ exchangeRate` (6 decimals, so very small requests don't show as 0).      |
+| `exchangeRate` | decimal | The global exchange rate (Toman per 1 USD) used for this request.                                             |
+
+- The price is what was **actually charged**: the model cost computed from the real token / image / audio /
+  character usage, × the global exchange rate, × the customer's multiplier (ضریب).
+- `price` is `null` (or absent) when nothing was billed: calls made with an admin JWT that has no customer are never metered.
+- A request that makes no model call is free: `new-session` returns a `price` of `0` for a customer.
+- Re-sending a request with the same `requestId` (idempotent retry) is charged only once.
+- Endpoints that return a **binary body** (voice chat, speech synthesis) carry the price in response headers instead: `X-Price-Toman`, `X-Price-Usd`, `X-Exchange-Rate`.
+- Not billed, so no price: the document endpoints (`/api/rag/documents*`) and the instruction endpoints (`/api/rag/instructions*`).
+
+| Endpoint                                  | Where the price is                                  |
+|-------------------------------------------|-----------------------------------------------------|
+| `POST /api/rag/chat/new-session`          | `price` (always 0 for a customer)                   |
+| `POST /api/rag/chat/send`                 | `price`                                             |
+| `POST /api/rag/chat/send-with-files`      | `price`                                             |
+| `POST /api/rag/chat/voice`                | headers — speech-to-text + chat + text-to-speech added together |
+| `POST /api/image-generation`              | `price`                                             |
+| `POST /api/image/ocr`                     | `price`                                             |
+| `POST /api/image-analysis`                | `price`                                             |
+| `POST /api/speech/transcribe`             | `price` (admin panel: null)                         |
+| `POST /api/speech/synthesize`             | headers (admin panel: absent)                       |
+
 ### Common error responses
 
 | Status | Meaning                                                                                   |
@@ -162,6 +197,7 @@ Starts a brand-new RAG conversation without sending a message yet.
 | `conversationId` | guid              | Id to reuse on subsequent `send` calls.       |
 | `citations`      | array             | Empty for a new session.                      |
 | `tokenUsage`     | object \| null    | Not populated for a new session.              |
+| `price`          | object \| null    | `0` Toman / `0` USD for a customer (no model call is made); `null` for admin calls. See *Request price*. |
 
 #### `POST /api/rag/chat/send`
 
@@ -187,6 +223,7 @@ Sends a user message, retrieves relevant knowledge, and returns the AI's grounde
 | `conversationId` | guid                     | Conversation id (new or continued) — store it to continue the chat.          |
 | `citations`      | array of citation object | Sources used (empty when `isMainChat` is `true`). See below.                  |
 | `tokenUsage`     | object \| null           | Token accounting for the model call. See below.                              |
+| `price`          | object \| null           | What this request cost, in Toman and USD (`toman`, `usd`, `exchangeRate`). See *Request price*. |
 
 Citation object (`RagChatCitationDto`):
 
@@ -254,7 +291,7 @@ A file whose content does not match its extension (for example a text file renam
 image/file inputs and need a chat model that supports them. When the chat model cannot read images
 (or PDFs), the request fails with `400` and a message naming the model. Text files work with every model.
 
-**Output:** the same `RagChatResponse` as `send`. Billing is unchanged: the call is priced from the
+**Output:** the same `RagChatResponse` as `send`, including `price`. The call is priced from the
 provider's real token usage (files and images included) and debited from the customer's credit.
 
 **Error responses:**
@@ -304,6 +341,9 @@ The text data is returned in response headers:
 | `X-Transcript`      | Text recognized from the user's audio (URL-encoded).                            |
 | `X-Response-Text`   | The AI-generated answer as text (URL-encoded).                                  |
 | `X-Conversation-Id` | Conversation id — store it to continue the chat.                                |
+| `X-Price-Toman`     | Price of the whole voice request in Toman (speech-to-text + chat + text-to-speech). Absent when not billed. |
+| `X-Price-Usd`       | The same price in US dollars.                                                   |
+| `X-Exchange-Rate`   | Global exchange rate used (Toman per USD).                                      |
 
 Header values containing text are encoded with `encodeURIComponent` semantics; decode them
 with `decodeURIComponent` (or equivalent). Very long answers may exceed server/proxy header
@@ -521,6 +561,7 @@ Auth: JWT **or** `X-Api-Key`. Content type: `multipart/form-data`.
 | `images[].dataBase64`| string         | Image bytes, base64-encoded (no `data:` prefix).                |
 | `images[].mediaType` | string         | `image/png`, `image/jpeg` or `image/webp`.                      |
 | `text`               | string \| null | Accompanying model text, if any.                                |
+| `price`              | object \| null | What this request cost in Toman and USD. See *Request price*.   |
 
 **Errors:** `400` (blank `prompt`, more than 8 images, empty/oversized image, or an image that is not
 PNG/JPEG/WebP — the format is detected from the file bytes, not the declared content type),
@@ -565,7 +606,7 @@ Content type: `multipart/form-data`.
 | `docType`   | enum   | **yes**  | Normally `ImageOCR` — selects which instructions apply.               |
 | `key`       | string | **yes**  | Instruction key to use (send an empty value if none).                 |
 
-**Output** (200): `{ "extractedText": "..." }`. **Errors:** `400` (no image), `402` (credit exhausted).
+**Output** (200): `{ "extractedText": "...", "price": { "toman": ..., "usd": ..., "exchangeRate": ... } }` (see *Request price*). **Errors:** `400` (no image), `402` (credit exhausted).
 
 ```bash
 curl -X POST https://<host>/api/image/ocr \
@@ -603,6 +644,7 @@ Auth: JWT **or** `X-Api-Key`. Content type: `multipart/form-data`.
 | `tokenUsage.cachedInputTokenCount`| long   | Tokens served from prompt cache.         |
 | `tokenUsage.outputTokenCount`     | long   | Completion tokens.                       |
 | `tokenUsage.totalTokenCount`      | long   | Input + output.                          |
+| `price`                           | object \| null | What this request cost in Toman and USD. See *Request price*. |
 
 **Errors:** `400` (no image, more than 8, empty/oversized image, or not PNG/JPEG/WebP), `402` (credit
 exhausted), `422` (no model assigned for the feature, the model lacks image-input/text-output support,
@@ -621,7 +663,8 @@ curl -X POST https://<host>/api/image-analysis \
 ### 5.7 Speech-to-text and text-to-speech (admin panel)
 
 Standalone speech endpoints used by the admin panel's «گفتار و صدا» page. **JWT only** — they are not
-metered per customer, so they are not exposed to customer API keys. (For customers, use the voice-chat
+exposed to customer API keys. A call made with an admin JWT (no customer) is not billed and has no price;
+a call made on behalf of a customer is billed and carries the price. (For customers, use the voice-chat
 endpoint in section 5.1, which runs speech-to-text → RAG chat → text-to-speech.)
 
 #### `POST /api/speech/transcribe`
@@ -633,7 +676,7 @@ Content type: `multipart/form-data` (max 25 MB).
 | `audio`    | file   | **yes**  | `mp3`, `mpeg`, `mpga`, `wav`, `flac`, `m4a`, `mp4`, `ogg` or `webm`.     |
 | `language` | string | no       | Language hint, e.g. `fa`, `en`.                                          |
 
-**Output** (200): `{ "text": "..." }`. **Errors:** `400` (no file / unsupported type), `422`, `502` (provider error).
+**Output** (200): `{ "text": "...", "price": null }` (`price` is filled only when billed to a customer). **Errors:** `400` (no file / unsupported type), `422`, `502` (provider error).
 
 #### `POST /api/speech/synthesize`
 
@@ -649,7 +692,7 @@ Content type: `application/json`.
 | `voice` | string | no       | A voice listed on the chosen TTS model (voices are per model, set on the AI Models page). Blank = the model's first voice. |
 | `modelId` | guid | no | Admin-only TTS model override; default = model assigned to feature «متن به گفتار». Customers get `403`. |
 
-**Output** (200): the spoken audio as `audio/mpeg` (binary). **Errors:** `400` (blank/too long text), `403` (model override by a customer), `422` (unknown voice for the model, wrong model kind, no model assigned), `502`.
+**Output** (200): the spoken audio as `audio/mpeg` (binary); when billed to a customer, the price is in the `X-Price-Toman`, `X-Price-Usd` and `X-Exchange-Rate` headers. **Errors:** `400` (blank/too long text), `403` (model override by a customer), `422` (unknown voice for the model, wrong model kind, no model assigned), `502`.
 
 ---
 
@@ -659,7 +702,7 @@ Content type: `application/json`.
 2. (Optional) Add per-`docType` instructions: `POST /api/rag/instructions`.
 3. Start a conversation: `POST /api/rag/chat/new-session` → store `conversationId`.
 4. Send messages: `POST /api/rag/chat/send` with the stored `conversationId`, reading
-   `responseText` and `citations` from each response.
+   `responseText`, `citations` and `price` (what the request cost, in Toman and USD) from each response.
 5. (Optional) Use `POST /api/rag/documents/search` to debug/preview retrieval quality
    independent of the chat model.
 
@@ -686,7 +729,7 @@ Each is assigned to the features «گفتار به متن» / «متن به گف
 model. A text-to-speech model carries its own comma-separated **voices** (first = default), because voice names are
 provider/model specific and are not guaranteed to work across models. The migration `AddSpeechModelsAndVoices`
 seeds the previously hard-coded models (`microsoft/mai-transcribe-2`, `openai/tts-1-hd` with the OpenAI voice set)
-as global defaults, so behaviour is unchanged until an admin changes it. Speech calls remain unmetered.
+as global defaults, so behaviour is unchanged until an admin changes it. Speech calls made for a customer (including the voice-chat endpoint) are metered and priced like any other model call; admin-panel calls without a customer are not billed.
 
 
 ### Conversation history and retrieved chunks

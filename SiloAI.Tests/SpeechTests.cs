@@ -1,4 +1,4 @@
-﻿using SiloAI.Application.Api;
+using SiloAI.Application.Api;
 using SiloAI.Application.Shared.Contracts.AiModels;
 using SiloAI.Application.Shared.Features;
 using SiloAI.Domains;
@@ -136,16 +136,16 @@ public class RagVoiceChatServiceTests
         public Task EnsureCreditAsync(int? customerId, CancellationToken ct)
             => Refuse && customerId is not null ? throw new InsufficientCreditException() : Task.CompletedTask;
 
-        public Task ChargeSpeechToTextAsync(int? customerId, ResolvedAiModel model, SpeechUsage usage, Guid requestId, CancellationToken ct)
+        public Task<ChargeResult?> ChargeSpeechToTextAsync(int? customerId, ResolvedAiModel model, SpeechUsage usage, Guid requestId, CancellationToken ct)
         {
             SttCharges++;
-            return Task.CompletedTask;
+            return Task.FromResult<ChargeResult?>(null);
         }
 
-        public Task ChargeTextToSpeechAsync(int? customerId, ResolvedAiModel model, int characters, Guid requestId, CancellationToken ct)
+        public Task<ChargeResult?> ChargeTextToSpeechAsync(int? customerId, ResolvedAiModel model, int characters, Guid requestId, CancellationToken ct)
         {
             TtsCharges++;
-            return Task.CompletedTask;
+            return Task.FromResult<ChargeResult?>(null);
         }
     }
 

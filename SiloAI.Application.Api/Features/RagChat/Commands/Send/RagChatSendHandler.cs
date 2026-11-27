@@ -173,6 +173,8 @@ public class RagChatSendHandler(
         chatSession.SessionState = result.SerializedSession;
         chatSession.UpdatedAt = now;
 
+        RequestPriceDto? price = null;
+
         if (request.CustomerId.HasValue)
         {
             var customerId = request.CustomerId.Value;
@@ -221,6 +223,8 @@ public class RagChatSendHandler(
             // already committed by an earlier attempt whose session save was lost, so the index
             // must move on or every later turn would reuse (and be swallowed by) the same key.
             chatSession.TurnIndex = turnIndex;
+
+            price = RequestPriceDto.From(charge);
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -244,7 +248,8 @@ public class RagChatSendHandler(
             ConversationId = chatSession.Id,
             TokenUsage = result.TokenUsage,
             Citations = citations,
-            PriceUsage = result.PriceUsage
+            PriceUsage = result.PriceUsage,
+            Price = price
         };
     }
 

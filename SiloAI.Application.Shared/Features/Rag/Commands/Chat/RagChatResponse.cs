@@ -1,4 +1,4 @@
-﻿namespace SiloAI.Application.Shared.Features;
+namespace SiloAI.Application.Shared.Features;
 
 public class RagChatResponse
 {
@@ -7,4 +7,7 @@ public class RagChatResponse
     public List<RagChatCitationDto> Citations { get; set; } = new();
     public ChatTokenUsageDto? TokenUsage { get; set; }
     public decimal? PriceUsage   { get; set; }
+
+    /// <summary>What this request cost, in Toman and USD. Null when the call was not billed.</summary>
+    public RequestPriceDto? Price { get; set; }
 }

@@ -19,6 +19,8 @@ public class ImageAnalysisCommandHandler(
             [.. request.Images.Select(i => new ImageAnalysisInput(i.Data, i.MediaType))],
             request.Prompt, model, RagDocType.ImageAnalysis, request.Key, cancellationToken);
 
+        RequestPriceDto? price = null;
+
         if (request.CustomerId is { } customerId)
         {
             var charge = await pricingEngine.CalculateAsync(
@@ -53,6 +55,8 @@ public class ImageAnalysisCommandHandler(
 
             if (outcome == ChargeOutcome.InsufficientBalance)
                 throw new InsufficientCreditException();
+
+            price = RequestPriceDto.From(charge);
         }
 
         return new ImageAnalysisResponse
@@ -64,7 +68,8 @@ public class ImageAnalysisCommandHandler(
                 CachedInputTokenCount = result.CachedInputTokens,
                 OutputTokenCount = result.OutputTokens,
                 TotalTokenCount = result.InputTokens + result.OutputTokens
-            }
+            },
+            Price = price
         };
     }
 }

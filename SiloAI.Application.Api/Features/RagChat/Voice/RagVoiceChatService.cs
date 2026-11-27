@@ -30,7 +30,7 @@ public interface ITextToSpeechService
     Task<SpeechResult> SynthesizeAsync(string text, string? voice, ResolvedAiModel model, CancellationToken cancellationToken);
 }
 
-public sealed record SpeechResult(byte[] Audio, string ContentType);
+public sealed record SpeechResult(byte[] Audio, string ContentType, RequestPriceDto? Price = null);
 
 public sealed class RagVoiceChatRequest
 {
@@ -60,6 +60,9 @@ public sealed class RagVoiceChatResult
     public required Guid ConversationId { get; init; }
     public required byte[] Audio { get; init; }
     public required string AudioContentType { get; init; }
+
+    /// <summary>speech-to-text + chat + text-to-speech together; null when nothing was billed (admin call).</summary>
+    public RequestPriceDto? Price { get; init; }
 }
 
 public interface IRagVoiceChatService
@@ -95,8 +98,10 @@ public sealed class RagVoiceChatService(
         var transcript = transcription.Text.Trim();
 
         // The provider call happened, so it is billed even when nothing was recognized.
+        ChargeResult? sttCharge = null;
+
         if (billing is not null)
-            await billing.ChargeSpeechToTextAsync(request.CustomerId, sttModel, transcription.Usage, Guid.NewGuid(), cancellationToken);
+            sttCharge = await billing.ChargeSpeechToTextAsync(request.CustomerId, sttModel, transcription.Usage, Guid.NewGuid(), cancellationToken);
 
         if (transcript.Length == 0)
             throw new InvalidOperationException("No speech could be recognized in the supplied audio.");
@@ -116,8 +121,10 @@ public sealed class RagVoiceChatService(
 
         var speech = await tts.SynthesizeAsync(chat.ResponseText, request.Voice, ttsModel, cancellationToken);
 
+        ChargeResult? ttsCharge = null;
+
         if (billing is not null)
-            await billing.ChargeTextToSpeechAsync(request.CustomerId, ttsModel, chat.ResponseText.Length, Guid.NewGuid(), cancellationToken);
+            ttsCharge = await billing.ChargeTextToSpeechAsync(request.CustomerId, ttsModel, chat.ResponseText.Length, Guid.NewGuid(), cancellationToken);
 
         return new RagVoiceChatResult
         {
@@ -125,7 +132,13 @@ public sealed class RagVoiceChatService(
             ResponseText = chat.ResponseText,
             ConversationId = chat.ConversationId,
             Audio = speech.Audio,
-            AudioContentType = speech.ContentType
+            AudioContentType = speech.ContentType,
+            Price = RequestPriceDto.Sum(
+            [
+                sttCharge is null ? null : RequestPriceDto.From(sttCharge),
+                chat.Price,
+                ttsCharge is null ? null : RequestPriceDto.From(ttsCharge)
+            ])
         };
     }
 }

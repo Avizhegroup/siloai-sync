@@ -37,4 +37,7 @@ public class ImageGenerationResponse
 
     /// <summary>Any accompanying text the model returned (may be empty).</summary>
     public string? Text { get; set; }
+
+    /// <summary>What this request cost, in Toman and USD. Null when the call was not billed.</summary>
+    public RequestPriceDto? Price { get; set; }
 }

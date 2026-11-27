@@ -47,9 +47,13 @@ public class TranscribeSpeechCommandHandler(
         var transcription = await stt.TranscribeWithUsageAsync(
             stream, request.Audio.FileName, request.Language, model, cancellationToken);
 
-        await billing.ChargeSpeechToTextAsync(customerId, model, transcription.Usage, Guid.NewGuid(), cancellationToken);
+        var charge = await billing.ChargeSpeechToTextAsync(customerId, model, transcription.Usage, Guid.NewGuid(), cancellationToken);
 
-        return new TranscriptionResponse { Text = transcription.Text.Trim() };
+        return new TranscriptionResponse
+        {
+            Text = transcription.Text.Trim(),
+            Price = charge is null ? null : RequestPriceDto.From(charge)
+        };
     }
 }
 
@@ -80,9 +84,9 @@ public class SynthesizeSpeechCommandHandler(
         var text = request.Text!.Trim();
         var speech = await tts.SynthesizeAsync(text, request.Voice?.Trim(), model, cancellationToken);
 
-        await billing.ChargeTextToSpeechAsync(customerId, model, text.Length, Guid.NewGuid(), cancellationToken);
+        var charge = await billing.ChargeTextToSpeechAsync(customerId, model, text.Length, Guid.NewGuid(), cancellationToken);
 
-        return speech;
+        return speech with { Price = charge is null ? null : RequestPriceDto.From(charge) };
     }
 }
 

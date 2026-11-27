@@ -4809,3 +4809,9 @@ code {
   color: var(--silo-text-faint);
   font-size: var(--fs-xs);
 }
+
+.chat-bubble-price {
+  margin-top: var(--space-2, 8px);
+  font-size: var(--fs-xs);
+  color: var(--silo-text-muted);
+}

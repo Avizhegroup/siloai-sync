@@ -101,6 +101,27 @@ public class SpeechBillingTests
     }
 
     [Fact]
+    public async Task The_charge_is_returned_so_the_response_can_announce_the_price()
+    {
+        var billing = new SpeechBillingService(new RecordingPricing(), new Ledger());
+
+        var stt = await billing.ChargeSpeechToTextAsync(5, Model, new SpeechUsage(1, 1, 1m), Guid.NewGuid(), default);
+        var tts = await billing.ChargeTextToSpeechAsync(5, Model, 10, Guid.NewGuid(), default);
+
+        Assert.Equal(1200m, RequestPriceDto.From(stt!).Toman);
+        Assert.Equal(1200m, RequestPriceDto.From(tts!).Toman);
+    }
+
+    [Fact]
+    public async Task Admin_calls_return_no_charge_and_therefore_no_price()
+    {
+        var billing = new SpeechBillingService(new RecordingPricing(), new Ledger());
+
+        Assert.Null(await billing.ChargeSpeechToTextAsync(null, Model, SpeechUsage.Unknown, Guid.NewGuid(), default));
+        Assert.Null(await billing.ChargeTextToSpeechAsync(null, Model, 10, Guid.NewGuid(), default));
+    }
+
+    [Fact]
     public async Task A_customer_without_credit_is_refused_up_front()
     {
         var billing = new SpeechBillingService(new RecordingPricing(), new Ledger { Balance = 0 });
